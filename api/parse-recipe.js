@@ -1,18 +1,29 @@
 // api/parse-recipe.js — Vercel Serverless Function
-// Proxies Claude API to parse recipe from URL or text
-// Claude APIのプロキシ：URLまたはテキストからレシピを解析 / 代理 Claude API 解析菜谱
+// Multi-provider AI recipe parser: Groq → Gemini → DeepSeek → Claude (fallback chain)
+// マルチプロバイダーAIレシピパーサー / 多模型菜谱解析，自动降级
 
 export default async function handler(req, res) {
   // CORS headers
-  // CORSヘッダー / CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
-  if (!CLAUDE_API_KEY) return res.status(500).json({ error: 'Claude API key not configured' });
+  // Auto-select available API key (priority: Groq → Gemini → DeepSeek → Claude)
+  // 利用可能なAPIキーを自動選択 / 自动选择可用的 API Key
+  const GROQ_API_KEY    = process.env.GROQ_API_KEY;
+  const GEMINI_API_KEY  = process.env.GEMINI_API_KEY;
+  const DEEPSEEK_API_KEY= process.env.DEEPSEEK_API_KEY;
+  const CLAUDE_API_KEY  = process.env.CLAUDE_API_KEY;
+
+  const provider =
+    GROQ_API_KEY     ? 'groq'     :
+    GEMINI_API_KEY   ? 'gemini'   :
+    DEEPSEEK_API_KEY ? 'deepseek' :
+    CLAUDE_API_KEY   ? 'claude'   : null;
+
+  if (!provider) return res.status(500).json({ error: 'No AI API key configured. Add GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, or CLAUDE_API_KEY in Vercel environment variables.' });
 
   const { url, text, lang = 'zh' } = req.body || {};
   if (!url && !text) return res.status(400).json({ error: 'url or text required' });
@@ -66,36 +77,88 @@ tags array must only contain values from: high-protein, low-fat, low-carb, high-
 Return ONLY the JSON object, no markdown, no explanation.`;
 
   try {
-    const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',  // Fast + cheap for parsing
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: sourceContent }],
-      }),
-    });
+    let raw = '';
 
-    if (!claudeResp.ok) {
-      const errBody = await claudeResp.text();
-      return res.status(502).json({ error: 'Claude API error', detail: errBody });
+    // ── Groq (OpenAI-compatible, free tier, fastest)
+    if (provider === 'groq') {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3-8b-8192',
+          max_tokens: 1024,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: sourceContent },
+          ],
+        }),
+      });
+      if (!r.ok) throw new Error(`Groq error ${r.status}: ${await r.text()}`);
+      raw = (await r.json()).choices?.[0]?.message?.content || '';
     }
 
-    const claudeData = await claudeResp.json();
-    const raw = claudeData.content?.[0]?.text || '';
+    // ── Gemini
+    else if (provider === 'gemini') {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt + '\n\n' + sourceContent }] }],
+            generationConfig: { maxOutputTokens: 1024 },
+          }),
+        }
+      );
+      if (!r.ok) throw new Error(`Gemini error ${r.status}: ${await r.text()}`);
+      raw = (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
 
-    // Parse JSON from response
-    // レスポンスからJSONをパース / 从响应中解析 JSON
+    // ── DeepSeek (OpenAI-compatible)
+    else if (provider === 'deepseek') {
+      const r = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${DEEPSEEK_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          max_tokens: 1024,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: sourceContent },
+          ],
+        }),
+      });
+      if (!r.ok) throw new Error(`DeepSeek error ${r.status}: ${await r.text()}`);
+      raw = (await r.json()).choices?.[0]?.message?.content || '';
+    }
+
+    // ── Claude (fallback)
+    else {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: sourceContent }],
+        }),
+      });
+      if (!r.ok) throw new Error(`Claude error ${r.status}: ${await r.text()}`);
+      raw = (await r.json()).content?.[0]?.text || '';
+    }
+
+    // Parse JSON from whichever model responded
+    // どのモデルの応答からもJSONをパース / 从任意模型响应中解析 JSON
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return res.status(422).json({ error: 'No JSON in response', raw });
 
     const recipe = JSON.parse(jsonMatch[0]);
-    return res.status(200).json(recipe);
+    return res.status(200).json({ ...recipe, _provider: provider });
 
   } catch (e) {
     console.error('[parse-recipe] error:', e);
