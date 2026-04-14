@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Meal 🥗</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     AUTH GATE  — shown until user is logged in
+     ════════════════════════════════════════════ -->
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo">🥗</div>
+    <h1 class="auth-title" data-i18n="app_name">Happy Meal</h1>
+    <p class="auth-subtitle" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
+
+    <!-- lang switcher -->
+    <div class="lang-row">
+      <button class="lang-btn active" onclick="I18n.set('zh')">中文</button>
+      <button class="lang-btn" onclick="I18n.set('en')">EN</button>
+      <button class="lang-btn" onclick="I18n.set('ja')">日本語</button>
+    </div>
+
+    <!-- login form -->
+    <div id="authForm">
+      <input id="authEmail" type="email" class="inp" data-i18n-ph="ph_email" placeholder="邮箱" autocomplete="username" />
+      <input id="authPwd" type="password" class="inp" data-i18n-ph="ph_pwd" placeholder="密码" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') Auth.login()" />
+      <button class="btn-primary w100" onclick="Auth.login()" data-i18n="btn_login">登录</button>
+      <button class="btn-secondary w100" onclick="Auth.register()" data-i18n="btn_register">注册</button>
+      <button class="btn-google w100" onclick="Auth.googleLogin()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" /> Google 登录
+      </button>
+      <p id="authErr" class="auth-err"></p>
+      <hr class="auth-divider" />
+      <button class="btn-local" onclick="Auth.localMode()" data-i18n="btn_local">👤 以本地模式进入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     MAIN APP
+     ════════════════════════════════════════════ -->
+<div id="mainApp" class="main-app hidden">
+
+  <!-- ── Top bar ── -->
+  <header class="topbar">
+    <span class="topbar-logo">🥗</span>
+    <span class="topbar-title" data-i18n="app_name">Happy Meal</span>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="LangMenu.toggle()" title="Language">🌐</button>
+      <div id="langMenu" class="dropdown hidden">
+        <button onclick="I18n.set('zh')">中文</button>
+        <button onclick="I18n.set('en')">English</button>
+        <button onclick="I18n.set('ja')">日本語</button>
+      </div>
+      <button class="icon-btn" onclick="ProfilePanel.toggle()" id="avatarBtn">👤</button>
+      <div id="profilePanel" class="profile-panel hidden">
+        <div class="profile-name" id="profileName">—</div>
+        <button class="btn-small" onclick="Auth.logout()" data-i18n="btn_logout">退出登录</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Tab Navigation ── -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+      <span class="tab-icon">🏠</span><span class="tab-label" data-i18n="tab_home">主页</span>
+    </button>
+    <button class="tab-btn" data-tab="recipes" onclick="App.switchTab('recipes')">
+      <span class="tab-icon">📖</span><span class="tab-label" data-i18n="tab_recipes">菜谱</span>
+    </button>
+    <button class="tab-btn" data-tab="tracker" onclick="App.switchTab('tracker')">
+      <span class="tab-icon">📊</span><span class="tab-label" data-i18n="tab_tracker">追踪</span>
+    </button>
+    <button class="tab-btn" data-tab="planner" onclick="App.switchTab('planner')">
+      <span class="tab-icon">📅</span><span class="tab-label" data-i18n="tab_planner">周菜单</span>
+    </button>
+    <button class="tab-btn" data-tab="indulgence" onclick="App.switchTab('indulgence')">
+      <span class="tab-icon">🍰</span><span class="tab-label" data-i18n="tab_indulgence">零食/酒</span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════
+       TAB: DASHBOARD (主页)
+       ═══════════════════════════════ -->
+  <section id="tab-dashboard" class="tab-page active">
+    <!-- BMI Card -->
+    <div class="card bmi-card">
+      <div class="card-title" data-i18n="bmi_title">📏 我的 BMI</div>
+      <div class="bmi-inputs">
+        <div class="inp-group">
+          <label data-i18n="lbl_gender">性别</label>
+          <select id="bmiGender" onchange="BMI.calc()">
+            <option value="male" data-i18n="opt_male">男</option>
+            <option value="female" data-i18n="opt_female">女</option>
+          </select>
+        </div>
+        <div class="inp-group">
+          <label data-i18n="lbl_age">年龄</label>
+          <input id="bmiAge" type="number" min="10" max="99" placeholder="25" oninput="BMI.calc()" />
+        </div>
+        <div class="inp-group">
+          <label data-i18n="lbl_height">身高 (cm)</label>
+          <input id="bmiHeight" type="number" min="100" max="250" placeholder="170" oninput="BMI.calc()" />
+        </div>
+        <div class="inp-group">
+          <label data-i18n="lbl_weight">体重 (kg)</label>
+          <input id="bmiWeight" type="number" min="30" max="300" placeholder="65" oninput="BMI.calc()" />
+        </div>
+      </div>
+      <div id="bmiResult" class="bmi-result hidden">
+        <div class="bmi-score" id="bmiScore">—</div>
+        <div class="bmi-label" id="bmiLabel">—</div>
+        <div class="bmi-target" id="bmiTarget">—</div>
+        <div class="bmi-bar-wrap">
+          <div class="bmi-bar-track">
+            <div class="bmi-bar-fill" id="bmiBarFill"></div>
+          </div>
+          <div class="bmi-bar-labels">
+            <span>偏瘦</span><span>正常</span><span>偏重</span><span>肥胖</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Summary -->
+    <div class="card">
+      <div class="card-title" data-i18n="today_summary">📋 今日摘要</div>
+      <div class="macro-ring-wrap">
+        <canvas id="macroRing" width="160" height="160"></canvas>
+        <div class="macro-ring-center">
+          <div id="todayKcal" class="ring-kcal">0</div>
+          <div class="ring-kcal-label" data-i18n="kcal">千卡</div>
+        </div>
+      </div>
+      <div class="macro-bars" id="macroBars">
+        <!-- rendered by Tracker.renderSummary() -->
+      </div>
+      <div class="target-row">
+        <span data-i18n="target_kcal">目标热量：</span>
+        <span id="targetKcal" class="highlight">—</span>
+        <span data-i18n="kcal"> 千卡</span>
+      </div>
+    </div>
+
+    <!-- Recommended Recipes -->
+    <div class="card">
+      <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
+      <div id="recommendList" class="recipe-list-small">
+        <!-- rendered by BMI.renderRecommend() -->
+        <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB: RECIPES (菜谱)
+       ═══════════════════════════════ -->
+  <section id="tab-recipes" class="tab-page">
+    <!-- Add Recipe -->
+    <div class="card">
+      <div class="card-title" data-i18n="add_recipe">➕ 添加菜谱</div>
+      <div class="add-recipe-tabs">
+        <button class="pill active" id="addTab-url" onclick="RecipeAdd.showTab('url')" data-i18n="from_url">从 URL 导入</button>
+        <button class="pill" id="addTab-manual" onclick="RecipeAdd.showTab('manual')" data-i18n="manual_input">手动录入</button>
+      </div>
+
+      <!-- URL import -->
+      <div id="addPanel-url" class="add-panel">
+        <input id="recipeUrl" type="url" class="inp" placeholder="https://..." data-i18n-ph="ph_url" />
+        <button class="btn-primary w100" onclick="Parser.fromUrl()" data-i18n="btn_parse">🔍 解析菜谱</button>
+        <div id="parseStatus" class="parse-status"></div>
+      </div>
+
+      <!-- Manual input -->
+      <div id="addPanel-manual" class="add-panel hidden">
+        <input id="rName" class="inp" placeholder="菜名" data-i18n-ph="ph_rname" />
+        <div class="inp-row">
+          <input id="rKcal" type="number" class="inp" placeholder="热量(kcal)" data-i18n-ph="ph_kcal" />
+          <input id="rProtein" type="number" class="inp" placeholder="蛋白质(g)" data-i18n-ph="ph_protein" />
+        </div>
+        <div class="inp-row">
+          <input id="rCarbs" type="number" class="inp" placeholder="碳水(g)" data-i18n-ph="ph_carbs" />
+          <input id="rFat" type="number" class="inp" placeholder="脂肪(g)" data-i18n-ph="ph_fat" />
+        </div>
+        <textarea id="rIngredients" class="inp textarea" placeholder="食材（每行一个，如：鸡胸肉 200g）" data-i18n-ph="ph_ingredients" rows="4"></textarea>
+        <textarea id="rSteps" class="inp textarea" placeholder="步骤（每行一步）" data-i18n-ph="ph_steps" rows="3"></textarea>
+        <div class="tag-select" id="tagSelect">
+          <button class="tag" data-tag="high-protein" onclick="RecipeAdd.toggleTag(this)">🥩 高蛋白</button>
+          <button class="tag" data-tag="low-fat" onclick="RecipeAdd.toggleTag(this)">🥗 低脂</button>
+          <button class="tag" data-tag="low-carb" onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
+          <button class="tag" data-tag="high-carb" onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
+          <button class="tag" data-tag="vegetarian" onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
+        </div>
+        <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save">💾 保存菜谱</button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-bar">
+      <button class="pill active" data-filter="all" onclick="Recipes.filter('all')" data-i18n="filter_all">全部</button>
+      <button class="pill" data-filter="high-protein" onclick="Recipes.filter('high-protein')">🥩 高蛋白</button>
+      <button class="pill" data-filter="low-fat" onclick="Recipes.filter('low-fat')">🥗 低脂</button>
+      <button class="pill" data-filter="low-carb" onclick="Recipes.filter('low-carb')">🥦 低碳</button>
+      <button class="pill" data-filter="high-carb" onclick="Recipes.filter('high-carb')">🍚 高碳</button>
+      <button class="pill" data-filter="vegetarian" onclick="Recipes.filter('vegetarian')">🌿 素食</button>
+    </div>
+
+    <!-- Recipe List -->
+    <div id="recipeList" class="recipe-grid">
+      <!-- rendered by Recipes.render() -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB: TRACKER (追踪)
+       ═══════════════════════════════ -->
+  <section id="tab-tracker" class="tab-page">
+    <!-- Date nav -->
+    <div class="date-nav">
+      <button class="icon-btn" onclick="Tracker.prevDay()">◀</button>
+      <span id="trackerDate" class="date-label"></span>
+      <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
+    </div>
+
+    <!-- Meals -->
+    <div id="mealSections">
+      <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
+    </div>
+
+    <!-- Daily totals chart -->
+    <div class="card">
+      <div class="card-title" data-i18n="nutrition_breakdown">📊 营养分布</div>
+      <canvas id="nutritionBar" height="120"></canvas>
+    </div>
+
+    <!-- 7-day history -->
+    <div class="card">
+      <div class="card-title" data-i18n="weekly_kcal">📈 近7日热量</div>
+      <canvas id="weeklyKcalChart" height="120"></canvas>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB: PLANNER (周菜单)
+       ═══════════════════════════════ -->
+  <section id="tab-planner" class="tab-page">
+    <div class="card">
+      <div class="card-title" data-i18n="weekly_plan">📅 本周菜单</div>
+      <div class="planner-actions">
+        <button class="btn-primary" onclick="Planner.autoGenerate()" data-i18n="btn_auto_plan">✨ 自动生成</button>
+        <button class="btn-secondary" onclick="Planner.sendEmail()" data-i18n="btn_email_plan">📧 发送到邮箱</button>
+      </div>
+      <div id="weeklyGrid" class="weekly-grid">
+        <!-- rendered by Planner.render() -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TAB: INDULGENCE (零食/酒)
+       ═══════════════════════════════ -->
+  <section id="tab-indulgence" class="tab-page">
+    <div class="card">
+      <div class="card-title" data-i18n="indulgence_title">🍰 甜品 / 饮料 / 酒精热量</div>
+      <p class="card-desc" data-i18n="indulgence_desc">快速查询高热量零食，添加到今日记录</p>
+      <div class="search-row">
+        <input id="indulgeSearch" class="inp" placeholder="搜索..." data-i18n-ph="ph_search" oninput="Indulgence.search(this.value)" />
+      </div>
+      <div class="indulge-cats">
+        <button class="pill active" data-cat="all" onclick="Indulgence.filterCat('all')" data-i18n="filter_all">全部</button>
+        <button class="pill" data-cat="dessert" onclick="Indulgence.filterCat('dessert')">🍰 甜品</button>
+        <button class="pill" data-cat="drink" onclick="Indulgence.filterCat('drink')">🧋 饮料</button>
+        <button class="pill" data-cat="alcohol" onclick="Indulgence.filterCat('alcohol')">🍺 酒精</button>
+      </div>
+      <div id="indulgeList" class="indulge-grid">
+        <!-- rendered by Indulgence.render() -->
+      </div>
+    </div>
+  </section>
+
+</div><!-- /mainApp -->
+
+<!-- ════════════════════════════════════════════
+     MODALS
+     ════════════════════════════════════════════ -->
+
+<!-- Recipe Detail Modal -->
+<div id="recipeModal" class="modal-overlay hidden" onclick="if(event.target===this)RecipeModal.close()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="RecipeModal.close()">✕</button>
+    <div id="recipeModalContent"></div>
+  </div>
+</div>
+
+<!-- Parsed Recipe Preview Modal -->
+<div id="parseModal" class="modal-overlay hidden" onclick="if(event.target===this)ParseModal.close()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="ParseModal.close()">✕</button>
+    <div id="parseModalContent"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="ParseModal.save()" data-i18n="btn_save_recipe">💾 保存菜谱</button>
+      <button class="btn-secondary" onclick="ParseModal.close()" data-i18n="btn_cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Indulgence Warning Toast -->
+<div id="indulgeToast" class="toast hidden"></div>
+
+<!-- ════════════════════════════════════════════
+     SCRIPTS — order matters
+     ════════════════════════════════════════════ -->
+<script src="js/i18n.js"></script>
+<script src="js/state.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/bmi.js"></script>
+<script src="js/recipes.js"></script>
+<script src="js/tracker.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/indulgence.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/keys.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
