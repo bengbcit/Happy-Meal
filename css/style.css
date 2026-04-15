@@ -475,6 +475,23 @@ input, select, textarea { font: inherit; }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* ── Motivational quote card ────────────────────────── */
+.motivate-card {
+  background: linear-gradient(135deg, #e8f8ef 0%, #d0f0e0 100%);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--green-dk);
+  border-left: 4px solid var(--green);
+  line-height: 1.5;
+  animation: fadeIn .4s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+@media (prefers-color-scheme: dark) {
+  .motivate-card { background: linear-gradient(135deg,#1a3328,#162b20); }
+}
+
 /* ── Dynamic ingredient / step rows ────────────────── */
 .section-label {
   display: flex; align-items: center; gap: 8px;

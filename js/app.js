@@ -68,6 +68,7 @@ const App = (() => {
   function init() {
     I18n.init();
     ThemeManager.init();
+    Motivate.render();   // daily quote — language-aware / 每日鼓励语
     BMI.init();
     Recipes.render();
     Tracker.init();

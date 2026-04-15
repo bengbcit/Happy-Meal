@@ -287,6 +287,9 @@ const I18n = (() => {
       _lang = lang;
       localStorage.setItem('hm_lang', lang);
       _apply();
+      // Refresh motivational quote when language changes
+      // 言語変更時に励ましメッセージをリフレッシュ / 语言切换时刷新鼓励语
+      if (typeof Motivate !== 'undefined') Motivate.onLangChange();
     },
     get(key, vars = {}) {
       const t = LANGS[_lang] || LANGS.zh;

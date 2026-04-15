@@ -129,6 +129,8 @@ Happy-Meal/
 - **输出格式**: 先说明修改点 → 再贴代码
 - **API 密钥**: 不要把真实密钥写进回复或提交到 git
 - **CONTEXT.md 触发词**: 每当我说「总结到context.md」或「context.md summary so far」，把本次对话要点追加到「开发日志」章节
+- **自动总结规则**: 每次对话结束或有代码改动时，Claude 自动把本次改动要点追加到「开发日志」，无需触发词
+- **鼓励语规则**: App 内所有鼓励语、提示语、Toast 消息，必须跟随当前语言选项（zh/en/ja）实时切换
 
 ---
 
@@ -198,6 +200,53 @@ git push
 - 三语言：中文 / 英文 / 日文
 - 第一版核心功能：菜谱录入 + BMI推荐 + 卡路里追踪
 - AI 解析改为多模型降级链：Groq → Gemini → DeepSeek → Claude
+
+### 2026-04-16 — 登录流程重写 + 菜谱大升级 + 多邮箱 + 孩子模式 + 鼓励语
+
+#### 新增规则
+- 每次对话代码改动后自动总结到本文件，无需触发词
+- 所有 App 内鼓励语、提示语跟随 zh/en/ja 语言选项实时切换
+
+#### 登录流程（按 login-flow.html）
+- `auth.js` 重写：本地/Firebase 两种模式，`_enterApp()` 根据 `isLocal` 分别渲染按钮
+- 本地模式 → 用户名"本地用户"，显示"登录账号"+"退出本地模式"
+- Firebase 模式 → 显示邮箱，显示"切换本地账号"+"退出登录"
+- 点用户名 → `switchPanel` 弹出（切换本地/邮箱/添加账号）
+
+#### 菜谱栏升级
+- 食材改为动态行：食材名 + 克重格（可 +/-），支持语音输入 `VoiceInput.start('ingredient')`
+- 步骤同样动态行 + 语音按钮，语音跟随当前语言（`zh-CN/en-US/ja-JP`）
+- 新增"图片/PDF" Tab：拖放上传 → `Parser.fromFile()` → AI 解析 → ParseModal 预览
+
+#### 追踪栏升级
+- 快速导入卡：CSV（`Tracker.importCSV()`）+ 图片/截图（`Tracker.importImage()`）
+- CSV 自动识别 name/kcal/protein/carbs/fat 列（兼容中英日列名）
+
+#### 周菜单升级
+- 🧑/👶 模式切换：孩子模式用儿童热量目标（男1600/女1400），优先低热量菜谱
+- 多邮箱行（`Planner.addEmailRow()`），发送时遍历所有有效邮箱
+
+#### 主页推荐逻辑
+- 评分改为蛋白质 +3，其他匹配 +1，偏重时高碳 −1
+- 显示推荐原因图标（🥩🥗🥦）+ 底部说明"推荐依据：蛋白质 > 碳水 > 脂肪"
+
+#### api/parse-recipe.js 升级
+- 支持 `fileBase64` 参数（图片/PDF）→ Gemini 或 Claude Vision 解析
+- `mode:'tracker'` 参数 → 返回食物数组而非菜谱格式
+
+#### 新增：鼓励语模块（motivate.js）
+- 每日换一句，跟随 zh/en/ja，显示在主页顶部
+- I18n.set() 时自动刷新
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| 动态行用数组维护 | `_ingredients[]` 存 `"名称\|克重"` 格式，渲染时解析 |
+| 语音 lang 跟 I18n | `SpeechRecognition.lang` 在每次 start 时从 `I18n.current()` 读取 |
+| CSV 列名模糊匹配 | 用 `includes()` 匹配中英日列名，兼容用户自定义 CSV |
+| Vision API 只选 Gemini/Claude | Groq/DeepSeek 不支持图片，需先判断 `visionProvider` |
+
+---
 
 ### 2026-04-16 — 部署修复 + 多模型 AI
 - vercel.json 从 `builds+routes` 改为 `rewrites`，修复 404
