@@ -319,26 +319,5 @@ const RecipeModal = (() => {
   return { open, close, _del };
 })();
 
-// ── ParseModal ────────────────────────────────────────
-const ParseModal = (() => {
-  let _pending = null;
-  function show(recipe) {
-    _pending = recipe;
-    const ings = (recipe.ingredients||[]).map(i=>`<li>${i}</li>`).join('');
-    const stps = (recipe.steps||[]).map((s,i)=>`<li>${s}</li>`).join('');
-    document.getElementById('parseModalContent').innerHTML = `
-      <div style="font-weight:800;font-size:1.1rem">${recipe.name}</div>
-      <div class="macro-chips">
-        <span class="macro-chip kcal">🔥 ${recipe.kcal||'—'} kcal</span>
-        <span class="macro-chip protein">🥩 ${recipe.protein||0}g</span>
-        <span class="macro-chip carb">🍚 ${recipe.carbs||0}g</span>
-        <span class="macro-chip fat">🧈 ${recipe.fat||0}g</span>
-      </div>
-      ${ings?`<div class="recipe-detail-section"><h4>食材</h4><ul>${ings}</ul></div>`:''}
-      ${stps?`<div class="recipe-detail-section"><h4>步骤</h4><ol>${stps}</ol></div>`:''}`;
-    document.getElementById('parseModal').classList.remove('hidden');
-  }
-  function save()  { if(!_pending)return; RecipeAdd.saveFromParsed(_pending); close(); }
-  function close() { document.getElementById('parseModal').classList.add('hidden'); _pending=null; }
-  return { show, save, close };
-})();
+// ParseModal is defined in parser.js — do not redeclare here
+// ParseModal は parser.js で定義済み — ここで再宣言しない / ParseModal 已在 parser.js 定义，此处不重复声明

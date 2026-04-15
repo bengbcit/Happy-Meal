@@ -201,6 +201,36 @@ git push
 - 第一版核心功能：菜谱录入 + BMI推荐 + 卡路里追踪
 - AI 解析改为多模型降级链：Groq → Gemini → DeepSeek → Claude
 
+### 2026-04-16 — 双重 Bug 修复：ParseModal 重复声明 + firebase-init ReferenceError
+
+#### ❓ Bug 1 — `Uncaught SyntaxError: Identifier 'ParseModal' has already been declared`
+- **根本原因**: `recipes.js` 和 `parser.js` 都定义了 `const ParseModal = (() => {...})()`，浏览器解析时 SyntaxError，**整个 JS 停止执行**，所有按钮全失效
+- **修复**: 删除 `recipes.js` 末尾多余的 `ParseModal`，保留 `parser.js` 里唯一的定义
+- **教训**: 两个文件迭代时各自加了同名 const，没有做重复检查
+
+#### ❓ Bug 2 — `ReferenceError: _setLoading is not defined` (firebase-init.js)
+- **根本原因**: `firebase-init.js` 的 `Object.assign(Auth, {...})` 里调用了裸函数 `_setLoading()` / `_setErr()`，但这两个方法是定义在 **`Auth` 对象里的**（`Auth._setLoading`），全局作用域根本不存在
+- **附加问题**: `_enterApp()` 被传入字符串 `_enterApp('User')`，但函数签名要求对象 `{displayName, email, isLocal}`
+- **修复**:
+  - 全部改为 `Auth._setLoading(...)` / `Auth._setErr(...)`
+  - `_enterApp` 调用改为传对象：`_enterApp({ displayName, email, isLocal: false })`
+  - 新增 `auth/invalid-credential`、`auth/popup-blocked` 等新版 Firebase 错误码映射
+- **教训**: `Object.assign` 注入的方法里调用 helper，必须用 `Auth.xxx()`，不能裸调用
+
+#### EmailJS 模板更新
+- 新模板 ID: `template_y2lqtd8`（已更新到 `firebase-config.js`）
+- To Email 字段必须填 `{{to_email}}`，否则发到固定地址
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| `const` 重复声明 = SyntaxError | 整个脚本文件停止解析，表现为所有 onclick 都失效，很难定位 |
+| `Object.assign` 里调用 helper | 必须用 `Auth._method()` 而不是裸 `_method()`，后者在全局不存在 |
+| `_enterApp` 参数类型 | 永远传对象 `{displayName, email, isLocal}`，不传字符串 |
+| Firebase 新版错误码 | `auth/wrong-password` 已被 `auth/invalid-credential` 替代，两个都要处理 |
+
+---
+
 ### 2026-04-16 — 运动Tab + 历史菜单 + 外食 + 小奖励改名 + AI背景
 
 #### 新增文件
