@@ -16,9 +16,9 @@ const firebaseConfig = {
 // EmailJS configuration
 // EmailJS設定 / EmailJS 配置
 const emailjsConfig = {
-  publicKey:   '1o0k8Wov1W7HtYneq',
-  serviceId:   'service_mvd09ib',
-  templateId:  'template_bj3gsu9',
+  publicKey: '1o0k8Wov1W7HtYneq',
+  serviceId: 'service_mvd09ib',
+  templateId: 'template_y2lqtd8',
 };
 
 // Vercel API base (leave empty for same-origin)
