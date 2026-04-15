@@ -131,21 +131,45 @@
 
         State.updateUser({ email: user.email || '', displayName: user.displayName || '' });
 
-        // Load Firestore data asynchronously (non-blocking — show UI first)
-        // 非同期でFirestoreデータをロード（ノンブロッキング — 先にUIを表示）
-        // 非阻塞异步加载 Firestore 数据（先显示 UI，后台同步数据）
+        // Helper: save local state to Firestore
+        // Firestoreにローカル状態を保存するヘルパー / 保存本地数据到 Firestore 的辅助函数
+        async function _saveToFirestore() {
+          try {
+            await setDoc(doc(db, 'users', user.uid), State.toCloud(), { merge: true });
+            console.log('[Firestore] saved ✅');
+          } catch (e) {
+            console.warn('[Firestore] save failed:', e.message);
+          }
+        }
+
+        // Expose globally so console & buttons can call it: FirebaseSync.push()
+        // コンソールやボタンから呼び出せるようにグローバルに公開 / 暴露给控制台和按钮调用
+        window.FirebaseSync = { push: _saveToFirestore };
+
+        // Load Firestore data first, then save local data if cloud is empty
+        // まずFirestoreからデータをロード、クラウドが空なら本地データを保存
+        // 先加载云端数据，若云端为空则把本地数据上传
         try {
           const snap = await getDoc(doc(db, 'users', user.uid));
           if (snap.exists()) {
             State.mergeFromCloud(snap.data());
-            if (typeof App !== 'undefined') App.init(); // re-render with cloud data
+            if (typeof App !== 'undefined') App.init();
+            console.log('[Firestore] loaded ✅');
+          } else {
+            // First login — push local data up immediately
+            // 初回ログイン — 本地データをすぐに送信 / 首次登录，立刻上传本地数据
+            await _saveToFirestore();
           }
         } catch (e) {
           console.warn('[Firestore] load failed, using local data:', e.message);
         }
 
-        // Auto-save to Firestore when tab closes
-        // タブを閉じる時に自動保存 / 标签关闭时自动保存
+        // Save every 3 minutes while app is open (auto-sync)
+        // アプリが開いている間、3分ごとに保存 / 打开期间每3分钟自动同步
+        setInterval(_saveToFirestore, 3 * 60 * 1000);
+
+        // Also save when tab closes
+        // タブを閉じる時にも保存 / 关闭标签时也保存
         window.addEventListener('beforeunload', () => {
           setDoc(doc(db, 'users', user.uid), State.toCloud(), { merge: true })
             .catch(() => {});
