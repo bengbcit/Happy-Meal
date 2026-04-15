@@ -25,11 +25,59 @@ export default async function handler(req, res) {
 
   if (!provider) return res.status(500).json({ error: 'No AI API key configured. Add GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, or CLAUDE_API_KEY in Vercel environment variables.' });
 
-  const { url, text, lang = 'zh' } = req.body || {};
-  if (!url && !text) return res.status(400).json({ error: 'url or text required' });
+  const { url, text, fileBase64, fileType, fileName, lang = 'zh', mode = 'recipe' } = req.body || {};
+  if (!url && !text && !fileBase64) return res.status(400).json({ error: 'url, text, or fileBase64 required' });
 
-  // Fetch page content if URL provided
-  // URLが指定された場合はページコンテンツを取得 / 如果提供了 URL 则抓取页面内容
+  // ── Handle image / PDF (base64) ──────────────────────
+  // 画像・PDFをbase64で処理 / 处理 base64 图片/PDF
+  if (fileBase64) {
+    // Only Gemini and Claude support vision natively; use Gemini if available
+    // GeminiとClaudeのみビジョンをサポート / 仅 Gemini 和 Claude 支持视觉
+    const visionProvider = GEMINI_API_KEY ? 'gemini' : CLAUDE_API_KEY ? 'claude' : null;
+    if (!visionProvider) return res.status(400).json({ error: 'Vision requires GEMINI_API_KEY or CLAUDE_API_KEY' });
+
+    const trackerPrompt = mode === 'tracker'
+      ? `Identify all food items visible in this image. Return a JSON array of objects: [{"name":"...","kcal":0,"protein":0,"carbs":0,"fat":0}]. Estimate portions. ${lang==='zh'?'用中文输出食物名称':lang==='ja'?'食品名は日本語で':'Output food names in English'}`
+      : `Extract the recipe from this image. Return ONLY valid JSON: {"name":"...","kcal":0,"protein":0,"carbs":0,"fat":0,"ingredients":[],"steps":[],"tags":[]}. ${lang==='zh'?'用中文':''}`;
+
+    try {
+      let raw = '';
+      if (visionProvider === 'gemini') {
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ contents:[{ parts:[
+              { text: trackerPrompt },
+              { inline_data: { mime_type: fileType, data: fileBase64 } }
+            ]}] }) }
+        );
+        if (!r.ok) throw new Error(`Gemini vision error ${r.status}`);
+        raw = (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        // Claude vision
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST',
+          headers:{ 'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json' },
+          body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:1024,
+            messages:[{ role:'user', content:[
+              { type:'image', source:{ type:'base64', media_type:fileType, data:fileBase64 } },
+              { type:'text',  text: trackerPrompt }
+            ]}]
+          })
+        });
+        if (!r.ok) throw new Error(`Claude vision error ${r.status}`);
+        raw = (await r.json()).content?.[0]?.text || '';
+      }
+
+      const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);
+      if (!jsonMatch) return res.status(422).json({ error:'No JSON in vision response', raw });
+      return res.status(200).json(JSON.parse(jsonMatch[0]));
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // ── Fetch URL content ────────────────────────────────
   let sourceContent = text || '';
   if (url) {
     try {
@@ -38,14 +86,12 @@ export default async function handler(req, res) {
         signal: AbortSignal.timeout(8000),
       });
       const html = await pageResp.text();
-      // Strip HTML tags for cleaner input
-      // HTMLタグを削除してクリーンな入力にする / 剥离 HTML 标签
       sourceContent = html
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s{2,}/g, ' ')
-        .slice(0, 6000);  // Limit context length / コンテキスト長を制限
+        .slice(0, 6000);
     } catch (e) {
       return res.status(422).json({ error: 'Failed to fetch URL: ' + e.message });
     }

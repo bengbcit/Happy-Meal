@@ -4,20 +4,21 @@
 // ⚠️ 请替换为你的真实 Firebase 项目配置（勿提交到 git）
 
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey: "AIzaSyDxpUeigUYcgT46Qo1Fof1O0-VMKQY0di4",
+  authDomain: "happy-meal-dca86.firebaseapp.com",
+  projectId: "happy-meal-dca86",
+  storageBucket: "happy-meal-dca86.firebasestorage.app",
+  messagingSenderId: "873727838981",
+  appId: "1:873727838981:web:0c3e26f59655a9d649056c",
+  measurementId: "G-BE57H1NFW6"
 };
 
 // EmailJS configuration
 // EmailJS設定 / EmailJS 配置
 const emailjsConfig = {
-  publicKey:   'YOUR_EMAILJS_PUBLIC_KEY',
-  serviceId:   'YOUR_EMAILJS_SERVICE_ID',
-  templateId:  'YOUR_EMAILJS_TEMPLATE_ID',
+  publicKey:   '1o0k8Wov1W7HtYneq',
+  serviceId:   'service_mvd09ib',
+  templateId:  'template_bj3gsu9',
 };
 
 // Vercel API base (leave empty for same-origin)

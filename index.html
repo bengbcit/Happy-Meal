@@ -60,9 +60,19 @@
         <button onclick="I18n.set('ja')">日本語</button>
       </div>
       <button class="icon-btn" onclick="ProfilePanel.toggle()" id="avatarBtn">👤</button>
+      <!-- Profile panel: name + actions (content set dynamically by _enterApp) -->
       <div id="profilePanel" class="profile-panel hidden">
-        <div class="profile-name" id="profileName">—</div>
-        <button class="btn-small" onclick="Auth.logout()" data-i18n="btn_logout">退出登录</button>
+        <div class="profile-name" id="profileName" style="cursor:pointer" onclick="Auth.showSwitchPanel()">
+          — <span style="font-size:.7rem;color:var(--text-muted)">▼</span>
+        </div>
+        <div id="profileActions"></div>
+      </div>
+      <!-- Switch account panel -->
+      <div id="switchPanel" class="profile-panel hidden" style="top:88px;min-width:180px">
+        <div style="font-size:.8rem;color:var(--text-muted);padding:4px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">切换账号</div>
+        <button onclick="Auth.switchToLocal()">🏠 <span data-i18n="switch_local">切换为本地账号</span></button>
+        <button onclick="Auth.switchToEmail()">📧 <span data-i18n="switch_email">切换为其他邮箱</span></button>
+        <button onclick="Auth.addAccount()">➕ <span data-i18n="add_account">添加新账号</span></button>
       </div>
     </div>
   </header>
@@ -167,8 +177,9 @@
     <div class="card">
       <div class="card-title" data-i18n="add_recipe">➕ 添加菜谱</div>
       <div class="add-recipe-tabs">
-        <button class="pill active" id="addTab-url" onclick="RecipeAdd.showTab('url')" data-i18n="from_url">从 URL 导入</button>
-        <button class="pill" id="addTab-manual" onclick="RecipeAdd.showTab('manual')" data-i18n="manual_input">手动录入</button>
+        <button class="pill active" id="addTab-url"    onclick="RecipeAdd.showTab('url')"    data-i18n="from_url">从 URL 导入</button>
+        <button class="pill"        id="addTab-media"  onclick="RecipeAdd.showTab('media')"  data-i18n="from_media">图片/PDF</button>
+        <button class="pill"        id="addTab-manual" onclick="RecipeAdd.showTab('manual')" data-i18n="manual_input">手动录入</button>
       </div>
 
       <!-- URL import -->
@@ -178,27 +189,59 @@
         <div id="parseStatus" class="parse-status"></div>
       </div>
 
+      <!-- Image / PDF import -->
+      <div id="addPanel-media" class="add-panel hidden">
+        <label class="upload-drop-zone" id="mediaDropZone" ondragover="RecipeAdd.onDragOver(event)"
+               ondrop="RecipeAdd.onDrop(event)" onclick="document.getElementById('mediaFileInput').click()">
+          <span class="upload-icon">📷</span>
+          <span data-i18n="drop_media">拖入图片 / PDF，或点击选择</span>
+          <span class="text-muted" style="font-size:.78rem">支持 JPG, PNG, WEBP, PDF</span>
+        </label>
+        <input id="mediaFileInput" type="file" accept="image/*,.pdf" class="hidden"
+               onchange="RecipeAdd.onFileSelect(this.files[0])"/>
+        <div id="mediaParseStatus" class="parse-status"></div>
+      </div>
+
       <!-- Manual input -->
       <div id="addPanel-manual" class="add-panel hidden">
         <input id="rName" class="inp" placeholder="菜名" data-i18n-ph="ph_rname" />
         <div class="inp-row">
-          <input id="rKcal" type="number" class="inp" placeholder="热量(kcal)" data-i18n-ph="ph_kcal" />
-          <input id="rProtein" type="number" class="inp" placeholder="蛋白质(g)" data-i18n-ph="ph_protein" />
+          <input id="rKcal"    type="number" class="inp" placeholder="热量(kcal)"  data-i18n-ph="ph_kcal" />
+          <input id="rProtein" type="number" class="inp" placeholder="蛋白质(g)"   data-i18n-ph="ph_protein" />
         </div>
         <div class="inp-row">
           <input id="rCarbs" type="number" class="inp" placeholder="碳水(g)" data-i18n-ph="ph_carbs" />
-          <input id="rFat" type="number" class="inp" placeholder="脂肪(g)" data-i18n-ph="ph_fat" />
+          <input id="rFat"   type="number" class="inp" placeholder="脂肪(g)"  data-i18n-ph="ph_fat" />
         </div>
-        <textarea id="rIngredients" class="inp textarea" placeholder="食材（每行一个，如：鸡胸肉 200g）" data-i18n-ph="ph_ingredients" rows="4"></textarea>
-        <textarea id="rSteps" class="inp textarea" placeholder="步骤（每行一步）" data-i18n-ph="ph_steps" rows="3"></textarea>
-        <div class="tag-select" id="tagSelect">
+
+        <!-- Dynamic ingredient rows with +/- buttons + voice -->
+        <div class="section-label">
+          <span data-i18n="ingredients_lbl">食材</span>
+          <button class="voice-btn" onclick="VoiceInput.start('ingredient')" title="语音输入">🎤</button>
+        </div>
+        <div id="ingredientRows" class="dynamic-rows">
+          <!-- rendered by RecipeAdd.renderIngredientRows() -->
+        </div>
+        <button class="add-row-btn" onclick="RecipeAdd.addIngredientRow()">＋ 添加食材</button>
+
+        <!-- Dynamic step rows with +/- buttons + voice -->
+        <div class="section-label" style="margin-top:10px">
+          <span data-i18n="steps_lbl">步骤</span>
+          <button class="voice-btn" onclick="VoiceInput.start('step')" title="语音输入">🎤</button>
+        </div>
+        <div id="stepRows" class="dynamic-rows">
+          <!-- rendered by RecipeAdd.renderStepRows() -->
+        </div>
+        <button class="add-row-btn" onclick="RecipeAdd.addStepRow()">＋ 添加步骤</button>
+
+        <div class="tag-select" id="tagSelect" style="margin-top:10px">
           <button class="tag" data-tag="high-protein" onclick="RecipeAdd.toggleTag(this)">🥩 高蛋白</button>
-          <button class="tag" data-tag="low-fat" onclick="RecipeAdd.toggleTag(this)">🥗 低脂</button>
-          <button class="tag" data-tag="low-carb" onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
-          <button class="tag" data-tag="high-carb" onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
-          <button class="tag" data-tag="vegetarian" onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
+          <button class="tag" data-tag="low-fat"      onclick="RecipeAdd.toggleTag(this)">🥗 低脂</button>
+          <button class="tag" data-tag="low-carb"     onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
+          <button class="tag" data-tag="high-carb"    onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
+          <button class="tag" data-tag="vegetarian"   onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
         </div>
-        <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save">💾 保存菜谱</button>
+        <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save" style="margin-top:10px">💾 保存菜谱</button>
       </div>
     </div>
 
@@ -229,6 +272,24 @@
       <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
     </div>
 
+    <!-- Quick import: CSV + image -->
+    <div class="card">
+      <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
+      <div class="import-row">
+        <label class="import-btn" onclick="document.getElementById('csvInput').click()">
+          📊 <span data-i18n="import_csv">导入 CSV</span>
+          <input id="csvInput" type="file" accept=".csv,.tsv" class="hidden"
+                 onchange="Tracker.importCSV(this.files[0])"/>
+        </label>
+        <label class="import-btn" onclick="document.getElementById('trackerImgInput').click()">
+          📷 <span data-i18n="import_photo">拍照/截图</span>
+          <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
+                 onchange="Tracker.importImage(this.files[0])"/>
+        </label>
+      </div>
+      <div id="importStatus" class="parse-status"></div>
+    </div>
+
     <!-- Meals -->
     <div id="mealSections">
       <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
@@ -253,10 +314,35 @@
   <section id="tab-planner" class="tab-page">
     <div class="card">
       <div class="card-title" data-i18n="weekly_plan">📅 本周菜单</div>
+
+      <!-- Mode toggle: Adult / Kids -->
+      <div class="mode-toggle-row">
+        <span data-i18n="plan_mode">菜单模式：</span>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeAdult" onclick="Planner.setMode('adult')">
+            🧑 <span data-i18n="mode_adult">大人</span>
+          </button>
+          <button class="mode-btn" id="modeKid" onclick="Planner.setMode('kid')">
+            👶 <span data-i18n="mode_kid">孩子</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Actions -->
       <div class="planner-actions">
         <button class="btn-primary" onclick="Planner.autoGenerate()" data-i18n="btn_auto_plan">✨ 自动生成</button>
         <button class="btn-secondary" onclick="Planner.sendEmail()" data-i18n="btn_email_plan">📧 发送到邮箱</button>
       </div>
+
+      <!-- Multi-email address list -->
+      <div class="section-label" style="margin-top:4px">
+        <span data-i18n="send_to">发送邮箱</span>
+        <button class="add-row-btn-sm" onclick="Planner.addEmailRow()">＋</button>
+      </div>
+      <div id="emailRows" class="dynamic-rows">
+        <!-- rendered by Planner.renderEmailRows() -->
+      </div>
+
       <div id="weeklyGrid" class="weekly-grid">
         <!-- rendered by Planner.render() -->
       </div>

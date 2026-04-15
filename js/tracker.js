@@ -191,6 +191,59 @@ const Tracker = (() => {
     Charts.renderMacroRing(t, target);
   }
 
+  // ── CSV import ───────────────────────────────────────
+  // CSVファイルから食品エントリをインポート / 从 CSV 文件导入食物条目
+  async function importCSV(file) {
+    const statusEl = document.getElementById('importStatus');
+    if (!file) return;
+    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> 读取 CSV...`;
+    try {
+      const text = await file.text();
+      const items = Parser.parseCSV(text);
+      if (!items.length) throw new Error('no data');
+      // Show selection prompt
+      // 選択プロンプトを表示 / 显示选择提示
+      const mealChoice = prompt(`CSV 解析到 ${items.length} 条食物，添加到哪一餐？\n1 早餐  2 午餐  3 晚餐  4 零食`, '4');
+      const mealMap = {'1':'breakfast','2':'lunch','3':'dinner','4':'snack'};
+      const meal = mealMap[mealChoice?.trim()] || 'snack';
+      items.forEach(item => State.addLogEntry(_date, meal, item));
+      render();
+      Charts.renderMacroRing();
+      if (statusEl) statusEl.textContent = `✅ 已导入 ${items.length} 条 → ${meal}`;
+    } catch(e) {
+      if (statusEl) statusEl.textContent = '❌ CSV 读取失败，请检查格式（需要 name/kcal/protein/carbs/fat 列）';
+    }
+  }
+
+  // ── Image import ─────────────────────────────────────
+  // 画像から食品を識別してログに追加 / 从图片识别食物并记录
+  async function importImage(file) {
+    const statusEl = document.getElementById('importStatus');
+    if (!file) return;
+    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> AI 识别中...`;
+    try {
+      const result = await Parser.fromImageForTracker(file);
+      if (!result) throw new Error('empty');
+
+      // Result can be a single item or array of items
+      const items = Array.isArray(result) ? result : [result];
+      const mealChoice = prompt(`识别到 ${items.length} 个食物，添加到哪一餐？\n1 早餐  2 午餐  3 晚餐  4 零食`, '2');
+      const mealMap = {'1':'breakfast','2':'lunch','3':'dinner','4':'snack'};
+      const meal = mealMap[mealChoice?.trim()] || 'snack';
+      items.forEach(item => {
+        if (item.name) State.addLogEntry(_date, meal, {
+          name: item.name, kcal: item.kcal||0,
+          protein: item.protein||0, carbs: item.carbs||0, fat: item.fat||0,
+        });
+      });
+      render();
+      Charts.renderMacroRing();
+      if (statusEl) statusEl.textContent = `✅ 已识别 ${items.length} 个食物`;
+    } catch(e) {
+      if (statusEl) statusEl.textContent = '❌ 识别失败，请手动添加';
+    }
+  }
+
   function init() {
     _date = _todayStr();
     render();
@@ -198,5 +251,5 @@ const Tracker = (() => {
   }
 
   return { prevDay, nextDay, addFromRecipe, addManual, removeEntry,
-           getTotals, getTodayMacros, renderSummary, render, init };
+           getTotals, getTodayMacros, renderSummary, render, importCSV, importImage, init };
 })();

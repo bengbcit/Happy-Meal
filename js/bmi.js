@@ -37,26 +37,42 @@ const BMI = (() => {
     return 'bmi_obese';
   }
 
-  // Choose which recipe categories to recommend based on BMI + today's macros
-  // BMIと今日の栄養素に基づいておすすめカテゴリを選択 / 根据 BMI 和当日营养素选择推荐分类
+  // Recommend priority order: Protein > Carbs > Fat (based on today's gaps)
+  // 推薦優先順位：タンパク質 > 炭水化物 > 脂質（今日の不足に基づく）/ 推荐优先：蛋白质>碳水>脂肪
   function _preferredTags(bmiVal, todayMacros) {
     const tags = [];
-    // Always prefer high-protein for satiety
-    tags.push('high-protein');
+
+    // Calculate today's macro gaps vs targets
+    // 今日の栄養素の不足量を計算 / 计算今日营养素与目标的差距
+    const target = State.get().settings.targetKcal || 1800;
+    const proteinTarget = (target * 0.30) / 4;  // 30% of kcal → grams
+    const carbTarget    = (target * 0.40) / 4;
+    const fatTarget     = (target * 0.30) / 9;
+
+    let proteinGap = proteinTarget, carbGap = carbTarget, fatGap = fatTarget;
+    if (todayMacros) {
+      proteinGap = Math.max(0, proteinTarget - todayMacros.protein);
+      carbGap    = Math.max(0, carbTarget    - todayMacros.carbs);
+      fatGap     = Math.max(0, fatTarget     - todayMacros.fat);
+    }
+
+    // Sort gaps: protein > carbs > fat (fixed priority)
+    // 固定優先順位：タンパク質 > 炭水化物 > 脂質 / 固定优先级：蛋白质 > 碳水 > 脂肪
+    // If protein is most needed → recommend high-protein recipes
+    if (proteinGap > 0) tags.push('high-protein');
+
+    // BMI modifier
     if (bmiVal > THRESHOLDS.normal) {
-      // Overweight+ → low fat + low carb
-      tags.push('low-fat', 'low-carb');
+      // Overweight → prioritize low-fat and low-carb even if carb gap exists
+      tags.push('low-fat');
+      if (carbGap <= 0) tags.push('low-carb');
     } else if (bmiVal < THRESHOLDS.thin) {
-      // Underweight → high carb for energy
-      tags.push('high-carb');
+      if (carbGap > 0) tags.push('high-carb');
     } else {
       tags.push('low-fat');
     }
-    // If today already consumed high carbs (>60% ratio) → suggest low carb
-    if (todayMacros && todayMacros.carbRatio > 0.6) {
-      if (!tags.includes('low-carb')) tags.push('low-carb');
-    }
-    return tags;
+
+    return [...new Set(tags)];  // deduplicate
   }
 
   // ── Public render ────────────────────────────────────
@@ -114,8 +130,8 @@ const BMI = (() => {
     renderRecommend(bmiVal);
   }
 
-  // Render recommended recipes on dashboard
-  // ダッシュボードにおすすめレシピをレンダリング / 渲染主页推荐菜谱
+  // Render recommended recipes on dashboard with priority label
+  // 優先度ラベル付きでダッシュボードにおすすめレシピをレンダリング / 带优先级标签渲染主页推荐
   function renderRecommend(bmiVal) {
     const el = document.getElementById('recommendList');
     if (!el) return;
@@ -124,25 +140,45 @@ const BMI = (() => {
     const preferred   = _preferredTags(bmiVal, todayMacros);
     const all         = State.getRecipes();
 
-    // Score recipes by tag match count
-    // タグ一致数でレシピをスコアリング / 按标签匹配数量对菜谱评分
+    // Score by priority: protein match scores 3, others 1
+    // 優先度スコアリング：タンパク質マッチは3点、その他は1点 / 优先级评分：蛋白质匹配3分，其他1分
     const scored = all.map(r => {
-      const tags = r.tags || [];
-      const score = preferred.filter(t => tags.includes(t)).length;
-      return { ...r, _score: score };
+      const tags  = r.tags || [];
+      let score   = 0;
+      if (tags.includes('high-protein')) score += 3;   // protein first
+      if (preferred.some(t => tags.includes(t))) score += 1;
+      // Penalize high-fat if overweight
+      if (bmiVal > THRESHOLDS.normal && tags.includes('high-carb')) score -= 1;
+      return { ...r, _score: score, _matched: preferred.filter(t=>tags.includes(t)) };
     }).sort((a, b) => b._score - a._score).slice(0, 5);
 
     if (scored.length === 0) {
-      el.innerHTML = `<p class="placeholder-text" data-i18n="no_recipes">${I18n.get('no_recipes')}</p>`;
+      el.innerHTML = `<p class="placeholder-text">${I18n.get('no_recipes')}</p>`;
       return;
     }
 
-    el.innerHTML = scored.map(r => `
-      <div class="recipe-small-row" onclick="RecipeModal.open('${r.id}')">
-        <span class="recipe-small-name">${r.name}</span>
-        <span class="recipe-small-kcal">${r.kcal || '—'} ${I18n.get('kcal')}</span>
-      </div>
-    `).join('');
+    // Show why each recipe is recommended
+    // 各レシピの推薦理由を表示 / 显示每个菜谱被推荐的原因
+    el.innerHTML = scored.map(r => {
+      const reasonIcons = (r._matched||[]).map(t => ({
+        'high-protein':'🥩','low-fat':'🥗','low-carb':'🥦','high-carb':'🍚','vegetarian':'🌿'
+      }[t]||'')).join('');
+      return `
+        <div class="recipe-small-row" onclick="RecipeModal.open('${r.id}')">
+          <span class="recipe-small-name">${r.name}</span>
+          <span style="font-size:.8rem">${reasonIcons}</span>
+          <span class="recipe-small-kcal">${r.kcal||'—'} ${I18n.get('kcal')}</span>
+        </div>`;
+    }).join('');
+
+    // Show priority hint
+    // 優先度ヒントを表示 / 显示优先级提示
+    const hint = document.createElement('p');
+    hint.className = 'text-muted';
+    hint.style.fontSize = '.75rem';
+    hint.style.marginTop = '6px';
+    hint.textContent = '推荐依据：蛋白质 > 碳水 > 脂肪';
+    el.appendChild(hint);
   }
 
   // Init: restore saved BMI inputs

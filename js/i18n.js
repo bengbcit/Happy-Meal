@@ -76,6 +76,22 @@ const I18n = (() => {
       parse_error: '解析失败，请手动录入',
       saved_ok: '✅ 已保存！',
       delete_confirm: '确定删除这个菜谱？',
+      from_media: '图片/PDF',
+      drop_media: '拖入图片 / PDF，或点击选择',
+      quick_import: '⚡ 快速导入食物',
+      import_csv: '导入 CSV',
+      import_photo: '拍照/截图',
+      ph_ingredient_name: '食材名',
+      ph_step: '描述步骤',
+      plan_mode: '菜单模式：',
+      mode_adult: '大人',
+      mode_kid: '孩子',
+      send_to: '发送邮箱',
+      local_user: '本地用户',
+      btn_logout_local: '退出本地模式',
+      switch_local: '切换为本地账号',
+      switch_email: '切换为其他邮箱',
+      add_account: '添加新账号',
     },
 
     en: {
@@ -150,6 +166,13 @@ const I18n = (() => {
       parse_error: 'Parse failed, please enter manually',
       saved_ok: '✅ Saved!',
       delete_confirm: 'Delete this recipe?',
+      from_media: 'Image/PDF', drop_media: 'Drop image / PDF, or click to select',
+      quick_import: '⚡ Quick Import', import_csv: 'Import CSV', import_photo: 'Photo/Screenshot',
+      ph_ingredient_name: 'Ingredient', ph_step: 'Describe step',
+      plan_mode: 'Mode:', mode_adult: 'Adult', mode_kid: 'Kids',
+      send_to: 'Send to', local_user: 'Guest',
+      btn_logout_local: 'Exit Guest Mode', switch_local: 'Switch to Guest',
+      switch_email: 'Switch Account', add_account: 'Add Account',
     },
 
     ja: {
@@ -224,6 +247,13 @@ const I18n = (() => {
       parse_error: '解析に失敗しました。手動で入力してください',
       saved_ok: '✅ 保存しました！',
       delete_confirm: 'このレシピを削除しますか？',
+      from_media: '画像/PDF', drop_media: '画像・PDFをドロップ、またはクリックして選択',
+      quick_import: '⚡ クイックインポート', import_csv: 'CSV取込', import_photo: '写真/スクリーンショット',
+      ph_ingredient_name: '食材名', ph_step: '手順を記述',
+      plan_mode: 'モード：', mode_adult: '大人', mode_kid: '子供',
+      send_to: '送信先', local_user: 'ゲスト',
+      btn_logout_local: 'ゲストモード終了', switch_local: 'ゲストに切替',
+      switch_email: 'アカウント切替', add_account: '新規アカウント追加',
     }
   };
 
