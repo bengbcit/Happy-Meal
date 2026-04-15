@@ -185,11 +185,77 @@ const Planner = (() => {
     });
   }
 
+  // ── Sub-tab switching ────────────────────────────────
+  // サブタブの切り替え / 子 Tab 切换
+  function showSub(sub) {
+    ['week','history','dining'].forEach(s => {
+      document.getElementById(`subPlan-${s}`)?.classList.toggle('active', s===sub);
+      document.getElementById(`planPanel-${s}`)?.classList.toggle('hidden', s!==sub);
+    });
+    if (sub==='history') renderHistory();
+    if (sub==='dining')  DiningOut.init();
+  }
+
+  // ── History ──────────────────────────────────────────
+  // 過去の週間プランを表示 / 显示历史周菜单列表
+  function renderHistory() {
+    const el = document.getElementById('historyList');
+    if (!el) return;
+    const allPlans = State.get().weeklyPlan || {};
+    const keys = Object.keys(allPlans).sort().reverse();  // newest first
+
+    if (!keys.length) {
+      el.innerHTML = `<p class="placeholder-text">还没有历史菜单，先生成本周菜单吧！</p>`;
+      return;
+    }
+    el.innerHTML = keys.map(k => `
+      <div class="history-item" onclick="Planner.openHistory('${k}')">
+        <span class="history-week">📅 ${k}</span>
+        <span class="history-arrow">›</span>
+      </div>`).join('');
+  }
+
+  function openHistory(weekKey) {
+    const plan    = State.get().weeklyPlan[weekKey] || {};
+    const recipes = State.getRecipes ? State.getRecipes() : State.get().recipes || [];
+    const titleEl = document.getElementById('historyDetailTitle');
+    const gridEl  = document.getElementById('historyDetailGrid');
+    if (!gridEl) return;
+    if (titleEl) titleEl.textContent = `📅 ${weekKey}`;
+
+    gridEl.innerHTML = DAYS.map((day, di) => {
+      const meals = plan[day] || [null,null,null];
+      const mealCards = MEAL_SLOTS.map((_, si) => {
+        const r = meals[si] ? recipes.find(x=>x.id===meals[si]) : null;
+        return `
+          <div class="week-meal">
+            <span class="week-meal-label">${MEAL_LABELS[si]}</span>
+            <span class="week-meal-name">${r?r.name:'—'}</span>
+            <span class="week-meal-kcal">${r?r.kcal+' kcal':''}</span>
+          </div>`;
+      }).join('');
+      return `
+        <div class="week-day-card">
+          <div class="week-day-label">${I18n.get(DAY_KEYS[di])}</div>
+          <div class="week-meals">${mealCards}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('historyList')?.classList.add('hidden');
+    document.getElementById('historyDetail')?.classList.remove('hidden');
+  }
+
+  function closeHistory() {
+    document.getElementById('historyDetail')?.classList.add('hidden');
+    document.getElementById('historyList')?.classList.remove('hidden');
+  }
+
   function init() {
     render();
     renderEmailRows();
   }
 
-  return { autoGenerate, render, swapMeal, sendEmail, setMode, addEmailRow, removeEmailRow,
-           renderEmailRows, _setEmail, init };
+  return { autoGenerate, render, swapMeal, sendEmail, setMode,
+           addEmailRow, removeEmailRow, renderEmailRows, _setEmail,
+           showSub, renderHistory, openHistory, closeHistory, init };
 })();

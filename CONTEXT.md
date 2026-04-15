@@ -201,6 +201,35 @@ git push
 - 第一版核心功能：菜谱录入 + BMI推荐 + 卡路里追踪
 - AI 解析改为多模型降级链：Groq → Gemini → DeepSeek → Claude
 
+### 2026-04-16 — 运动Tab + 历史菜单 + 外食 + 小奖励改名 + AI背景
+
+#### 新增文件
+- `js/exercise.js` — Exercise + DiningOut 两个模块合一
+- `js/background.js` — 背景上传 + Pollinations.ai 免费 AI 生图
+
+#### 新功能
+| 功能 | 说明 |
+|------|------|
+| 🏋️ 运动 Tab | 18种内置运动，MET公式算消耗，分钟可+/-调整，记录当日消耗 |
+| 外食选项 | Planner 子Tab，12种内置外食 + 自定义，一键加入今日追踪 |
+| 历史周菜单 | Planner 子Tab，列出所有保存过的周计划，点击可查看详情 |
+| 小奖励 | 原"零食/酒"改名，图标🎁，提示语更正面 |
+| 背景板 | Topbar 🎨按钮 → 上传图片 或 Pollinations.ai 免费 AI 生成 |
+
+#### 技术要点
+- Pollinations.ai：`https://image.pollinations.ai/prompt/{prompt}?width=1200&height=800&nologo=true` 完全免费无需 API Key
+- 运动消耗公式：`MET × 体重(kg) × 时间(h)`，体重从 `State.get().user.weight` 读取
+- 历史菜单从 `State.get().weeklyPlan` 读取所有 weekKey，倒序展示
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| Pollinations.ai 用 preload 验证 | 用 `new Image().onload` 确认生成成功再保存，避免背景设置成坏图 |
+| 背景存 URL 而非 base64 | Pollinations URL 保存更省 localStorage，上传图片才用 base64 |
+| MET × kg × h 公式简单准确 | 无需调用外部 API，参照 ACSM 数据即可 |
+
+---
+
 ### 2026-04-16 — 登录流程重写 + 菜谱大升级 + 多邮箱 + 孩子模式 + 鼓励语
 
 #### 新增规则

@@ -17,11 +17,12 @@ const App = (() => {
 
     // Lazy render on tab switch
     // タブ切り替え時に遅延レンダリング / Tab 切换时懒渲染
-    if (tabId === 'recipes')     Recipes.render();
-    if (tabId === 'tracker')     Tracker.render();
-    if (tabId === 'planner')     Planner.render();
-    if (tabId === 'indulgence')  Indulgence.render();
-    if (tabId === 'dashboard')   { BMI.init(); Tracker.renderSummary(); Charts.renderMacroRing(); }
+    if (tabId === 'recipes')    Recipes.render();
+    if (tabId === 'tracker')    Tracker.render();
+    if (tabId === 'planner')    Planner.render();
+    if (tabId === 'exercise')   { Exercise.render(); Exercise.renderLog(); }
+    if (tabId === 'indulgence') Indulgence.render();
+    if (tabId === 'dashboard')  { BMI.init(); Tracker.renderSummary(); Charts.renderMacroRing(); }
   }
 
   // Toast notification
@@ -60,6 +61,7 @@ const App = (() => {
     if (!e.target.closest('.topbar-right')) {
       document.getElementById('langMenu')?.classList.add('hidden');
       document.getElementById('profilePanel')?.classList.add('hidden');
+      document.getElementById('bgPanel')?.classList.add('hidden');
     }
   });
 
@@ -69,6 +71,7 @@ const App = (() => {
     I18n.init();
     ThemeManager.init();
     Motivate.render();   // daily quote — language-aware / 每日鼓励语
+    BgPanel.init();      // restore saved background / 恢复已保存背景
     BMI.init();
     Recipes.render();
     Tracker.init();

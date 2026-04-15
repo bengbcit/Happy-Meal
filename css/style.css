@@ -475,6 +475,89 @@ input, select, textarea { font: inherit; }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* ── Sub-tabs (Planner: week / history / dining) ───── */
+.sub-tabs { display:flex; gap:6px; padding:0 0 4px; overflow-x:auto; scrollbar-width:none; }
+.sub-tab {
+  padding:6px 16px; border-radius:20px; font-size:.82rem;
+  background:var(--bg); border:1.5px solid var(--border); color:var(--text-muted);
+  white-space:nowrap; transition:var(--transition);
+}
+.sub-tab.active { background:var(--green-lt); border-color:var(--green); color:var(--green-dk); font-weight:600; }
+.plan-panel { display:flex; flex-direction:column; gap:10px; }
+
+/* ── History ────────────────────────────────────────── */
+.history-list { display:flex; flex-direction:column; gap:6px; }
+.history-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--bg); border-radius:var(--radius-sm);
+  border:1.5px solid var(--border); cursor:pointer; transition:var(--transition);
+}
+.history-item:hover { border-color:var(--green); background:var(--green-lt); }
+.history-week { font-weight:600; font-size:.9rem; }
+.history-arrow { color:var(--text-muted); font-size:1.2rem; }
+
+/* ── Exercise tab ───────────────────────────────────── */
+.exercise-list { display:flex; flex-direction:column; gap:8px; }
+.exercise-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; margin-bottom:8px; }
+.exercise-card {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg); border-radius:var(--radius-sm);
+  padding:10px 12px; border:1.5px solid var(--border);
+  flex-wrap:wrap;
+}
+.ex-icon  { font-size:1.4rem; flex-shrink:0; }
+.ex-info  { flex:1; min-width:100px; }
+.ex-name  { font-weight:600; font-size:.88rem; display:block; }
+.ex-met   { font-size:.72rem; color:var(--text-muted); }
+.ex-controls { display:flex; align-items:center; gap:4px; }
+.ex-min-btn {
+  width:26px; height:26px; border-radius:50%; background:var(--green-lt);
+  color:var(--green-dk); font-size:1rem; font-weight:700; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:background var(--transition);
+}
+.ex-min-btn:hover { background:#c3efd4; }
+.ex-min-inp {
+  width:52px; text-align:center; padding:4px 6px;
+  border:1.5px solid var(--border); border-radius:6px;
+  background:var(--bg); color:var(--text); font-size:.85rem;
+}
+.ex-min-label { font-size:.75rem; color:var(--text-muted); }
+.ex-kcal-preview {
+  font-size:.85rem; font-weight:700; color:var(--accent);
+  min-width:70px; text-align:right;
+}
+.ex-log-btn {
+  padding:5px 10px; border-radius:20px; font-size:.78rem;
+  background:var(--green); color:#fff; font-weight:600; flex-shrink:0;
+  transition:background var(--transition);
+}
+.ex-log-btn:hover { background:var(--green-dk); }
+.exercise-log-list { display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+.exercise-log-item {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--bg); border-radius:var(--radius-sm); font-size:.85rem;
+}
+.ex-log-name { flex:1; font-weight:600; }
+.ex-log-detail { font-size:.78rem; color:var(--text-muted); }
+.exercise-total-row {
+  display:flex; align-items:center; gap:4px;
+  font-size:.9rem; color:var(--text-muted); margin-top:8px;
+  padding:10px 0; border-top:1px solid var(--border);
+}
+
+/* ── Dining out ─────────────────────────────────────── */
+.dining-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; }
+
+/* ── Background panel button ────────────────────────── */
+.bg-option-btn {
+  display:flex; align-items:center; gap:6px;
+  width:100%; padding:8px 12px; border-radius:6px;
+  font-size:.85rem; text-align:left; cursor:pointer;
+  transition:background var(--transition);
+}
+.bg-option-btn:hover { background:var(--green-lt); color:var(--green-dk); }
+
 /* ── Motivational quote card ────────────────────────── */
 .motivate-card {
   background: linear-gradient(135deg, #e8f8ef 0%, #d0f0e0 100%);
