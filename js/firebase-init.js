@@ -192,6 +192,7 @@ function _fbErr(code) {
     'auth/network-request-failed':'网络错误，请检查连接',
     'auth/too-many-requests':     '请求过多，请稍后再试',
     'auth/cancelled-popup-request': '登录已取消',
+    'auth/unauthorized-domain':     '域名未授权，请联系管理员（Firebase Console → Auth → Settings → Authorized domains）',
   };
   return map[code] || '登录失败：' + code;
 }
