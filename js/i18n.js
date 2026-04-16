@@ -306,7 +306,17 @@ const I18n = (() => {
       _apply();
       // Refresh motivational quote when language changes
       // 言語変更時に励ましメッセージをリフレッシュ / 语言切换时刷新鼓励语
-      if (typeof Motivate !== 'undefined') Motivate.onLangChange();
+      if (typeof Motivate    !== 'undefined') Motivate.onLangChange();
+      // Re-render all JS-driven modules so dynamic content reflects the new language
+      // JS モジュールを再レンダリングして動的コンテンツを新言語に反映 / 重新渲染所有 JS 模块以更新动态内容
+      if (typeof Recipes     !== 'undefined') Recipes.render();
+      if (typeof Tracker     !== 'undefined') Tracker.render();
+      if (typeof Planner     !== 'undefined') Planner.render();
+      if (typeof Exercise    !== 'undefined') { Exercise.render(); Exercise.renderLog(); }
+      if (typeof DiningOut   !== 'undefined') DiningOut.render();
+      if (typeof Indulgence  !== 'undefined') Indulgence.render();
+      if (typeof BMI         !== 'undefined') BMI.init();
+      if (typeof Charts      !== 'undefined') { Charts.renderMacroRing(); Charts.renderWeeklyKcal(); }
     },
     get(key, vars = {}) {
       const t = LANGS[_lang] || LANGS.zh;
