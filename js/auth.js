@@ -130,10 +130,14 @@ function _enterApp(userInfo) {
   const profileNameEl = document.getElementById('profileName');
   const profileActionsEl = document.getElementById('profileActions');
 
+  // Show email for Firebase users, "本地用户" for local mode
+  // Firebase ユーザーにはメールを表示、ローカルモードには "本地用户" を表示
+  // Firebase 用户显示邮箱，本地模式显示"本地用户"
   if (profileNameEl) {
-    profileNameEl.textContent = userInfo.isLocal
+    const label = userInfo.isLocal
       ? (I18n?.get('local_user') || '本地用户')
-      : (userInfo.displayName || userInfo.email || 'User');
+      : (userInfo.email || userInfo.displayName || 'User');
+    profileNameEl.innerHTML = `${label} <span style="font-size:.7rem;color:var(--text-muted)">▼</span>`;
   }
 
   if (profileActionsEl) {

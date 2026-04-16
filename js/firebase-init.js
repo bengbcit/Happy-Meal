@@ -116,18 +116,31 @@
     onAuthStateChanged(auth, async user => {
       clearTimeout(offlineTimer);
       if (user) {
-        // FIX: _enterApp expects an object {displayName, email, isLocal}
-        // 修正: _enterApp はオブジェクト {displayName, email, isLocal} を期待する
-        // 修复: _enterApp 需要对象参数，之前传的是字符串
-        _enterApp({
-          displayName: user.displayName || user.email?.split('@')[0] || 'User',
-          email:       user.email || '',
-          isLocal:     false,
-        });
+        // FIX: If a DIFFERENT user logs in, clear localStorage to avoid data leakage between accounts
+        // 別のユーザーがログインした場合、アカウント間のデータ漏洩を避けるためlocalStorageをクリア
+        // 修复: 不同账号登录时清除 localStorage，避免数据串号
+        const storedEmail = State.get().user.email;
+        if (storedEmail && storedEmail !== user.email) {
+          console.log('[Auth] Different user detected, clearing local state...');
+          localStorage.removeItem('hm_state');
+          // Re-initialize State with fresh defaults
+          // 新しいデフォルトでStateを再初期化 / 用默认值重新初始化 State
+          window.location.reload();
+          return;
+        }
 
-        // Clear local-mode flag if Firebase signed in
-        // Firebaseログイン時にローカルモードフラグをクリア / Firebase 登录时清除本地模式标记
         localStorage.removeItem('hm_localMode');
+
+        // Show correct email/name immediately — NOT "本地用户"
+        // 正しいメール/名前をすぐに表示 — "本地用户" ではない
+        // 立刻显示正确邮箱/名字，而不是"本地用户"
+        const displayName = user.displayName || user.email || 'User';
+        _enterApp({ displayName, email: user.email || '', isLocal: false });
+
+        // Also force-update the profile name element directly
+        // プロフィール名要素を直接強制更新 / 直接强制更新用户名元素
+        const pnEl = document.getElementById('profileName');
+        if (pnEl) pnEl.innerHTML = `${user.email} <span style="font-size:.7rem;color:var(--text-muted)">▼</span>`;
 
         State.updateUser({ email: user.email || '', displayName: user.displayName || '' });
 

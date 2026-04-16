@@ -164,22 +164,26 @@ git push
 - [x] Vercel 部署（happy-meal-two.vercel.app）
 - [x] vercel.json 404 修复（改用 rewrites）
 - [x] AI 解析支持多模型（Groq/Gemini/DeepSeek/Claude 自动降级）
-- [ ] Firebase Auth 开启（Email/Password + Google）
-- [ ] Firestore 数据库创建
-- [ ] 登录流程完善（按流程图）
-- [ ] 菜谱食材 +/- 动态行 + 语音输入
-- [ ] 图片/PDF 菜谱解析
-- [ ] 追踪栏 CSV + 图片上传
-- [ ] 周菜单多邮箱 + 孩子模式
-- [ ] 主页推荐按蛋白>碳水>脂肪排序
+- [x] Firebase Auth 开启（Email/Password + Google）
+- [x] Firestore 数据库创建
+- [x] 登录流程完善（按流程图）
+- [x] 登录后正确显示邮箱（不再显示"本地用户"）
+- [x] 不同账号数据隔离（切换账号清除本地缓存）
+- [x] Firestore 自动同步（登录/3分钟/关闭Tab）
+- [x] 菜谱食材 +/- 动态行 + 语音输入
+- [x] 图片/PDF 菜谱解析
+- [x] 追踪栏 CSV + 图片上传
+- [x] 周菜单多邮箱 + 孩子模式
+- [x] 主页推荐按蛋白>碳水>脂肪排序
+- [x] 语言切换全页更新（zh/en/ja 所有动态内容同步）
 
 ---
 
 ## 下一步任务
-- [ ] **Firebase Auth**: Console → Authentication → 开启 Email/Password + Google
-- [ ] **Firestore**: Console → Firestore → Create database → asia-east1
-- [ ] **Vercel 环境变量**: 加 `GROQ_API_KEY`（或其他 AI key）→ Redeploy
-- [ ] **Google Cloud Console**: API Key → HTTP referrers → 加 `happy-meal-two.vercel.app/*`
+- [ ] **git push**: 删除 `.git/index.lock` 和 `.git/HEAD.lock` 后推送（见日志）
+- [ ] **验证**: 登录后确认 Firestore 有数据写入（Firebase Console → Firestore → users）
+- [ ] **验证**: 切换 zh/en/ja 确认全页内容切换正常
+- [ ] **后续功能**: 体重趋势图 / 运动目标 / 菜谱分享
 
 ---
 
@@ -304,6 +308,68 @@ git push
 | 语音 lang 跟 I18n | `SpeechRecognition.lang` 在每次 start 时从 `I18n.current()` 读取 |
 | CSV 列名模糊匹配 | 用 `includes()` 匹配中英日列名，兼容用户自定义 CSV |
 | Vision API 只选 Gemini/Claude | Groq/DeepSeek 不支持图片，需先判断 `visionProvider` |
+
+---
+
+### 2026-04-16 — 登录后显示邮箱 + 账号数据隔离 + 语言切换全页更新
+
+#### Bug 3 — 登录后用户名仍显示"本地用户"
+- **根本原因1**: `_enterApp()` 用 `textContent` 设置用户名，覆盖了 `▼` 箭头 span，导致 `App.init()` 后再次 re-render 时 HTML 结构丢失
+- **根本原因2**: `App.init()` 会重新渲染整个 Topbar，覆盖 `_enterApp()` 的设置
+- **修复 (firebase-init.js)**:
+  - 改用 `innerHTML` 保留 `▼` span
+  - 在 `onAuthStateChanged` 里直接强制更新 `profileName`：`pnEl.innerHTML = user.email + ' ▼'`
+  - 用 `userInfo.email` 优先于 `displayName`（Firebase 用户显示邮箱而非昵称）
+- **修复 (auth.js)**:
+  - `_enterApp()` 的 `profileNameEl.innerHTML` 改用 innerHTML，非 isLocal 时显示 email
+
+#### Bug 4 — 不同账号共享同一份 localStorage 数据
+- **根本原因**: `hm_state` localStorage 以 app 为 key，不区分用户
+- **修复**: `onAuthStateChanged` 登录时检测 `storedEmail !== user.email`，若不同则清除 `hm_state` 并 reload
+- **效果**: 不同账号登录后从各自 Firestore 数据加载，不会串号
+
+#### 新增：FirebaseSync 全局对象
+- `window.FirebaseSync = { push: _saveToFirestore }` — 可在控制台或按钮调用 `FirebaseSync.push()`
+- 自动同步策略：登录即加载云端 → 每 3 分钟自动保存 → 关闭标签前 `beforeunload` 保存
+
+#### Bug 5 — 语言切换只更新静态 HTML，JS 动态内容不变
+- **根本原因**: `I18n.set()` 只调用 `_apply()`（更新 `data-i18n` 属性）和 `Motivate.onLangChange()`，但菜谱卡片、追踪餐食标签、周菜单日名、运动名称等都是 JS render 的
+- **修复 (i18n.js)**:
+  ```javascript
+  // I18n.set() 末尾新增：
+  if (typeof Recipes    !== 'undefined') Recipes.render();
+  if (typeof Tracker    !== 'undefined') Tracker.render();
+  if (typeof Planner    !== 'undefined') Planner.render();
+  if (typeof Exercise   !== 'undefined') { Exercise.render(); Exercise.renderLog(); }
+  if (typeof DiningOut  !== 'undefined') DiningOut.render();
+  if (typeof Indulgence !== 'undefined') Indulgence.render();
+  if (typeof BMI        !== 'undefined') BMI.init();
+  if (typeof Charts     !== 'undefined') { Charts.renderMacroRing(); Charts.renderWeeklyKcal(); }
+  ```
+- **效果**: 点一下 zh/en/ja，全页所有内容（含卡片、标签、日名、运动名）同步切换
+
+#### ⚠️ Git 遇到 index.lock 问题
+- macOS APFS mount 下 `.git/index.lock` 和 `.git/HEAD.lock` 残留文件无法在沙箱内删除
+- **用户操作**: 在 Mac 终端删除这两个 lock 文件后再 `git push`：
+  ```bash
+  rm "I:\Projects and Coding\Apps\Happy Meal\.git\index.lock"
+  rm "I:\Projects and Coding\Apps\Happy Meal\.git\HEAD.lock"
+  git push
+  ```
+  或 PowerShell：
+  ```powershell
+  Remove-Item "I:\Projects and Coding\Apps\Happy Meal\.git\index.lock"
+  Remove-Item "I:\Projects and Coding\Apps\Happy Meal\.git\HEAD.lock"
+  git push
+  ```
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| `innerHTML` vs `textContent` | 有子元素（span ▼）时必须用 innerHTML，否则子元素丢失 |
+| 账号隔离 | localStorage 数据不能以 app 为 key，必须在登录时判断 email 是否一致 |
+| 语言切换需全量 re-render | 任何用 `I18n.get()` 的 JS 模块都需在 `I18n.set()` 后重新 render |
+| Object.assign 里调方法 | 必须 `Auth._method()`，不能裸 `_method()`（无全局作用域） |
 
 ---
 
