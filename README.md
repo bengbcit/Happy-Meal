@@ -1,175 +1,85 @@
-# Happy Meal 🥗
+# Happy Meal 🥗 — 健康食堂 / ハッピーミール
 
-**A trilingual health & weight-loss web app** — recipe management, AI-powered food parsing, calorie tracking, BMI recommendations, and weekly meal planning.
+A weight-loss assistant web app with recipe management, calorie tracking, BMI-based recommendations, and weekly meal planning.
 
-**Live demo:** https://happy-meal-two.vercel.app &nbsp;|&nbsp; **Stack:** Vanilla JS · Firebase · Vercel Serverless · Chart.js
+---
+
+## 🚀 Quick Setup
+
+### 1. Firebase (new project, same account as Study Stars)
+1. Go to [Firebase Console](https://console.firebase.google.com/) → Add project → name: `happy-meal`
+2. Enable **Authentication** → Email/Password + Google
+3. Enable **Firestore** → Start in production mode
+4. Get your config: Project Settings → Your apps → `firebaseConfig`
+5. Paste into `js/firebase-config.js`
+6. In Google Cloud Console → Credentials → Browser Key → add your Vercel domain to HTTP referrers
+
+### 2. Vercel (same account as Study Stars)
+1. Push this repo to GitHub
+2. Vercel Dashboard → Import Git Repo → select this repo
+3. Add Environment Variables:
+   - `CLAUDE_API_KEY` = your Anthropic Claude API key
+4. Deploy!
+
+### 3. EmailJS (same account as Study Stars)
+1. EmailJS Dashboard → Email Templates → Create New Template
+2. Template variables to use:
+   - `{{to_email}}` — recipient
+   - `{{subject}}` — email subject
+   - `{{message}}` — weekly meal plan text
+3. Copy Service ID + Template ID → paste into `js/firebase-config.js` → `emailjsConfig`
+
+---
+
+## 📁 File Structure
+```
+Happy-Meal/
+├── index.html          # Single page app entry
+├── vercel.json         # Vercel deployment config
+├── .gitignore
+├── css/
+│   └── style.css       # All styles (green health theme)
+├── js/
+│   ├── app.js          # Main entry, tab routing
+│   ├── auth.js         # Auth stub (overridden by firebase-init.js)
+│   ├── firebase-config.js  # ⚠️ Fill in your keys
+│   ├── firebase-init.js    # Firebase + EmailJS init
+│   ├── i18n.js         # zh/en/ja translations
+│   ├── state.js        # Global state + localStorage
+│   ├── bmi.js          # BMI calc + recommendations
+│   ├── recipes.js      # Recipe CRUD + display
+│   ├── tracker.js      # Daily food log
+│   ├── planner.js      # Weekly meal planner + email
+│   ├── parser.js       # URL recipe parser
+│   ├── indulgence.js   # Treats/drinks/alcohol lookup
+│   ├── charts.js       # Chart.js wrappers
+│   ├── theme.js        # Theme management
+│   └── keys.js         # API key management dialog
+└── api/
+    └── parse-recipe.js # Vercel serverless: Claude API proxy
+```
 
 ---
 
 ## ✨ Features
-
-### 🧠 AI Recipe Parsing
-- **URL import** — paste any recipe link; the app fetches the page, extracts structured data (JSON-LD schema.org/Recipe first, then AI fallback), and fills in name, ingredients, macros, and steps automatically
-- **Image / PDF import** — drag in a photo or PDF; vision AI reads the ingredients and steps
-- **Multi-model fallback chain** — Groq → Gemini → DeepSeek → Claude; whichever key you configure gets used, with automatic failover
-- **Universal ingredient recognition** — prompt handles every common section heading across Chinese, English, and Japanese sites (用料 / 食材 / 调料 / 配料 / Ingredients / 材料…)
-
-### 📷 Smart Food Recognition (Tracker)
-- Upload a meal photo; AI identifies every food item, estimates **gram weight** per item, and infers which meal it belongs to from visual context
-- A single image showing an entire day's food is split into **breakfast / lunch / dinner / snack** automatically
-- An editable review modal appears before anything is saved — adjust names, grams, kcal, or meal assignment, then confirm
-
-### 📏 BMI & Personalised Recommendations
-- Mifflin-St Jeor formula → BMR → TDEE → daily calorie target (deficit-adjusted, separate for male / female)
-- Recipe recommendations scored by today's macro gap: protein deficiency → high-protein recipes rise first
-- Recommendation scoring: protein match +3 pts, other tag match +1 pt, excess carbs −1 pt
-
-### 📅 Weekly Meal Planner
-- Auto-generate a Monday–Sunday plan matched to your BMI and calorie goal
-- **Kids mode** — switches to child calorie targets (1 600 / 1 400 kcal)
-- Send the plan to one or more email addresses via EmailJS
-- History browser — tap any past week to review the saved plan
-
-### 🏋️ Exercise Tracker
-- 18 built-in exercises with MET values; minute slider with +/− buttons
-- Calorie burn formula: `MET × body weight (kg) × duration (h)`
-- Dining-out sub-tab — 12 restaurant presets + custom options
-
-### 🍰 Treats & Snack Calculator
-- 25+ sweets, drinks, and alcohol items with instant calorie lookup
-- Warning toast when a snack exceeds a rice-bowl equivalent
-
-### 🌐 Trilingual UI
-- Full Chinese / English / Japanese support via `I18n` module
-- Language switch re-renders **all** dynamic content instantly — recipe cards, meal labels, day names, exercise names, planner grid, charts
-
-### 🔐 Auth & Data Sync
-- Firebase Auth — Email/Password + Google Sign-In
-- Each account gets an **isolated localStorage partition** (`hm_state_<uid>`) so switching accounts never mixes data
-- Firestore sync on login, every 3 minutes, and on tab close
-- Local / guest mode available with no account required
+- **Recipe Import** — Paste any recipe URL → Claude AI parses it automatically
+- **Smart Categories** — High-protein 🥩 / Low-fat 🥗 / Low-carb 🥦 / High-carb 🍚 / Vegetarian 🌿
+- **BMI Calculator** — Mifflin-St Jeor equation, personalized calorie targets
+- **Daily Tracker** — Log breakfast/lunch/dinner/snacks, see macro breakdown
+- **Weekly Planner** — Auto-generate Mon–Sun meal plan based on your BMI, email it to yourself
+- **Treats Database** — 25+ common desserts/drinks/alcohol with calorie warnings
+- **Trilingual** — 中文 / English / 日本語
 
 ---
 
-## 🛠 Tech Stack
+## 🔧 Development
+Open `index.html` directly in browser for local testing (Firebase features require a domain).
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vanilla JS (no framework), HTML5, CSS3 |
-| Auth | Firebase Authentication (Email + Google OAuth) |
-| Database | Cloud Firestore |
-| Charts | Chart.js — donut macro ring, weekly calorie bar |
-| AI Parsing | Groq (Llama 3) · Google Gemini · DeepSeek · Anthropic Claude |
-| Image AI | Gemini 1.5 Flash Vision / Claude Vision |
-| Email | EmailJS |
-| Background Art | Pollinations.ai (free generative image API, no key needed) |
-| Deployment | Vercel (static + Serverless Functions) |
-| i18n | Custom `I18n` module — zh / en / ja |
+For Vercel API functions, use `vercel dev` locally.
 
 ---
 
-## 📁 Project Structure
-
-```
-Happy-Meal/
-├── index.html              Single-page app entry point
-├── vercel.json             Vercel rewrites config
-├── api/
-│   └── parse-recipe.js     Serverless: multi-model AI recipe parser
-├── css/
-│   └── style.css           All styles — green health theme, dark mode
-└── js/
-    ├── app.js              Tab router, toast, profile panel
-    ├── auth.js             Auth stub + local mode (overridden by firebase-init)
-    ├── firebase-config.js  Firebase + EmailJS config (fill in your keys)
-    ├── firebase-init.js    Firebase init, onAuthStateChanged, Firestore sync
-    ├── i18n.js             Translation strings + dynamic re-render on switch
-    ├── state.js            Global state, per-user localStorage, Firestore helpers
-    ├── bmi.js              BMI calc (Mifflin-St Jeor) + recipe recommendations
-    ├── recipes.js          Recipe CRUD, filter pills, dynamic ingredient rows
-    ├── tracker.js          Daily food log, TrackerImportModal, CSV import
-    ├── planner.js          Weekly planner, history, dining-out, kids mode
-    ├── parser.js           URL / file / CSV parser, ParseModal
-    ├── indulgence.js       Treats database, calorie warnings
-    ├── exercise.js         Exercise list (MET), DiningOut module
-    ├── background.js       Custom background — upload or AI-generate
-    ├── charts.js           Chart.js wrappers (macro ring, bar, weekly line)
-    ├── motivate.js         Daily motivational quotes (zh / en / ja, rotates)
-    ├── theme.js            System dark-mode detection
-    └── keys.js             In-app API key management dialog
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- A [Firebase](https://firebase.google.com) project with Authentication and Firestore enabled
-- A [Vercel](https://vercel.com) account for deployment
-- At least one AI API key (Groq is free and fast)
-
-### 1 — Clone and configure Firebase
-
-```bash
-git clone https://github.com/bengbcit/Happy-Meal.git
-cd Happy-Meal
-```
-
-Edit `js/firebase-config.js` with your Firebase project credentials and (optionally) your EmailJS service details.
-
-### 2 — Deploy to Vercel
-
-```bash
-# Install Vercel CLI if needed
-npm i -g vercel
-vercel
-```
-
-In the Vercel dashboard, add the following **Environment Variables** for the AI parser:
-
-| Variable | Description |
-|----------|-------------|
-| `GROQ_API_KEY` | Groq API key (recommended — free tier) |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `DEEPSEEK_API_KEY` | DeepSeek API key |
-| `CLAUDE_API_KEY` | Anthropic Claude API key |
-
-You only need **one** key; the app tries them in the order listed above.
-
-### 3 — Firebase Auth domains
-
-In Firebase Console → Authentication → Settings → Authorized domains, add your Vercel deployment URL (e.g. `happy-meal-two.vercel.app`).
-
-### 4 — Firestore rules
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
-    }
-  }
-}
-```
-
----
-
-## 🔒 Security
-
-- API keys belong in Vercel environment variables, **never** in source code
-- `js/firebase-config.js` is intentionally committed with real Firebase web config — this is safe by design (Firebase security is enforced by Auth + Firestore rules, not by hiding the config)
-- All Firestore reads and writes are restricted to the authenticated user's own document
-
----
-
-## 📸 Screenshots
-
-> *(Add screenshots here)*
-
----
-
-## 📄 License
-
-MIT
+## ⚠️ Security Notes
+- Never commit real API keys to git
+- `firebase-config.js` contains placeholder values only
+- Use Vercel Environment Variables for `CLAUDE_API_KEY`
