@@ -130,6 +130,7 @@ Happy-Meal/
 - **API 密钥**: 不要把真实密钥写进回复或提交到 git
 - **CONTEXT.md 触发词**: 每当我说「总结到context.md」或「context.md summary so far」，把本次对话要点追加到「开发日志」章节
 - **自动总结规则**: 每次对话结束或有代码改动时，Claude 自动把本次改动要点追加到「开发日志」，无需触发词
+- **README 同步规则**: 每次更新 CONTEXT.md 的同时，也同步更新 README.md（面向 GitHub 公开展示，不写敏感账户信息，突出功能亮点和技术栈）
 - **鼓励语规则**: App 内所有鼓励语、提示语、Toast 消息，必须跟随当前语言选项（zh/en/ja）实时切换
 
 ---
@@ -370,6 +371,54 @@ git push
 | 账号隔离 | localStorage 数据不能以 app 为 key，必须在登录时判断 email 是否一致 |
 | 语言切换需全量 re-render | 任何用 `I18n.get()` 的 JS 模块都需在 `I18n.set()` 后重新 render |
 | Object.assign 里调方法 | 必须 `Auth._method()`，不能裸 `_method()`（无全局作用域） |
+
+---
+
+### 2026-04-19 — 图片识别弹窗审阅 + 账号数据彻底隔离
+
+#### 需求
+- 图片拖入后识别出食物，要先显示审阅界面（可编辑克重/kcal），确认后再保存
+- AI 估算每个食物的克重
+- 一张图片有多个餐次（早/午/晚），分别存入对应餐次
+- 切换账号时每个账号数据独立，不互相干扰
+
+#### js/state.js — 账号级 localStorage 隔离
+- localStorage key 从固定 `hm_state` 改为 `hm_state_<uid>`
+- 新增 `State.switchUser(uid)` 方法：切换 key → reset 默认值 → 加载该用户数据
+- 不同账号从不共享同一 slot，彻底防止数据串号
+- 匿名/本地模式仍用 `hm_state`（向下兼容）
+
+#### js/firebase-init.js — 登录时触发账号切换
+- `onAuthStateChanged` 首行调用 `State.switchUser(user.uid)`
+- 替代了之前 email 对比 + location.reload() 的粗暴方案，更快更干净
+
+#### api/parse-recipe.js — tracker 模式增强
+- 返回结构改为 `{ meals: { breakfast:[...], lunch:[...], dinner:[...], snack:[...] } }`
+- 每个食物项包含 `grams`（估算克重）
+- AI 从图片视觉上下文推断餐次（早餐食物→breakfast，便当→lunch 等）
+- 单张图片含多个餐次时，自动按餐次分组
+
+#### js/tracker.js — TrackerImportModal 取代 prompt()
+| 功能 | 说明 |
+|------|------|
+| 审阅弹窗 | AI 识别结果不再直接保存，先弹窗显示所有识别项 |
+| 按餐次分组 | breakfast/lunch/dinner/snack 各自一节，一目了然 |
+| 可编辑 | 每行：食物名、克重、kcal、餐次下拉菜单、删除按钮 |
+| 手动补充 | "＋添加食物"按钮可新增空白行手动录入 |
+| 全部保存 | 保存按钮将所有行写入对应餐次的 State，刷新追踪界面 |
+
+#### index.html + css/style.css
+- 新增 `#trackerImportModal` HTML
+- ParseModal 静态 modal-actions 按钮移除（ParseModal.show() 动态渲染）
+- 新增 `.tim-*` 样式族：行布局、克重输入、餐次选择器
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| localStorage key 必须含 UID | 固定 key 是多账号数据串号的根本原因 |
+| 审阅弹窗比 prompt() 更友好 | prompt() 无法批量修改，弹窗可以逐项调整 |
+| grams 估算对 kcal 计算有帮助 | 用户可对照实物调整克重，比直接输入 kcal 更直观 |
+| 多餐次结构 `{meals:{...}}` | API 返回分组结构，前端直接展示不需再问用户选哪一餐 |
 
 ---
 

@@ -34,30 +34,9 @@ export default async function handler(req, res) {
     // Vision prompt: explicitly handle multi-language ingredient section names
     // ビジョンプロンプト：多言語の食材セクション名を明示的に処理 / 视觉提示：明确处理多语言食材区块名称
     const visionPrompt = mode === 'tracker'
-      ? `Analyze this food image carefully. Identify ALL food and drink items visible.
-For each item estimate:
-- name (${lang==='zh'?'in Chinese / 中文':lang==='ja'?'in Japanese / 日本語':'in English'})
-- grams: estimated portion weight in grams (look at plate/bowl size, typical serving sizes)
-- kcal: estimated calories for that portion
-- protein, carbs, fat: macros in grams
-- meal: which meal this item belongs to — detect from visual/contextual clues:
-    morning context / 早餐食物 (toast, eggs, congee, milk) → "breakfast"
-    lunch box / 午餐 (rice, noodles, lunch set) → "lunch"
-    dinner / 晚餐 (hot dishes, soup, full meal) → "dinner"
-    snacks / drinks / dessert → "snack"
-  If the image shows MULTIPLE distinct meals (e.g. a full day's food photo), assign each item to the correct meal.
-  If unclear, use "snack".
-
-Return ONLY valid JSON (no markdown):
-{
-  "meals": {
-    "breakfast": [{"name":"...","grams":150,"kcal":200,"protein":8,"carbs":30,"fat":4}],
-    "lunch":     [...],
-    "dinner":    [...],
-    "snack":     [...]
-  }
-}
-Include only meals that have detected items (omit empty arrays).`
+      ? `Identify all food items in this image. Return ONLY a JSON array:
+[{"name":"food name","kcal":0,"protein":0,"carbs":0,"fat":0}]
+Estimate nutrition per serving. ${lang==='zh'?'食物名用中文':lang==='ja'?'食品名は日本語で':'Use English names'}.`
       : `Extract the complete recipe from this image or document.
 The ingredients section may be labeled: 用料、食材、调料、材料、配料、原料、食品、食料、原材料、Ingredients、材料 or similar.
 Return ONLY valid JSON (no markdown):

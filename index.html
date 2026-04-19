@@ -491,27 +491,13 @@
 </div>
 
 <!-- Parsed Recipe Preview Modal -->
-<!-- Buttons are rendered dynamically by ParseModal.show() — no static actions needed -->
-<!-- ボタンはParseModal.show()によって動的にレンダリングされる / 按钮由 ParseModal.show() 动态渲染 -->
 <div id="parseModal" class="modal-overlay hidden" onclick="if(event.target===this)ParseModal.close()">
   <div class="modal-card">
     <button class="modal-close" onclick="ParseModal.close()">✕</button>
     <div id="parseModalContent"></div>
-  </div>
-</div>
-
-<!-- Tracker Image Import Review Modal -->
-<!-- 图片识别后的食物审阅/编辑弹窗 / 画像認識後の食物確認・編集モーダル -->
-<div id="trackerImportModal" class="modal-overlay hidden" onclick="if(event.target===this)TrackerImportModal.close()">
-  <div class="modal-card" style="max-width:560px">
-    <button class="modal-close" onclick="TrackerImportModal.close()">✕</button>
-    <div style="font-weight:800;font-size:1.05rem">
-      📷 <span data-i18n="import_review_title">识别结果 — 确认后保存</span>
-    </div>
-    <div id="trackerImportContent"></div>
-    <div class="modal-actions" style="margin-top:4px">
-      <button class="btn-secondary" onclick="TrackerImportModal.close()" data-i18n="btn_cancel">取消</button>
-      <button class="btn-primary" onclick="TrackerImportModal.saveAll()" data-i18n="btn_save_all">✅ 全部保存</button>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="ParseModal.save()" data-i18n="btn_save_recipe">💾 保存菜谱</button>
+      <button class="btn-secondary" onclick="ParseModal.close()" data-i18n="btn_cancel">取消</button>
     </div>
   </div>
 </div>

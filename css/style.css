@@ -638,36 +638,6 @@ input, select, textarea { font: inherit; }
 }
 .import-btn:hover { background: var(--green-lt); border-color: var(--green); color: var(--green-dk); }
 
-/* ── Tracker Import Modal (TrackerImportModal) ──────── */
-/* 画像認識後の審阅・編集モーダルスタイル / 图片识别审阅弹窗样式 */
-.tim-hint {
-  font-size: .82rem; color: var(--text-muted); margin: 0 0 8px;
-}
-.tim-meal-group { margin-bottom: 12px; }
-.tim-meal-label {
-  font-size: .78rem; font-weight: 700; color: var(--green-dk);
-  text-transform: uppercase; letter-spacing: .03em;
-  margin-bottom: 6px; padding: 2px 0;
-  border-bottom: 1px solid var(--border);
-}
-.tim-row {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  padding: 6px 0; border-bottom: 1px solid var(--border-lt, #f0f0f0);
-}
-.tim-name { flex: 1 1 140px; min-width: 100px; }
-.tim-nums { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
-.tim-num  { width: 68px !important; flex: none; text-align: right; }
-.tim-sep  { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
-.tim-meal-sel { font-size: .78rem; padding: 4px 6px; border-radius: var(--radius-sm);
-               border: 1.5px solid var(--border); background: var(--card-bg);
-               color: var(--text); cursor: pointer; max-width: 90px; }
-.tim-add-btn {
-  margin-top: 8px; width: 100%; background: var(--bg);
-  border: 1.5px dashed var(--border); color: var(--text-muted);
-  font-size: .85rem; padding: 8px;
-}
-.tim-add-btn:hover { background: var(--green-lt); border-color: var(--green); color: var(--green-dk); }
-
 /* ── Planner mode toggle ────────────────────────────── */
 .mode-toggle-row { display: flex; align-items: center; gap: 10px; font-size: .85rem; }
 .mode-toggle { display: flex; gap: 4px; }
