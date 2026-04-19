@@ -21,6 +21,5 @@ node_modules/
 *.suo
 .claude/
 
-# OAuth client secrets — NEVER commit these
-client_secret*.json
-*OAuth*.json
+# OAuth client secrets (if any)
+client_secre
