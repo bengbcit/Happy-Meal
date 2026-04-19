@@ -2,7 +2,10 @@
 // グローバル状態管理 / 全局状态管理
 
 const State = (() => {
-  const KEY = 'hm_state';
+  const KEY_PREFIX = 'hm_state';
+  // Per-user key: hm_state_<uid> prevents data leakage between accounts
+  // ユーザーごとのキー: アカウント間のデータ漏洩を防ぐ / 每个账号独立 key，防止数据混用
+  let _currentKey = KEY_PREFIX;
 
   // Default state structure
   // デフォルト状態 / 默认状态结构
@@ -31,7 +34,7 @@ const State = (() => {
 
   function _load() {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(_currentKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         // Deep merge: keep defaults for any missing keys
@@ -46,7 +49,7 @@ const State = (() => {
 
   function _save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify(_s));
+      localStorage.setItem(_currentKey, JSON.stringify(_s));
     } catch (e) {
       console.error('[State] save error', e);
     }
@@ -76,6 +79,16 @@ const State = (() => {
   return {
     get() { return _s; },
     save() { _save(); },
+
+    // Switch to a different user's storage partition (called after Firebase login)
+    // 別ユーザーのストレージに切り替え / 切换到指定用户的存储分区（Firebase 登录后调用）
+    switchUser(uid) {
+      const newKey = uid ? `${KEY_PREFIX}_${uid}` : KEY_PREFIX;
+      if (newKey === _currentKey) return; // same user, nothing to do
+      _currentKey = newKey;
+      _s = JSON.parse(JSON.stringify(_default)); // reset to defaults first
+      _load(); // then load this user's data
+    },
 
     // Convenience helpers
     // 便利ヘルパー / 便利方法
