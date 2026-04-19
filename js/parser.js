@@ -137,25 +137,56 @@ const Parser = (() => {
 })();
 
 // ── ParseModal ─────────────────────────────────────────
+// Shows parsed recipe preview with two actions:
+// プレビューを表示し、2つのアクションを提供 / 显示解析预览，提供两个操作
+//   1. 填入表单 — populate manual form for review/edit
+//   2. 直接保存 — save directly to recipe list
 const ParseModal = (() => {
   let _pending = null;
+
   function show(recipe) {
     _pending = recipe;
-    const ings = (recipe.ingredients||[]).map(i=>`<li>${i}</li>`).join('');
-    const stps = (recipe.steps||[]).map(s=>`<li>${s}</li>`).join('');
+    const ings = (recipe.ingredients || []).map(i => `<li>${i}</li>`).join('');
+    const stps = (recipe.steps || []).map((s, i) => `<li>${s}</li>`).join('');
+    const provider = recipe._provider ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:6px">via ${recipe._provider}</span>` : '';
+
     document.getElementById('parseModalContent').innerHTML = `
-      <div style="font-weight:800;font-size:1.1rem">${recipe.name}</div>
+      <div style="font-weight:800;font-size:1.1rem">${recipe.name}${provider}</div>
       <div class="macro-chips">
-        <span class="macro-chip kcal">🔥 ${recipe.kcal||'—'} kcal</span>
-        <span class="macro-chip protein">🥩 ${recipe.protein||0}g</span>
-        <span class="macro-chip carb">🍚 ${recipe.carbs||0}g</span>
-        <span class="macro-chip fat">🧈 ${recipe.fat||0}g</span>
+        <span class="macro-chip kcal">🔥 ${recipe.kcal || '—'} kcal</span>
+        <span class="macro-chip protein">🥩 ${recipe.protein || 0}g</span>
+        <span class="macro-chip carb">🍚 ${recipe.carbs || 0}g</span>
+        <span class="macro-chip fat">🧈 ${recipe.fat || 0}g</span>
       </div>
-      ${ings?`<div class="recipe-detail-section"><h4>食材</h4><ul>${ings}</ul></div>`:''}
-      ${stps?`<div class="recipe-detail-section"><h4>步骤</h4><ol>${stps}</ol></div>`:''}`;
+      ${ings ? `<div class="recipe-detail-section"><h4>${I18n.get('ingredients_lbl')} (${recipe.ingredients.length})</h4><ul>${ings}</ul></div>` : ''}
+      ${stps ? `<div class="recipe-detail-section"><h4>${I18n.get('steps_lbl')}</h4><ol>${stps}</ol></div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn-primary" style="flex:1" onclick="ParseModal.fillForm()">
+          ✏️ ${I18n.get('fill_form') || '填入表单编辑'}
+        </button>
+        <button class="btn-secondary" style="flex:1" onclick="ParseModal.save()">
+          💾 ${I18n.get('btn_save_recipe') || '直接保存'}
+        </button>
+      </div>`;
+
     document.getElementById('parseModal').classList.remove('hidden');
   }
-  function save()  { if(!_pending)return; RecipeAdd.saveFromParsed(_pending); close(); }
-  function close() { document.getElementById('parseModal').classList.add('hidden'); _pending=null; }
-  return { show, save, close };
+
+  // Fill manual-entry form with parsed data, switch to manual tab for review
+  // パース済みデータを手動入力フォームに入力し、レビュー用に手動タブへ切り替え
+  // 将解析结果填入手动录入表单，切换到手动Tab供用户审查编辑
+  function fillForm() {
+    if (!_pending) return;
+    RecipeAdd.populateFromParsed(_pending);
+    // Switch to manual tab inside the AddRecipe panel
+    RecipeAdd.showTab('manual');
+    // Scroll to the add-recipe section so user sees the form
+    document.getElementById('addRecipeSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    close();
+    App.showToast('✅ ' + (I18n.get('filled_form') || '已填入手动录入，可继续编辑'));
+  }
+
+  function save()  { if (!_pending) return; RecipeAdd.saveFromParsed(_pending); close(); }
+  function close() { document.getElementById('parseModal').classList.add('hidden'); _pending = null; }
+  return { show, save, fillForm, close };
 })();
