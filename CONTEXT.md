@@ -373,6 +373,40 @@ git push
 
 ---
 
+### 2026-04-19 — 菜谱智能解析升级 + ParseModal 填入表单
+
+#### 需求
+- 不同网站食材区块名称不同（用料/调料/食材/食品/配料/原料等），AI 解析漏掉
+- 解析成功后希望自动填入手动录入表单，方便修改后再保存
+
+#### api/parse-recipe.js 升级
+| 改进 | 说明 |
+|------|------|
+| **JSON-LD 优先** | 先提取 `<script type="application/ld+json">` 里的 schema.org/Recipe，下厨房等大站直接提取，无需 AI |
+| **多别名 Prompt** | AI Fallback 时，提示词明确列出所有食材区块别名：用料/食材/调料/主料/辅料/材料/配料/原料/食品/食料/原材料/Ingredients/材料 |
+| **HTML 去噪** | 去掉 nav/footer/header/aside/广告，再按食材/步骤关键词切段，只把有效内容送给 AI |
+| **User-Agent** | 改为 Chrome 120，兼容更多网站的防爬策略 |
+| **max_tokens** | 提升到 2048，避免食材列表被截断 |
+| **JSON-LD 对象处理** | 支持 `recipeIngredient[]`、`HowToStep`、`HowToSection`、营养数据 |
+
+#### js/parser.js — ParseModal 新增"填入表单"按钮
+- 解析成功弹窗现在有两个按钮：
+  - **✏️ 填入表单编辑** → `RecipeAdd.populateFromParsed()` + 切到手动录入 Tab，可逐项编辑再保存
+  - **💾 直接保存** → 原有行为，直接加入菜谱列表
+- 弹窗顶部显示食材数量 + AI 来源（如 `via json-ld` / `via groq`）
+
+#### js/i18n.js
+- 新增 `fill_form` / `filled_form` 三语翻译 key
+
+#### 📌 关键经验
+| 经验 | 说明 |
+|------|------|
+| JSON-LD 是最可靠的菜谱提取方式 | 主流菜谱网站都有 schema.org/Recipe，100% 准确，不消耗 AI Token |
+| AI Prompt 要列举所有别名 | "食材区块" 在不同网站/语言叫法不同，不列举 AI 会漏掉 |
+| HTML 去噪比截断更有效 | 去掉 nav/footer 后，8000 字符能覆盖更多食材内容 |
+
+---
+
 ### 2026-04-16 — 部署修复 + 多模型 AI
 - vercel.json 从 `builds+routes` 改为 `rewrites`，修复 404
 - `api/parse-recipe.js` 重写支持 Groq / Gemini / DeepSeek / Claude
