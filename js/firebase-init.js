@@ -116,18 +116,11 @@
     onAuthStateChanged(auth, async user => {
       clearTimeout(offlineTimer);
       if (user) {
-        // FIX: If a DIFFERENT user logs in, clear localStorage to avoid data leakage between accounts
-        // 別のユーザーがログインした場合、アカウント間のデータ漏洩を避けるためlocalStorageをクリア
-        // 修复: 不同账号登录时清除 localStorage，避免数据串号
-        const storedEmail = State.get().user.email;
-        if (storedEmail && storedEmail !== user.email) {
-          console.log('[Auth] Different user detected, clearing local state...');
-          localStorage.removeItem('hm_state');
-          // Re-initialize State with fresh defaults
-          // 新しいデフォルトでStateを再初期化 / 用默认值重新初始化 State
-          window.location.reload();
-          return;
-        }
+        // Switch to this user's isolated localStorage partition (key: hm_state_<uid>)
+        // Each Firebase user gets their own localStorage slot — no data leakage between accounts
+        // このユーザーの独立したlocalStorageパーティションに切り替え (hm_state_<uid>)
+        // 切换到该用户独立的存储分区，彻底隔离不同账号数据
+        State.switchUser(user.uid);
 
         localStorage.removeItem('hm_localMode');
 

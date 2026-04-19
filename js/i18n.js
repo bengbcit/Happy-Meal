@@ -102,6 +102,12 @@ const I18n = (() => {
       add_account: '添加新账号',
       fill_form: '填入表单编辑',
       filled_form: '已填入手动录入，可继续编辑',
+      import_review_title: '识别结果 — 确认后保存',
+      btn_save_all: '✅ 全部保存',
+      ai_recognizing: 'AI 识别中...',
+      no_food_detected: '未识别到食物，请手动添加',
+      import_hint: '已识别 {n} 个食物，可编辑后保存',
+      items_saved: '个食物已保存',
     },
 
     en: {
@@ -194,6 +200,12 @@ const I18n = (() => {
       switch_email: 'Switch Account', add_account: 'Add Account',
       fill_form: 'Fill Form & Edit',
       filled_form: 'Filled into form — edit before saving',
+      import_review_title: 'AI Results — Review before saving',
+      btn_save_all: '✅ Save All',
+      ai_recognizing: 'AI recognizing...',
+      no_food_detected: 'No food detected, please add manually',
+      import_hint: 'Detected {n} items — edit and save',
+      items_saved: 'items saved',
     },
 
     ja: {
@@ -277,6 +289,12 @@ const I18n = (() => {
       switch_email: 'アカウント切替', add_account: '新規アカウント追加',
       fill_form: 'フォームに入力して編集',
       filled_form: 'フォームに入力しました。編集後に保存してください',
+      import_review_title: 'AI認識結果 — 確認して保存',
+      btn_save_all: '✅ すべて保存',
+      ai_recognizing: 'AI認識中...',
+      no_food_detected: '食品が認識されませんでした',
+      import_hint: '{n}件の食品を認識しました',
+      items_saved: '件保存しました',
     }
   };
 

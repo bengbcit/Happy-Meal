@@ -1,3 +1,7 @@
+# Claude context — local only, not for GitHub
+# Claudeコンテキスト — ローカルのみ / Claude 上下文文件，仅本地保存
+CONTEXT.md
+
 # Environment variables / 环境变量 / 環境変数
 .env
 .env.local
@@ -15,6 +19,7 @@ node_modules/
 # Editor
 .vscode/
 *.suo
+.claude/
 
 # OAuth client secrets (if any)
-client_secret_*.json
+client_secre

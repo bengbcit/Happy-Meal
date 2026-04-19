@@ -215,32 +215,19 @@ const Tracker = (() => {
     }
   }
 
-  // ── Image import ─────────────────────────────────────
-  // 画像から食品を識別してログに追加 / 从图片识别食物并记录
+  // ── Image import — shows TrackerImportModal for review before saving ───────
+  // 画像インポート：保存前にレビューモーダルを表示 / 图片导入：保存前显示审阅弹窗
   async function importImage(file) {
     const statusEl = document.getElementById('importStatus');
     if (!file) return;
-    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> AI 识别中...`;
+    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> ${I18n.get('ai_recognizing') || 'AI 识别中...'}`;
     try {
       const result = await Parser.fromImageForTracker(file);
       if (!result) throw new Error('empty');
-
-      // Result can be a single item or array of items
-      const items = Array.isArray(result) ? result : [result];
-      const mealChoice = prompt(`识别到 ${items.length} 个食物，添加到哪一餐？\n1 早餐  2 午餐  3 晚餐  4 零食`, '2');
-      const mealMap = {'1':'breakfast','2':'lunch','3':'dinner','4':'snack'};
-      const meal = mealMap[mealChoice?.trim()] || 'snack';
-      items.forEach(item => {
-        if (item.name) State.addLogEntry(_date, meal, {
-          name: item.name, kcal: item.kcal||0,
-          protein: item.protein||0, carbs: item.carbs||0, fat: item.fat||0,
-        });
-      });
-      render();
-      Charts.renderMacroRing();
-      if (statusEl) statusEl.textContent = `✅ 已识别 ${items.length} 个食物`;
+      if (statusEl) statusEl.textContent = '';
+      TrackerImportModal.show(result, _date);
     } catch(e) {
-      if (statusEl) statusEl.textContent = '❌ 识别失败，请手动添加';
+      if (statusEl) statusEl.textContent = '❌ ' + (I18n.get('parse_error') || '识别失败，请手动添加');
     }
   }
 
@@ -252,4 +239,165 @@ const Tracker = (() => {
 
   return { prevDay, nextDay, addFromRecipe, addManual, removeEntry,
            getTotals, getTodayMacros, renderSummary, render, importCSV, importImage, init };
+})();
+
+// ── TrackerImportModal ────────────────────────────────
+// Review-and-edit modal shown after AI image recognition
+// AI画像認識後のレビュー・編集モーダル / AI 图片识别后的审阅编辑弹窗
+// Features: gram estimates, per-item meal assignment, edit before save
+// 機能：グラム推定、食事別割り当て、保存前編集 / 支持克重估算、分餐分配、保存前编辑
+const TrackerImportModal = (() => {
+  let _items = [];
+  let _date  = null;
+  let _nextId = 0;
+
+  const MEAL_KEYS = ['breakfast','lunch','dinner','snack'];
+
+  function _mealLabel(m) {
+    return { breakfast: I18n.get('meal_breakfast'), lunch: I18n.get('meal_lunch'),
+             dinner: I18n.get('meal_dinner'), snack: I18n.get('meal_snack') }[m] || m;
+  }
+
+  // Normalize API response: handle {meals:{...}} or flat array
+  // APIレスポンスを正規化: {meals:{...}} または フラット配列を処理
+  // 标准化 API 返回: 支持 {meals:{...}} 结构或扁平数组
+  function _normalize(raw) {
+    const items = [];
+    if (raw && raw.meals && typeof raw.meals === 'object') {
+      // Grouped by meal: {meals:{breakfast:[...], lunch:[...], ...}}
+      MEAL_KEYS.forEach(meal => {
+        (raw.meals[meal] || []).forEach(item => {
+          items.push({ id: _nextId++, meal, ...item });
+        });
+      });
+    } else {
+      // Flat array: [{name, kcal, protein, carbs, fat, meal?}, ...]
+      const arr = Array.isArray(raw) ? raw : [raw];
+      arr.forEach(item => {
+        items.push({ id: _nextId++, meal: item.meal || 'snack', ...item });
+      });
+    }
+    return items;
+  }
+
+  function show(raw, date) {
+    _date  = date;
+    _items = _normalize(raw);
+    _render();
+    document.getElementById('trackerImportModal')?.classList.remove('hidden');
+  }
+
+  function _render() {
+    const el = document.getElementById('trackerImportContent');
+    if (!el) return;
+
+    if (_items.length === 0) {
+      el.innerHTML = `<p class="placeholder-text">${I18n.get('no_food_detected') || '未识别到食物，请手动添加'}</p>`;
+      return;
+    }
+
+    // Group by meal for display
+    const grouped = {};
+    MEAL_KEYS.forEach(m => { grouped[m] = []; });
+    _items.forEach(item => { (grouped[item.meal] || grouped.snack).push(item); });
+
+    const totalItems = _items.length;
+    const hintTpl = I18n.get('import_hint') || '已识别 {n} 个食物，可编辑后保存';
+    const hintText = hintTpl.replace('{n}', totalItems);
+    const mealSections = MEAL_KEYS
+      .filter(m => grouped[m].length > 0)
+      .map(m => `
+        <div class="tim-meal-group">
+          <div class="tim-meal-label">${_mealLabel(m)}</div>
+          ${grouped[m].map(item => _itemRowHTML(item)).join('')}
+        </div>`).join('');
+
+    el.innerHTML = `
+      <p class="tim-hint">${hintText}</p>
+      ${mealSections}
+      <button class="btn-small tim-add-btn" onclick="TrackerImportModal.addEmpty()">
+        ＋ ${I18n.get('add_food') || '添加食物'}
+      </button>`;
+  }
+
+  function _itemRowHTML(item) {
+    const mealOptions = MEAL_KEYS.map(m =>
+      `<option value="${m}" ${item.meal===m?'selected':''}>${_mealLabel(m)}</option>`
+    ).join('');
+    return `
+      <div class="tim-row" id="timRow-${item.id}">
+        <input class="inp tim-name" value="${_esc(item.name||'')}"
+               placeholder="${I18n.get('add_food')||'食物名'}"
+               onchange="TrackerImportModal._upd(${item.id},'name',this.value)"/>
+        <div class="tim-nums">
+          <input class="inp tim-num" type="number" min="0" value="${item.grams||''}"
+                 placeholder="g" title="克重"
+                 onchange="TrackerImportModal._upd(${item.id},'grams',this.value)"/>
+          <span class="tim-sep">g</span>
+          <input class="inp tim-num" type="number" min="0" value="${item.kcal||''}"
+                 placeholder="kcal"
+                 onchange="TrackerImportModal._upd(${item.id},'kcal',this.value)"/>
+          <span class="tim-sep">kcal</span>
+        </div>
+        <select class="inp tim-meal-sel"
+                onchange="TrackerImportModal._upd(${item.id},'meal',this.value)">
+          ${mealOptions}
+        </select>
+        <button class="row-del-btn" onclick="TrackerImportModal._del(${item.id})">−</button>
+      </div>`;
+  }
+
+  function _esc(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+  function _upd(id, field, val) {
+    const item = _items.find(x => x.id === id);
+    if (!item) return;
+    if (['grams','kcal','protein','carbs','fat'].includes(field)) {
+      item[field] = parseFloat(val) || 0;
+    } else {
+      item[field] = val;
+    }
+    // Re-render grouped view if meal changed (item moves to different section)
+    if (field === 'meal') _render();
+  }
+
+  function _del(id) {
+    _items = _items.filter(x => x.id !== id);
+    _render();
+  }
+
+  // Add a blank row so user can manually add items
+  // 空白行を追加してユーザーが手動で入力できるようにする / 添加空白行供用户手动录入
+  function addEmpty() {
+    _items.push({ id: _nextId++, name:'', grams:0, kcal:0, protein:0, carbs:0, fat:0, meal:'snack' });
+    _render();
+  }
+
+  // Save all valid items to their respective meal buckets
+  // すべての有効なアイテムをそれぞれの食事バケツに保存 / 将所有有效条目保存到对应餐次
+  function saveAll() {
+    const valid = _items.filter(x => (x.name||'').trim());
+    if (!valid.length) { close(); return; }
+    valid.forEach(item => {
+      State.addLogEntry(_date, item.meal, {
+        name:    item.name.trim(),
+        kcal:    item.kcal    || 0,
+        protein: item.protein || 0,
+        carbs:   item.carbs   || 0,
+        fat:     item.fat     || 0,
+        grams:   item.grams   || 0,
+      });
+    });
+    close();
+    Tracker.render();
+    Charts.renderMacroRing();
+    App.showToast(`✅ ${I18n.get('saved_ok')||'已保存'} — ${valid.length} ${I18n.get('items_saved')||'个食物'}`);
+  }
+
+  function close() {
+    document.getElementById('trackerImportModal')?.classList.add('hidden');
+    _items = [];
+  }
+
+  return { show, saveAll, addEmpty, close, _upd, _del };
 })();
