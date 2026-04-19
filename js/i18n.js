@@ -100,8 +100,6 @@ const I18n = (() => {
       switch_local: '切换为本地账号',
       switch_email: '切换为其他邮箱',
       add_account: '添加新账号',
-      fill_form: '填入表单编辑',
-      filled_form: '已填入手动录入，可继续编辑',
     },
 
     en: {
@@ -192,8 +190,6 @@ const I18n = (() => {
       local_user: 'Guest',
       btn_logout_local: 'Exit Guest Mode', switch_local: 'Switch to Guest',
       switch_email: 'Switch Account', add_account: 'Add Account',
-      fill_form: 'Fill Form & Edit',
-      filled_form: 'Filled into form — edit before saving',
     },
 
     ja: {
@@ -275,8 +271,6 @@ const I18n = (() => {
       send_to: '送信先', local_user: 'ゲスト',
       btn_logout_local: 'ゲストモード終了', switch_local: 'ゲストに切替',
       switch_email: 'アカウント切替', add_account: '新規アカウント追加',
-      fill_form: 'フォームに入力して編集',
-      filled_form: 'フォームに入力しました。編集後に保存してください',
     }
   };
 
