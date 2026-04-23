@@ -24,3 +24,13 @@ node_modules/
 # OAuth client secrets — NEVER commit these
 client_secret*.json
 *OAuth*.json
+
+# XHS recipe agent — local background tool, not for GitHub
+xhs_recipe_agent.py
+xhs_import.json
+xhs_output/
+.xhs_cookies.json
+i18n-agent.py
+i18n-multiagent.py
+i18n-watcher.py
+.venv/

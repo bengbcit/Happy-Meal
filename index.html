@@ -329,6 +329,15 @@
       </div>
     </div>
 
+    <!-- XHS Import -->
+    <div style="text-align:right; margin-bottom:8px;">
+      <button class="pill" style="background:linear-gradient(135deg,#ff2442,#ff6b81);color:#fff;border:none;padding:6px 14px;cursor:pointer;"
+              onclick="XhsImport.run()" title="从 xhs_import.json 批量导入小红书菜谱">
+        🍜 导入小红书菜谱
+      </button>
+      <input type="file" id="xhsFileInput" accept=".json" style="display:none" onchange="XhsImport.fromFile(this)">
+    </div>
+
     <!-- Filter -->
     <div class="filter-bar">
       <button class="pill active" data-filter="all" onclick="Recipes.filter('all')" data-i18n="filter_all">全部</button>

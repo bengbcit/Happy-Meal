@@ -321,3 +321,73 @@ const RecipeModal = (() => {
 
 // ParseModal is defined in parser.js — do not redeclare here
 // ParseModal は parser.js で定義済み — ここで再宣言しない / ParseModal 已在 parser.js 定义，此处不重复声明
+
+// ══════════════════════════════════════════════════════
+// XhsImport — 导入小红书菜谱 (xhs_import.json)
+// ══════════════════════════════════════════════════════
+const XhsImport = (() => {
+
+  // 解析并导入 hm_data 对象
+  function _importData(hm_data) {
+    const recipes = hm_data.recipes || [];
+    if (!recipes.length) { App.toast('没有找到可导入的菜谱', 'warn'); return; }
+
+    let added = 0, skipped = 0;
+    const existing = new Set(State.getRecipes().map(r => r.name));
+
+    recipes.forEach(r => {
+      if (existing.has(r.name)) { skipped++; return; }   // 同名不重复导入
+      // 确保字段合法
+      const recipe = {
+        id:          r.id || ('xhs_' + Math.random().toString(36).slice(2,10)),
+        name:        r.name || '未知菜谱',
+        kcal:        Number(r.kcal)    || 0,
+        protein:     Number(r.protein) || 0,
+        carbs:       Number(r.carbs)   || 0,
+        fat:         Number(r.fat)     || 0,
+        ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+        steps:       Array.isArray(r.steps)       ? r.steps       : [],
+        tags:        Array.isArray(r.tags)         ? r.tags        : [],
+        source:      r.source     || '小红书',
+        source_url:  r.source_url || '',
+      };
+      State.addRecipe(recipe);
+      added++;
+    });
+
+    Recipes.render();
+    App.toast(`✅ 导入完成：新增 ${added} 个菜谱${skipped ? `，跳过 ${skipped} 个重复` : ''}`, 'success');
+  }
+
+  // 点按钮：先尝试 fetch xhs_import.json，失败则弹文件选择器
+  async function run() {
+    try {
+      const res  = await fetch('xhs_import.json?t=' + Date.now());
+      if (!res.ok) throw new Error('not found');
+      const data = await res.json();
+      _importData(data);
+    } catch {
+      // 本地文件协议下 fetch 会失败，改为弹文件选择器
+      document.getElementById('xhsFileInput').click();
+    }
+  }
+
+  // 从 <input type=file> 读取
+  function fromFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        _importData(data);
+      } catch {
+        App.toast('JSON 格式错误，请检查文件', 'error');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    input.value = '';   // 允许重复选同一文件
+  }
+
+  return { run, fromFile };
+})();
