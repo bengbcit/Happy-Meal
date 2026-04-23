@@ -15,6 +15,9 @@ const App = (() => {
     });
     _currentTab = tabId;
 
+    // Fire custom event so scroll-reveal observer can re-run
+    document.dispatchEvent(new CustomEvent('tabChanged', { detail: tabId }));
+
     // Lazy render on tab switch
     // タブ切り替え時に遅延レンダリング / Tab 切换时懒渲染
     if (tabId === 'recipes')    Recipes.render();
@@ -22,7 +25,7 @@ const App = (() => {
     if (tabId === 'planner')    Planner.render();
     if (tabId === 'exercise')   { Exercise.render(); Exercise.renderLog(); }
     if (tabId === 'indulgence') Indulgence.render();
-    if (tabId === 'dashboard')  { BMI.init(); Tracker.renderSummary(); Charts.renderMacroRing(); }
+    if (tabId === 'dashboard')  { BMI.init(); Tracker.renderSummary(); Charts.renderMacroRing(); Charts.renderWeightChart(); }
   }
 
   // Toast notification
@@ -79,6 +82,7 @@ const App = (() => {
     Indulgence.init();
     Charts.renderMacroRing();
     Charts.renderWeeklyKcal();
+    Charts.renderWeightChart();
   }
 
   // Auto-enter if Firebase auth persists (checked by firebase-init.js)

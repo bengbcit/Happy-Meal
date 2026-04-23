@@ -181,6 +181,33 @@ const BMI = (() => {
     el.appendChild(hint);
   }
 
+  // Log today's weight and refresh chart + BMI
+  // 今日の体重を記録してチャートとBMIを更新 / 记录今日体重并刷新图表和BMI
+  function logWeight() {
+    const input = document.getElementById('weightLogInput');
+    if (!input) return;
+    const w = parseFloat(input.value);
+    if (!w || w < 20 || w > 500) {
+      App && App.toast && App.toast(I18n.get('invalid_weight') || '请输入有效体重 (20–500 kg)', 'warn');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    State.addWeightEntry(today, w);
+
+    // Also update profile weight so BMI recalculates from latest entry
+    const bmiWeightEl = document.getElementById('bmiWeight');
+    if (bmiWeightEl) { bmiWeightEl.value = w; }
+    State.updateUser({ weight: w });
+    calc();
+
+    if (typeof Charts !== 'undefined') Charts.renderWeightChart();
+    App && App.toast && App.toast('✅ 体重已记录', 'success');
+
+    // Update last-logged display
+    const lastEl = document.getElementById('weightLogLast');
+    if (lastEl) lastEl.textContent = `上次记录：${today}  ${w} kg`;
+  }
+
   // Init: restore saved BMI inputs
   // 初期化：保存されたBMI入力を復元 / 初始化：恢复保存的 BMI 输入
   function init() {
@@ -190,7 +217,24 @@ const BMI = (() => {
     if (u.height)  document.getElementById('bmiHeight') && (document.getElementById('bmiHeight').value = u.height);
     if (u.weight)  document.getElementById('bmiWeight') && (document.getElementById('bmiWeight').value = u.weight);
     if (u.age && u.height && u.weight) calc();
+
+    // Pre-fill today's weight from log if available
+    const log = State.getWeightLog();
+    const today = new Date().toISOString().slice(0, 10);
+    const todayEntry = log.find(e => e.date === today);
+    const lastEntry  = log[log.length - 1];
+    const weightLogInput = document.getElementById('weightLogInput');
+    if (weightLogInput) {
+      if (todayEntry) weightLogInput.value = todayEntry.weight;
+      else if (lastEntry) weightLogInput.value = lastEntry.weight;
+    }
+    const lastEl = document.getElementById('weightLogLast');
+    if (lastEl && lastEntry) {
+      lastEl.textContent = `上次记录：${lastEntry.date}  ${lastEntry.weight} kg`;
+    }
+
+    if (typeof Charts !== 'undefined') Charts.renderWeightChart();
   }
 
-  return { calc, renderRecommend, init };
+  return { calc, renderRecommend, init, logWeight };
 })();

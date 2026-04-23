@@ -19,6 +19,11 @@
 - A single image showing an entire day's food is split into **breakfast / lunch / dinner / snack** automatically
 - An editable review modal appears before anything is saved — adjust names, grams, kcal, or meal assignment, then confirm
 
+### ⚖️ Weight Tracking
+- Log your weight daily; BMI and calorie targets recalculate instantly
+- Dual-axis history chart — weight (kg) on the left axis, live-calculated BMI on the right — up to 30 entries
+- Weight log synced to Firestore alongside all other user data (max 90 entries retained)
+
 ### 📏 BMI & Personalised Recommendations
 - Mifflin-St Jeor formula → BMR → TDEE → daily calorie target (deficit-adjusted, separate for male / female)
 - Recipe recommendations scored by today's macro gap: protein deficiency → high-protein recipes rise first
@@ -38,6 +43,12 @@
 ### 🍰 Treats & Snack Calculator
 - 25+ sweets, drinks, and alcohol items with instant calorie lookup
 - Warning toast when a snack exceeds a rice-bowl equivalent
+
+### 🎬 Modern Home Screen
+- Full-viewport fitness video hero (autoplay, muted, looping) with a dark overlay, app title, and daily motivational quote
+- Scroll-based dashboard: video hero at top, then BMI card, today's summary, recommendations, and quick-nav cards to every section
+- Cards fade in as they enter the viewport via `IntersectionObserver`
+- Study Reminder shortcut button in the top-right bar
 
 ### 🌐 Trilingual UI
 - Full Chinese / English / Japanese support via `I18n` module
@@ -77,15 +88,18 @@ Happy-Meal/
 ├── api/
 │   └── parse-recipe.js     Serverless: multi-model AI recipe parser
 ├── css/
-│   └── style.css           All styles — green health theme, dark mode
+│   └── style.css           All styles — green health theme, dark mode, video hero
+├── img_vid/
+│   ├── fitness.mp4         Hero background video (primary)
+│   └── fitness2.mp4.mp4    Hero background video (fallback)
 └── js/
-    ├── app.js              Tab router, toast, profile panel
+    ├── app.js              Tab router, toast, profile panel, tabChanged event
     ├── auth.js             Auth stub + local mode (overridden by firebase-init)
     ├── firebase-config.js  Firebase + EmailJS config (fill in your keys)
     ├── firebase-init.js    Firebase init, onAuthStateChanged, Firestore sync
     ├── i18n.js             Translation strings + dynamic re-render on switch
     ├── state.js            Global state, per-user localStorage, Firestore helpers
-    ├── bmi.js              BMI calc (Mifflin-St Jeor) + recipe recommendations
+    ├── bmi.js              BMI calc, weight logging, recipe recommendations
     ├── recipes.js          Recipe CRUD, filter pills, dynamic ingredient rows
     ├── tracker.js          Daily food log, TrackerImportModal, CSV import
     ├── planner.js          Weekly planner, history, dining-out, kids mode
@@ -93,7 +107,7 @@ Happy-Meal/
     ├── indulgence.js       Treats database, calorie warnings
     ├── exercise.js         Exercise list (MET), DiningOut module
     ├── background.js       Custom background — upload or AI-generate
-    ├── charts.js           Chart.js wrappers (macro ring, bar, weekly line)
+    ├── charts.js           Chart.js wrappers (macro ring, bar, weekly line, weight)
     ├── motivate.js         Daily motivational quotes (zh / en / ja, rotates)
     ├── theme.js            System dark-mode detection
     └── keys.js             In-app API key management dialog

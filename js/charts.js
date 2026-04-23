@@ -5,6 +5,7 @@ const Charts = (() => {
   let _macroRingChart = null;
   let _nutritionBarChart = null;
   let _weeklyKcalChart = null;
+  let _weightChart = null;
 
   // Destroy existing chart before re-creating
   // 再作成前に既存チャートを破棄 / 重新创建前销毁旧图表
@@ -147,5 +148,80 @@ const Charts = (() => {
     });
   }
 
-  return { renderMacroRing, renderNutritionBar, renderWeeklyKcal };
+  // ── Weight History Chart (line, last 30 entries) ─────
+  // 体重履歴折れ線グラフ / 近30条体重历史折线图
+  function renderWeightChart() {
+    const canvas = document.getElementById('weightHistoryChart');
+    if (!canvas) return;
+
+    const log = State.getWeightLog();
+    if (log.length === 0) {
+      _weightChart = _destroy(_weightChart);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    const entries = log.slice(-30);
+    const labels  = entries.map(e => e.date.slice(5)); // MM-DD
+    const data    = entries.map(e => e.weight);
+
+    // Compute BMI for each entry
+    const u = State.get().user;
+    const hm = (u.height / 100) ** 2;
+    const bmiData = entries.map(e => +(e.weight / hm).toFixed(1));
+
+    _weightChart = _destroy(_weightChart);
+    _weightChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '体重 (kg)',
+            data,
+            borderColor: '#2ecc71',
+            backgroundColor: 'rgba(46,204,113,0.12)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            yAxisID: 'yWeight',
+          },
+          {
+            label: 'BMI',
+            data: bmiData,
+            borderColor: '#3498db',
+            borderDash: [5, 3],
+            borderWidth: 1.5,
+            pointRadius: 3,
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'yBmi',
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        },
+        scales: {
+          yWeight: {
+            type: 'linear', position: 'left',
+            beginAtZero: false,
+            grid: { color: 'rgba(0,0,0,.05)' },
+            ticks: { font: { size: 11 } }
+          },
+          yBmi: {
+            type: 'linear', position: 'right',
+            beginAtZero: false,
+            grid: { drawOnChartArea: false },
+            ticks: { font: { size: 11 } }
+          },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  return { renderMacroRing, renderNutritionBar, renderWeeklyKcal, renderWeightChart };
 })();

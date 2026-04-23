@@ -53,6 +53,9 @@
     <span class="topbar-logo">🥗</span>
     <span class="topbar-title" data-i18n="app_name">Happy Meal</span>
     <div class="topbar-right">
+      <a class="topbar-study-btn" href="https://study-reminder-dusky.vercel.app" target="_blank" rel="noopener" title="Study Reminder">
+        📚 Study
+      </a>
       <button class="icon-btn" onclick="BgPanel.toggle()" title="Background">🎨</button>
       <div id="bgPanel" class="dropdown hidden" style="min-width:200px;right:0">
         <div style="padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text-muted)">背景 / Background</div>
@@ -117,80 +120,137 @@
   <!-- ═══════════════════════════════
        TAB: DASHBOARD (主页)
        ═══════════════════════════════ -->
-  <section id="tab-dashboard" class="tab-page active">
+  <section id="tab-dashboard" class="tab-page active dash-page">
 
-    <!-- Daily motivational quote — language-aware -->
-    <div class="motivate-card">
-      <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
+    <!-- ── Video Hero ── -->
+    <div class="hero-section">
+      <video class="hero-video" autoplay muted loop playsinline>
+        <source src="img_vid/fitness.mp4" type="video/mp4" />
+        <source src="img_vid/fitness2.mp4.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-logo">🥗</div>
+        <h1 class="hero-title" data-i18n="app_name">Happy Meal</h1>
+        <p class="hero-sub" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
+        <div class="hero-quote">
+          <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
+        </div>
+        <button class="hero-scroll-btn" onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
+          ↓ 开始追踪
+        </button>
+      </div>
     </div>
 
-    <!-- BMI Card -->
-    <div class="card bmi-card">
-      <div class="card-title" data-i18n="bmi_title">📏 我的 BMI</div>
-      <div class="bmi-inputs">
-        <div class="inp-group">
-          <label data-i18n="lbl_gender">性别</label>
-          <select id="bmiGender" onchange="BMI.calc()">
-            <option value="male" data-i18n="opt_male">男</option>
-            <option value="female" data-i18n="opt_female">女</option>
-          </select>
+    <!-- ── Dashboard Content (below hero) ── -->
+    <div id="dashContent" class="dash-content">
+
+      <!-- Weight Log Card -->
+      <div class="card reveal-card">
+        <div class="card-title">⚖️ <span data-i18n="weight_log_title">体重记录</span></div>
+        <div class="weight-log-row">
+          <input id="weightLogInput" type="number" step="0.1" min="20" max="500"
+                 class="inp" style="max-width:120px" placeholder="kg"
+                 onkeydown="if(event.key==='Enter') BMI.logWeight()" />
+          <button class="btn-primary" onclick="BMI.logWeight()" data-i18n="btn_log_weight">记录今日体重</button>
         </div>
-        <div class="inp-group">
-          <label data-i18n="lbl_age">年龄</label>
-          <input id="bmiAge" type="number" min="10" max="99" placeholder="25" oninput="BMI.calc()" />
-        </div>
-        <div class="inp-group">
-          <label data-i18n="lbl_height">身高 (cm)</label>
-          <input id="bmiHeight" type="number" min="100" max="250" placeholder="170" oninput="BMI.calc()" />
-        </div>
-        <div class="inp-group">
-          <label data-i18n="lbl_weight">体重 (kg)</label>
-          <input id="bmiWeight" type="number" min="30" max="300" placeholder="65" oninput="BMI.calc()" />
-        </div>
+        <div id="weightLogLast" class="text-muted" style="font-size:.8rem"></div>
+        <canvas id="weightHistoryChart" height="160"></canvas>
       </div>
-      <div id="bmiResult" class="bmi-result hidden">
-        <div class="bmi-score" id="bmiScore">—</div>
-        <div class="bmi-label" id="bmiLabel">—</div>
-        <div class="bmi-target" id="bmiTarget">—</div>
-        <div class="bmi-bar-wrap">
-          <div class="bmi-bar-track">
-            <div class="bmi-bar-fill" id="bmiBarFill"></div>
+
+      <!-- BMI Card -->
+      <div class="card bmi-card reveal-card">
+        <div class="card-title" data-i18n="bmi_title">📏 我的 BMI</div>
+        <div class="bmi-inputs">
+          <div class="inp-group">
+            <label data-i18n="lbl_gender">性别</label>
+            <select id="bmiGender" onchange="BMI.calc()">
+              <option value="male" data-i18n="opt_male">男</option>
+              <option value="female" data-i18n="opt_female">女</option>
+            </select>
           </div>
-          <div class="bmi-bar-labels">
-            <span>偏瘦</span><span>正常</span><span>偏重</span><span>肥胖</span>
+          <div class="inp-group">
+            <label data-i18n="lbl_age">年龄</label>
+            <input id="bmiAge" type="number" min="10" max="99" placeholder="25" oninput="BMI.calc()" />
+          </div>
+          <div class="inp-group">
+            <label data-i18n="lbl_height">身高 (cm)</label>
+            <input id="bmiHeight" type="number" min="100" max="250" placeholder="170" oninput="BMI.calc()" />
+          </div>
+          <div class="inp-group">
+            <label data-i18n="lbl_weight">体重 (kg)</label>
+            <input id="bmiWeight" type="number" min="30" max="300" placeholder="65" oninput="BMI.calc()" />
+          </div>
+        </div>
+        <div id="bmiResult" class="bmi-result hidden">
+          <div class="bmi-score" id="bmiScore">—</div>
+          <div class="bmi-label" id="bmiLabel">—</div>
+          <div class="bmi-target" id="bmiTarget">—</div>
+          <div class="bmi-bar-wrap">
+            <div class="bmi-bar-track">
+              <div class="bmi-bar-fill" id="bmiBarFill"></div>
+            </div>
+            <div class="bmi-bar-labels">
+              <span>偏瘦</span><span>正常</span><span>偏重</span><span>肥胖</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Today's Summary -->
-    <div class="card">
-      <div class="card-title" data-i18n="today_summary">📋 今日摘要</div>
-      <div class="macro-ring-wrap">
-        <canvas id="macroRing" width="160" height="160"></canvas>
-        <div class="macro-ring-center">
-          <div id="todayKcal" class="ring-kcal">0</div>
-          <div class="ring-kcal-label" data-i18n="kcal">千卡</div>
+      <!-- Today's Summary -->
+      <div class="card reveal-card">
+        <div class="card-title" data-i18n="today_summary">📋 今日摘要</div>
+        <div class="macro-ring-wrap">
+          <canvas id="macroRing" width="160" height="160"></canvas>
+          <div class="macro-ring-center">
+            <div id="todayKcal" class="ring-kcal">0</div>
+            <div class="ring-kcal-label" data-i18n="kcal">千卡</div>
+          </div>
+        </div>
+        <div class="macro-bars" id="macroBars">
+          <!-- rendered by Tracker.renderSummary() -->
+        </div>
+        <div class="target-row">
+          <span data-i18n="target_kcal">目标热量：</span>
+          <span id="targetKcal" class="highlight">—</span>
+          <span data-i18n="kcal"> 千卡</span>
         </div>
       </div>
-      <div class="macro-bars" id="macroBars">
-        <!-- rendered by Tracker.renderSummary() -->
-      </div>
-      <div class="target-row">
-        <span data-i18n="target_kcal">目标热量：</span>
-        <span id="targetKcal" class="highlight">—</span>
-        <span data-i18n="kcal"> 千卡</span>
-      </div>
-    </div>
 
-    <!-- Recommended Recipes -->
-    <div class="card">
-      <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
-      <div id="recommendList" class="recipe-list-small">
-        <!-- rendered by BMI.renderRecommend() -->
-        <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+      <!-- Recommended Recipes -->
+      <div class="card reveal-card">
+        <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
+        <div id="recommendList" class="recipe-list-small">
+          <!-- rendered by BMI.renderRecommend() -->
+          <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+        </div>
       </div>
-    </div>
+
+      <!-- Section Nav Cards -->
+      <div class="section-nav-grid reveal-card">
+        <button class="section-nav-card" onclick="App.switchTab('recipes')">
+          <span class="snc-icon">📖</span>
+          <span class="snc-label" data-i18n="tab_recipes">菜谱</span>
+          <span class="snc-arrow">→</span>
+        </button>
+        <button class="section-nav-card" onclick="App.switchTab('tracker')">
+          <span class="snc-icon">📊</span>
+          <span class="snc-label" data-i18n="tab_tracker">追踪</span>
+          <span class="snc-arrow">→</span>
+        </button>
+        <button class="section-nav-card" onclick="App.switchTab('planner')">
+          <span class="snc-icon">📅</span>
+          <span class="snc-label" data-i18n="tab_planner">周菜单</span>
+          <span class="snc-arrow">→</span>
+        </button>
+        <button class="section-nav-card" onclick="App.switchTab('exercise')">
+          <span class="snc-icon">🏋️</span>
+          <span class="snc-label" data-i18n="tab_exercise">运动</span>
+          <span class="snc-arrow">→</span>
+        </button>
+      </div>
+
+    </div><!-- /dashContent -->
   </section>
 
   <!-- ═══════════════════════════════
@@ -540,6 +600,32 @@
 <script src="js/background.js"></script>
 <script src="js/keys.js"></script>
 <script src="js/app.js"></script>
+
+<script>
+// ── Scroll-reveal for .reveal-card elements ──────────────
+(function () {
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    }),
+    { threshold: 0.12 }
+  );
+
+  function observe() {
+    document.querySelectorAll('.reveal-card').forEach(el => observer.observe(el));
+  }
+
+  // Run after app initialises (DOM is ready)
+  document.addEventListener('DOMContentLoaded', observe);
+  // Also re-run when dashboard tab becomes active (switchTab fires a custom event)
+  document.addEventListener('tabChanged', e => {
+    if (e.detail === 'dashboard') observe();
+  });
+})();
+</script>
 
 </body>
 </html>

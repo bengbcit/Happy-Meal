@@ -21,6 +21,7 @@ const State = (() => {
     recipes: [],          // Array of recipe objects
     logs: {},             // { 'YYYY-MM-DD': { meals: { breakfast:[], lunch:[], dinner:[], snack:[] } } }
     weeklyPlan: {},       // { 'YYYY-Www': { mon:[], tue:[], ... } }  ([] = [recipeId, recipeId, recipeId] for B/L/D)
+    weightLog: [],        // [{ date: 'YYYY-MM-DD', weight: 65.5 }, ...]
     settings: {
       targetKcal: 0,      // auto-calculated from BMI if 0
       emailAddress: '',
@@ -142,6 +143,23 @@ const State = (() => {
       _save();
     },
 
+    // Weight log helpers
+    // 体重ログヘルパー / 体重记录辅助
+    getWeightLog() { return _s.weightLog || []; },
+    addWeightEntry(dateStr, weight) {
+      if (!_s.weightLog) _s.weightLog = [];
+      const idx = _s.weightLog.findIndex(e => e.date === dateStr);
+      if (idx !== -1) {
+        _s.weightLog[idx].weight = weight;
+      } else {
+        _s.weightLog.push({ date: dateStr, weight });
+        _s.weightLog.sort((a, b) => a.date.localeCompare(b.date));
+      }
+      // Keep only last 90 days
+      if (_s.weightLog.length > 90) _s.weightLog = _s.weightLog.slice(-90);
+      _save();
+    },
+
     // User profile helpers
     // ユーザープロフィールヘルパー / 用户档案辅助
     updateUser(updates) {
@@ -159,6 +177,7 @@ const State = (() => {
       if (data.recipes && Array.isArray(data.recipes)) _s.recipes = data.recipes;
       if (data.logs) _s.logs = data.logs;
       if (data.weeklyPlan) _s.weeklyPlan = data.weeklyPlan;
+      if (data.weightLog && Array.isArray(data.weightLog)) _s.weightLog = data.weightLog;
       if (data.user) Object.assign(_s.user, data.user);
       if (data.settings) Object.assign(_s.settings, data.settings);
       _save();
@@ -169,6 +188,7 @@ const State = (() => {
         recipes: _s.recipes,
         logs: _s.logs,
         weeklyPlan: _s.weeklyPlan,
+        weightLog: _s.weightLog || [],
         user: _s.user,
         settings: _s.settings,
       };

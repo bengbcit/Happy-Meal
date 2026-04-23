@@ -108,6 +108,9 @@ const I18n = (() => {
       no_food_detected: '未识别到食物，请手动添加',
       import_hint: '已识别 {n} 个食物，可编辑后保存',
       items_saved: '个食物已保存',
+      weight_log_title: '体重记录',
+      btn_log_weight: '记录今日体重',
+      invalid_weight: '请输入有效体重 (20–500 kg)',
     },
 
     en: {
@@ -206,6 +209,9 @@ const I18n = (() => {
       no_food_detected: 'No food detected, please add manually',
       import_hint: 'Detected {n} items — edit and save',
       items_saved: 'items saved',
+      weight_log_title: 'Weight Log',
+      btn_log_weight: 'Log Today\'s Weight',
+      invalid_weight: 'Please enter a valid weight (20–500 kg)',
     },
 
     ja: {
@@ -295,6 +301,9 @@ const I18n = (() => {
       no_food_detected: '食品が認識されませんでした',
       import_hint: '{n}件の食品を認識しました',
       items_saved: '件保存しました',
+      weight_log_title: '体重記録',
+      btn_log_weight: '今日の体重を記録',
+      invalid_weight: '有効な体重を入力してください (20–500 kg)',
     }
   };
 
