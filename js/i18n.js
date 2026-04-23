@@ -304,6 +304,21 @@ const I18n = (() => {
       weight_log_title: '体重記録',
       btn_log_weight: '今日の体重を記録',
       invalid_weight: '有効な体重を入力してください (20–500 kg)',
+      // ── auto-filled by i18n-agent ──────────────────
+      tab_exercise: '運動',
+      exercise_title: '🏋️ 運動消費カロリー',
+      exercise_desc: '体重と時間からカロリー消費を計算',
+      exercise_log: '📋 今日の運動記録',
+      total_burned: '今日の消費：',
+      add_exercise: '運動を追加',
+      this_week: '今週',
+      history: '履歴',
+      dining_out: '外食',
+      history_plans: '📚 過去の週間献立',
+      history_hint: '週をタップして献立を確認',
+      dining_desc: '外食でメニューの1食を置き換える',
+      add_dining: '自定義外食を追加',
+      btn_back: '← 戻る',
     }
   };
 
