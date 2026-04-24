@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,633 +9,655 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
 
-<!-- ════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════
      AUTH GATE  — shown until user is logged in
      ════════════════════════════════════════════ -->
-<div id="authGate" class="auth-gate">
-  <div class="auth-card">
-    <div class="auth-logo">🥗</div>
-    <h1 class="auth-title" data-i18n="app_name">Happy Meal</h1>
-    <p class="auth-subtitle" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
+  <div id="authGate" class="auth-gate">
+    <div class="auth-card">
+      <div class="auth-logo">🥗</div>
+      <h1 class="auth-title" data-i18n="app_name">Happy Meal</h1>
+      <p class="auth-subtitle" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
 
-    <!-- lang switcher -->
-    <div class="lang-row">
-      <button class="lang-btn active" onclick="I18n.set('zh')">中文</button>
-      <button class="lang-btn" onclick="I18n.set('en')">EN</button>
-      <button class="lang-btn" onclick="I18n.set('ja')">日本語</button>
-    </div>
+      <!-- lang switcher -->
+      <div class="lang-row">
+        <button class="lang-btn active" onclick="I18n.set('zh')">中文</button>
+        <button class="lang-btn" onclick="I18n.set('en')">EN</button>
+        <button class="lang-btn" onclick="I18n.set('ja')">日本語</button>
+      </div>
 
-    <!-- login form -->
-    <div id="authForm">
-      <input id="authEmail" type="email" class="inp" data-i18n-ph="ph_email" placeholder="邮箱" autocomplete="username" />
-      <input id="authPwd" type="password" class="inp" data-i18n-ph="ph_pwd" placeholder="密码" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter') Auth.login()" />
-      <button class="btn-primary w100" onclick="Auth.login()" data-i18n="btn_login">登录</button>
-      <button class="btn-secondary w100" onclick="Auth.register()" data-i18n="btn_register">注册</button>
-      <button class="btn-google w100" onclick="Auth.googleLogin()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" /> Google 登录
-      </button>
-      <p id="authErr" class="auth-err"></p>
-      <hr class="auth-divider" />
-      <button class="btn-local" onclick="Auth.localMode()" data-i18n="btn_local">👤 以本地模式进入</button>
+      <!-- login form -->
+      <div id="authForm">
+        <input id="authEmail" type="email" class="inp" data-i18n-ph="ph_email" placeholder="邮箱"
+          autocomplete="username" />
+        <input id="authPwd" type="password" class="inp" data-i18n-ph="ph_pwd" placeholder="密码"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter') Auth.login()" />
+        <button class="btn-primary w100" onclick="Auth.login()" data-i18n="btn_login">登录</button>
+        <button class="btn-secondary w100" onclick="Auth.register()" data-i18n="btn_register">注册</button>
+        <button class="btn-google w100" onclick="Auth.googleLogin()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" /> Google 登录
+        </button>
+        <p id="authErr" class="auth-err"></p>
+        <hr class="auth-divider" />
+        <button class="btn-local" onclick="Auth.localMode()" data-i18n="btn_local">👤 以本地模式进入</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════
      MAIN APP
      ════════════════════════════════════════════ -->
-<div id="mainApp" class="main-app hidden">
+  <div id="mainApp" class="main-app hidden">
 
-  <!-- ── Top bar ── -->
-  <header class="topbar">
-    <span class="topbar-logo">🥗</span>
-    <span class="topbar-title" data-i18n="app_name">Happy Meal</span>
-    <div class="topbar-right">
-      <a class="topbar-study-btn" href="https://study-reminder-dusky.vercel.app" target="_blank" rel="noopener" title="Study Reminder">
-        📚 Study
-      </a>
-      <button class="icon-btn" onclick="BgPanel.toggle()" title="Background">🎨</button>
-      <div id="bgPanel" class="dropdown hidden" style="min-width:200px;right:0">
-        <div style="padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text-muted)">背景 / Background</div>
-        <label class="bg-option-btn" onclick="document.getElementById('bgFileInput').click()">
-          🖼 上传图片
-          <input id="bgFileInput" type="file" accept="image/*" class="hidden" onchange="BgPanel.uploadBg(this.files[0])"/>
-        </label>
-        <button class="bg-option-btn" onclick="BgPanel.showAIPrompt()">✨ AI 生成背景</button>
-        <button class="bg-option-btn" onclick="BgPanel.clearBg()">🗑 恢复默认</button>
-        <div id="aiBgSection" class="hidden" style="padding:6px">
-          <input id="aiBgPrompt" class="inp" style="font-size:.8rem" placeholder="描述你想要的背景..."/>
-          <button class="btn-primary w100" style="margin-top:4px;font-size:.8rem" onclick="BgPanel.generateAI()">生成</button>
-          <div id="aiBgStatus" class="parse-status"></div>
+    <!-- ── Top bar ── -->
+    <header class="topbar">
+      <span class="topbar-logo">🥗</span>
+      <span class="topbar-title" data-i18n="app_name">Happy Meal</span>
+      <div class="topbar-right">
+        <a class="topbar-study-btn" href="https://study-reminder-dusky.vercel.app" target="_blank" rel="noopener"
+          title="Study Reminder">
+          📚 Study
+        </a>
+        <button class="icon-btn" onclick="BgPanel.toggle()" title="Background">🎨</button>
+        <div id="bgPanel" class="dropdown hidden" style="min-width:200px;right:0">
+          <div style="padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text-muted)">背景 / Background</div>
+          <label class="bg-option-btn" onclick="document.getElementById('bgFileInput').click()">
+            🖼 上传图片
+            <input id="bgFileInput" type="file" accept="image/*" class="hidden"
+              onchange="BgPanel.uploadBg(this.files[0])" />
+          </label>
+          <button class="bg-option-btn" onclick="BgPanel.showAIPrompt()">✨ AI 生成背景</button>
+          <button class="bg-option-btn" onclick="BgPanel.clearBg()">🗑 恢复默认</button>
+          <div id="aiBgSection" class="hidden" style="padding:6px">
+            <input id="aiBgPrompt" class="inp" style="font-size:.8rem" placeholder="描述你想要的背景..." />
+            <button class="btn-primary w100" style="margin-top:4px;font-size:.8rem"
+              onclick="BgPanel.generateAI()">生成</button>
+            <div id="aiBgStatus" class="parse-status"></div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="LangMenu.toggle()" title="Language">🌐</button>
+        <div id="langMenu" class="dropdown hidden">
+          <button onclick="I18n.set('zh')">中文</button>
+          <button onclick="I18n.set('en')">English</button>
+          <button onclick="I18n.set('ja')">日本語</button>
+        </div>
+        <button class="icon-btn" onclick="ProfilePanel.toggle()" id="avatarBtn">👤</button>
+        <!-- Profile panel: name + actions (content set dynamically by _enterApp) -->
+        <div id="profilePanel" class="profile-panel hidden">
+          <div class="profile-name" id="profileName" style="cursor:pointer" onclick="Auth.showSwitchPanel()">
+            — <span style="font-size:.7rem;color:var(--text-muted)">▼</span>
+          </div>
+          <div id="profileActions"></div>
+        </div>
+        <!-- Switch account panel -->
+        <div id="switchPanel" class="profile-panel hidden" style="top:88px;min-width:180px">
+          <div
+            style="font-size:.8rem;color:var(--text-muted);padding:4px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+            切换账号</div>
+          <button onclick="Auth.switchToLocal()">🏠 <span data-i18n="switch_local">切换为本地账号</span></button>
+          <button onclick="Auth.switchToEmail()">📧 <span data-i18n="switch_email">切换为其他邮箱</span></button>
+          <button onclick="Auth.addAccount()">➕ <span data-i18n="add_account">添加新账号</span></button>
         </div>
       </div>
-      <button class="icon-btn" onclick="LangMenu.toggle()" title="Language">🌐</button>
-      <div id="langMenu" class="dropdown hidden">
-        <button onclick="I18n.set('zh')">中文</button>
-        <button onclick="I18n.set('en')">English</button>
-        <button onclick="I18n.set('ja')">日本語</button>
-      </div>
-      <button class="icon-btn" onclick="ProfilePanel.toggle()" id="avatarBtn">👤</button>
-      <!-- Profile panel: name + actions (content set dynamically by _enterApp) -->
-      <div id="profilePanel" class="profile-panel hidden">
-        <div class="profile-name" id="profileName" style="cursor:pointer" onclick="Auth.showSwitchPanel()">
-          — <span style="font-size:.7rem;color:var(--text-muted)">▼</span>
-        </div>
-        <div id="profileActions"></div>
-      </div>
-      <!-- Switch account panel -->
-      <div id="switchPanel" class="profile-panel hidden" style="top:88px;min-width:180px">
-        <div style="font-size:.8rem;color:var(--text-muted);padding:4px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">切换账号</div>
-        <button onclick="Auth.switchToLocal()">🏠 <span data-i18n="switch_local">切换为本地账号</span></button>
-        <button onclick="Auth.switchToEmail()">📧 <span data-i18n="switch_email">切换为其他邮箱</span></button>
-        <button onclick="Auth.addAccount()">➕ <span data-i18n="add_account">添加新账号</span></button>
-      </div>
-    </div>
-  </header>
+    </header>
 
-  <!-- ── Tab Navigation ── -->
-  <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
-      <span class="tab-icon">🏠</span><span class="tab-label" data-i18n="tab_home">主页</span>
-    </button>
-    <button class="tab-btn" data-tab="recipes" onclick="App.switchTab('recipes')">
-      <span class="tab-icon">📖</span><span class="tab-label" data-i18n="tab_recipes">菜谱</span>
-    </button>
-    <button class="tab-btn" data-tab="tracker" onclick="App.switchTab('tracker')">
-      <span class="tab-icon">📊</span><span class="tab-label" data-i18n="tab_tracker">追踪</span>
-    </button>
-    <button class="tab-btn" data-tab="planner" onclick="App.switchTab('planner')">
-      <span class="tab-icon">📅</span><span class="tab-label" data-i18n="tab_planner">周菜单</span>
-    </button>
-    <button class="tab-btn" data-tab="exercise" onclick="App.switchTab('exercise')">
-      <span class="tab-icon">🏋️</span><span class="tab-label" data-i18n="tab_exercise">运动</span>
-    </button>
-    <button class="tab-btn" data-tab="indulgence" onclick="App.switchTab('indulgence')">
-      <span class="tab-icon">🎁</span><span class="tab-label" data-i18n="tab_indulgence">小奖励</span>
-    </button>
-  </nav>
+    <!-- ── Tab Navigation ── -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+        <span class="tab-icon">🏠</span><span class="tab-label" data-i18n="tab_home">主页</span>
+      </button>
+      <button class="tab-btn" data-tab="recipes" onclick="App.switchTab('recipes')">
+        <span class="tab-icon">📖</span><span class="tab-label" data-i18n="tab_recipes">菜谱</span>
+      </button>
+      <button class="tab-btn" data-tab="tracker" onclick="App.switchTab('tracker')">
+        <span class="tab-icon">📊</span><span class="tab-label" data-i18n="tab_tracker">追踪</span>
+      </button>
+      <button class="tab-btn" data-tab="planner" onclick="App.switchTab('planner')">
+        <span class="tab-icon">📅</span><span class="tab-label" data-i18n="tab_planner">周菜单</span>
+      </button>
+      <button class="tab-btn" data-tab="exercise" onclick="App.switchTab('exercise')">
+        <span class="tab-icon">🏋️</span><span class="tab-label" data-i18n="tab_exercise">运动</span>
+      </button>
+      <button class="tab-btn" data-tab="indulgence" onclick="App.switchTab('indulgence')">
+        <span class="tab-icon">🎁</span><span class="tab-label" data-i18n="tab_indulgence">小奖励</span>
+      </button>
+    </nav>
 
-  <!-- ═══════════════════════════════
+    <!-- ═══════════════════════════════
        TAB: DASHBOARD (主页)
        ═══════════════════════════════ -->
-  <section id="tab-dashboard" class="tab-page active dash-page">
+    <section id="tab-dashboard" class="tab-page active dash-page">
 
-    <!-- ── Video Hero ── -->
-    <div class="hero-section">
-      <video class="hero-video" autoplay muted loop playsinline>
-        <source src="img_vid/fitness.mp4" type="video/mp4" />
-        <source src="img_vid/fitness2.mp4.mp4" type="video/mp4" />
-      </video>
-      <div class="hero-overlay"></div>
-      <div class="hero-content">
-        <div class="hero-logo">🥗</div>
-        <h1 class="hero-title" data-i18n="app_name">Happy Meal</h1>
-        <p class="hero-sub" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
-        <div class="hero-quote">
-          <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
+      <!-- ── Video Hero ── -->
+      <div class="hero-section">
+        <video class="hero-video" autoplay muted loop playsinline>
+          <source src="img_vid/fitness.mp4" type="video/mp4" />
+          <source src="img_vid/fitness2.mp4.mp4" type="video/mp4" />
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-logo">🥗</div>
+          <h1 class="hero-title" data-i18n="app_name">Happy Meal</h1>
+          <p class="hero-sub" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
+          <div class="hero-quote">
+            <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
+          </div>
+          <button class="hero-scroll-btn"
+            onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
+            ↓ 开始追踪
+          </button>
         </div>
-        <button class="hero-scroll-btn" onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
-          ↓ 开始追踪
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Dashboard Content (below hero) ── -->
-    <div id="dashContent" class="dash-content">
-
-      <!-- Weight Log Card -->
-      <div class="card reveal-card">
-        <div class="card-title">⚖️ <span data-i18n="weight_log_title">体重记录</span></div>
-        <div class="weight-log-row">
-          <input id="weightLogInput" type="number" step="0.1" min="20" max="500"
-                 class="inp" style="max-width:120px" placeholder="kg"
-                 onkeydown="if(event.key==='Enter') BMI.logWeight()" />
-          <button class="btn-primary" onclick="BMI.logWeight()" data-i18n="btn_log_weight">记录今日体重</button>
-        </div>
-        <div id="weightLogLast" class="text-muted" style="font-size:.8rem"></div>
-        <canvas id="weightHistoryChart" height="160"></canvas>
       </div>
 
-      <!-- BMI Card -->
-      <div class="card bmi-card reveal-card">
-        <div class="card-title" data-i18n="bmi_title">📏 我的 BMI</div>
-        <div class="bmi-inputs">
-          <div class="inp-group">
-            <label data-i18n="lbl_gender">性别</label>
-            <select id="bmiGender" onchange="BMI.calc()">
-              <option value="male" data-i18n="opt_male">男</option>
-              <option value="female" data-i18n="opt_female">女</option>
-            </select>
+      <!-- ── Dashboard Content (below hero) ── -->
+      <div id="dashContent" class="dash-content">
+
+        <!-- Weight Log Card -->
+        <div class="card reveal-card">
+          <div class="card-title">⚖️ <span data-i18n="weight_log_title">体重记录</span></div>
+          <div class="weight-log-row">
+            <input id="weightLogInput" type="number" step="0.1" min="20" max="500" class="inp" style="max-width:120px"
+              placeholder="kg" onkeydown="if(event.key==='Enter') BMI.logWeight()" />
+            <button class="btn-primary" onclick="BMI.logWeight()" data-i18n="btn_log_weight">记录今日体重</button>
           </div>
-          <div class="inp-group">
-            <label data-i18n="lbl_age">年龄</label>
-            <input id="bmiAge" type="number" min="10" max="99" placeholder="25" oninput="BMI.calc()" />
-          </div>
-          <div class="inp-group">
-            <label data-i18n="lbl_height">身高 (cm)</label>
-            <input id="bmiHeight" type="number" min="100" max="250" placeholder="170" oninput="BMI.calc()" />
-          </div>
-          <div class="inp-group">
-            <label data-i18n="lbl_weight">体重 (kg)</label>
-            <input id="bmiWeight" type="number" min="30" max="300" placeholder="65" oninput="BMI.calc()" />
-          </div>
+          <div id="weightLogLast" class="text-muted" style="font-size:.8rem"></div>
+          <canvas id="weightHistoryChart" height="160"></canvas>
         </div>
-        <div id="bmiResult" class="bmi-result hidden">
-          <div class="bmi-score" id="bmiScore">—</div>
-          <div class="bmi-label" id="bmiLabel">—</div>
-          <div class="bmi-target" id="bmiTarget">—</div>
-          <div class="bmi-bar-wrap">
-            <div class="bmi-bar-track">
-              <div class="bmi-bar-fill" id="bmiBarFill"></div>
+
+        <!-- BMI Card -->
+        <div class="card bmi-card reveal-card">
+          <div class="card-title" data-i18n="bmi_title">📏 我的 BMI</div>
+          <div class="bmi-inputs">
+            <div class="inp-group">
+              <label data-i18n="lbl_gender">性别</label>
+              <select id="bmiGender" onchange="BMI.calc()">
+                <option value="male" data-i18n="opt_male">男</option>
+                <option value="female" data-i18n="opt_female">女</option>
+              </select>
             </div>
-            <div class="bmi-bar-labels">
-              <span>偏瘦</span><span>正常</span><span>偏重</span><span>肥胖</span>
+            <div class="inp-group">
+              <label data-i18n="lbl_age">年龄</label>
+              <input id="bmiAge" type="number" min="10" max="99" placeholder="25" oninput="BMI.calc()" />
+            </div>
+            <div class="inp-group">
+              <label data-i18n="lbl_height">身高 (cm)</label>
+              <input id="bmiHeight" type="number" min="100" max="250" placeholder="170" oninput="BMI.calc()" />
+            </div>
+            <div class="inp-group">
+              <label data-i18n="lbl_weight">体重 (kg)</label>
+              <input id="bmiWeight" type="number" min="30" max="300" placeholder="65" oninput="BMI.calc()" />
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Today's Summary -->
-      <div class="card reveal-card">
-        <div class="card-title" data-i18n="today_summary">📋 今日摘要</div>
-        <div class="macro-ring-wrap">
-          <canvas id="macroRing" width="160" height="160"></canvas>
-          <div class="macro-ring-center">
-            <div id="todayKcal" class="ring-kcal">0</div>
-            <div class="ring-kcal-label" data-i18n="kcal">千卡</div>
+          <div id="bmiResult" class="bmi-result hidden">
+            <div class="bmi-score" id="bmiScore">—</div>
+            <div class="bmi-label" id="bmiLabel">—</div>
+            <div class="bmi-target" id="bmiTarget">—</div>
+            <div class="bmi-bar-wrap">
+              <div class="bmi-bar-track">
+                <div class="bmi-bar-fill" id="bmiBarFill"></div>
+              </div>
+              <div class="bmi-bar-labels">
+                <span>偏瘦</span><span>正常</span><span>偏重</span><span>肥胖</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="macro-bars" id="macroBars">
-          <!-- rendered by Tracker.renderSummary() -->
+
+        <!-- Today's Summary -->
+        <div class="card reveal-card">
+          <div class="card-title" data-i18n="today_summary">📋 今日摘要</div>
+          <div class="macro-ring-wrap">
+            <canvas id="macroRing" width="160" height="160"></canvas>
+            <div class="macro-ring-center">
+              <div id="todayKcal" class="ring-kcal">0</div>
+              <div class="ring-kcal-label" data-i18n="kcal">千卡</div>
+            </div>
+          </div>
+          <div class="macro-bars" id="macroBars">
+            <!-- rendered by Tracker.renderSummary() -->
+          </div>
+          <div class="target-row">
+            <span data-i18n="target_kcal">目标热量：</span>
+            <span id="targetKcal" class="highlight">—</span>
+            <span data-i18n="kcal"> 千卡</span>
+          </div>
         </div>
-        <div class="target-row">
-          <span data-i18n="target_kcal">目标热量：</span>
-          <span id="targetKcal" class="highlight">—</span>
-          <span data-i18n="kcal"> 千卡</span>
+
+        <!-- Recommended Recipes -->
+        <div class="card reveal-card">
+          <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
+          <div id="recommendList" class="recipe-list-small">
+            <!-- rendered by BMI.renderRecommend() -->
+            <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+          </div>
         </div>
-      </div>
 
-      <!-- Recommended Recipes -->
-      <div class="card reveal-card">
-        <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
-        <div id="recommendList" class="recipe-list-small">
-          <!-- rendered by BMI.renderRecommend() -->
-          <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+        <!-- Section Nav Cards -->
+        <div class="section-nav-grid reveal-card">
+          <button class="section-nav-card" onclick="App.switchTab('recipes')">
+            <span class="snc-icon">📖</span>
+            <span class="snc-label" data-i18n="tab_recipes">菜谱</span>
+            <span class="snc-arrow">→</span>
+          </button>
+          <button class="section-nav-card" onclick="App.switchTab('tracker')">
+            <span class="snc-icon">📊</span>
+            <span class="snc-label" data-i18n="tab_tracker">追踪</span>
+            <span class="snc-arrow">→</span>
+          </button>
+          <button class="section-nav-card" onclick="App.switchTab('planner')">
+            <span class="snc-icon">📅</span>
+            <span class="snc-label" data-i18n="tab_planner">周菜单</span>
+            <span class="snc-arrow">→</span>
+          </button>
+          <button class="section-nav-card" onclick="App.switchTab('exercise')">
+            <span class="snc-icon">🏋️</span>
+            <span class="snc-label" data-i18n="tab_exercise">运动</span>
+            <span class="snc-arrow">→</span>
+          </button>
         </div>
-      </div>
 
-      <!-- Section Nav Cards -->
-      <div class="section-nav-grid reveal-card">
-        <button class="section-nav-card" onclick="App.switchTab('recipes')">
-          <span class="snc-icon">📖</span>
-          <span class="snc-label" data-i18n="tab_recipes">菜谱</span>
-          <span class="snc-arrow">→</span>
-        </button>
-        <button class="section-nav-card" onclick="App.switchTab('tracker')">
-          <span class="snc-icon">📊</span>
-          <span class="snc-label" data-i18n="tab_tracker">追踪</span>
-          <span class="snc-arrow">→</span>
-        </button>
-        <button class="section-nav-card" onclick="App.switchTab('planner')">
-          <span class="snc-icon">📅</span>
-          <span class="snc-label" data-i18n="tab_planner">周菜单</span>
-          <span class="snc-arrow">→</span>
-        </button>
-        <button class="section-nav-card" onclick="App.switchTab('exercise')">
-          <span class="snc-icon">🏋️</span>
-          <span class="snc-label" data-i18n="tab_exercise">运动</span>
-          <span class="snc-arrow">→</span>
-        </button>
-      </div>
+      </div><!-- /dashContent -->
+    </section>
 
-    </div><!-- /dashContent -->
-  </section>
-
-  <!-- ═══════════════════════════════
+    <!-- ═══════════════════════════════
        TAB: RECIPES (菜谱)
        ═══════════════════════════════ -->
-  <section id="tab-recipes" class="tab-page">
-    <!-- Add Recipe -->
-    <div class="card">
-      <div class="card-title" data-i18n="add_recipe">➕ 添加菜谱</div>
-      <div class="add-recipe-tabs">
-        <button class="pill active" id="addTab-url"    onclick="RecipeAdd.showTab('url')"    data-i18n="from_url">从 URL 导入</button>
-        <button class="pill"        id="addTab-media"  onclick="RecipeAdd.showTab('media')"  data-i18n="from_media">图片/PDF</button>
-        <button class="pill"        id="addTab-manual" onclick="RecipeAdd.showTab('manual')" data-i18n="manual_input">手动录入</button>
+    <section id="tab-recipes" class="tab-page">
+      <!-- Add Recipe -->
+      <div class="card">
+        <div class="card-title" data-i18n="add_recipe">➕ 添加菜谱</div>
+        <div class="add-recipe-tabs">
+          <button class="pill active" id="addTab-url" onclick="RecipeAdd.showTab('url')" data-i18n="from_url">从 URL
+            导入</button>
+          <button class="pill" id="addTab-media" onclick="RecipeAdd.showTab('media')"
+            data-i18n="from_media">图片/PDF</button>
+          <button class="pill" id="addTab-manual" onclick="RecipeAdd.showTab('manual')"
+            data-i18n="manual_input">手动录入</button>
+        </div>
+
+        <!-- URL import -->
+        <div id="addPanel-url" class="add-panel">
+          <input id="recipeUrl" type="url" class="inp" placeholder="https://..." data-i18n-ph="ph_url" />
+          <button class="btn-primary w100" onclick="Parser.fromUrl()" data-i18n="btn_parse">🔍 解析菜谱</button>
+          <div id="parseStatus" class="parse-status"></div>
+        </div>
+
+        <!-- Image / PDF import -->
+        <div id="addPanel-media" class="add-panel hidden">
+          <label class="upload-drop-zone" id="mediaDropZone" ondragover="RecipeAdd.onDragOver(event)"
+            ondrop="RecipeAdd.onDrop(event)" onclick="document.getElementById('mediaFileInput').click()">
+            <span class="upload-icon">📷</span>
+            <span data-i18n="drop_media">拖入图片 / PDF，或点击选择</span>
+            <span class="text-muted" style="font-size:.78rem">支持 JPG, PNG, WEBP, PDF</span>
+          </label>
+          <input id="mediaFileInput" type="file" accept="image/*,.pdf" class="hidden"
+            onchange="RecipeAdd.onFileSelect(this.files[0])" />
+          <div id="mediaParseStatus" class="parse-status"></div>
+        </div>
+
+        <!-- Manual input -->
+        <div id="addPanel-manual" class="add-panel hidden">
+          <input id="rName" class="inp" placeholder="菜名" data-i18n-ph="ph_rname" />
+          <div class="inp-row">
+            <input id="rKcal" type="number" class="inp" placeholder="热量(kcal)" data-i18n-ph="ph_kcal" />
+            <input id="rProtein" type="number" class="inp" placeholder="蛋白质(g)" data-i18n-ph="ph_protein" />
+          </div>
+          <div class="inp-row">
+            <input id="rCarbs" type="number" class="inp" placeholder="碳水(g)" data-i18n-ph="ph_carbs" />
+            <input id="rFat" type="number" class="inp" placeholder="脂肪(g)" data-i18n-ph="ph_fat" />
+          </div>
+
+          <!-- Dynamic ingredient rows with +/- buttons + voice -->
+          <div class="section-label">
+            <span data-i18n="ingredients_lbl">食材</span>
+            <button class="voice-btn" onclick="VoiceInput.start('ingredient')" title="语音输入">🎤</button>
+          </div>
+          <div id="ingredientRows" class="dynamic-rows">
+            <!-- rendered by RecipeAdd.renderIngredientRows() -->
+          </div>
+          <button class="add-row-btn" onclick="RecipeAdd.addIngredientRow()">＋ 添加食材</button>
+
+          <!-- Dynamic step rows with +/- buttons + voice -->
+          <div class="section-label" style="margin-top:10px">
+            <span data-i18n="steps_lbl">步骤</span>
+            <button class="voice-btn" onclick="VoiceInput.start('step')" title="语音输入">🎤</button>
+          </div>
+          <div id="stepRows" class="dynamic-rows">
+            <!-- rendered by RecipeAdd.renderStepRows() -->
+          </div>
+          <button class="add-row-btn" onclick="RecipeAdd.addStepRow()">＋ 添加步骤</button>
+
+          <div class="tag-select" id="tagSelect" style="margin-top:10px">
+            <button class="tag" data-tag="high-protein" onclick="RecipeAdd.toggleTag(this)">🥩 高蛋白</button>
+            <button class="tag" data-tag="low-fat" onclick="RecipeAdd.toggleTag(this)">🥗 低脂</button>
+            <button class="tag" data-tag="low-carb" onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
+            <button class="tag" data-tag="high-carb" onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
+            <button class="tag" data-tag="vegetarian" onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
+          </div>
+          <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save" style="margin-top:10px">💾
+            保存菜谱</button>
+        </div>
       </div>
 
-      <!-- URL import -->
-      <div id="addPanel-url" class="add-panel">
-        <input id="recipeUrl" type="url" class="inp" placeholder="https://..." data-i18n-ph="ph_url" />
-        <button class="btn-primary w100" onclick="Parser.fromUrl()" data-i18n="btn_parse">🔍 解析菜谱</button>
-        <div id="parseStatus" class="parse-status"></div>
+      <!-- XHS Import -->
+      <div style="text-align:right; margin-bottom:8px;">
+        <button class="pill"
+          style="background:linear-gradient(135deg,#ff2442,#ff6b81);color:#fff;border:none;padding:6px 14px;cursor:pointer;"
+          onclick="XhsImport.run()" title="从 xhs_import.json 批量导入小红书菜谱">
+          🍜 导入小红书菜谱
+        </button>
+        <input type="file" id="xhsFileInput" accept=".json" style="display:none" onchange="XhsImport.fromFile(this)">
       </div>
 
-      <!-- Image / PDF import -->
-      <div id="addPanel-media" class="add-panel hidden">
-        <label class="upload-drop-zone" id="mediaDropZone" ondragover="RecipeAdd.onDragOver(event)"
-               ondrop="RecipeAdd.onDrop(event)" onclick="document.getElementById('mediaFileInput').click()">
-          <span class="upload-icon">📷</span>
-          <span data-i18n="drop_media">拖入图片 / PDF，或点击选择</span>
-          <span class="text-muted" style="font-size:.78rem">支持 JPG, PNG, WEBP, PDF</span>
-        </label>
-        <input id="mediaFileInput" type="file" accept="image/*,.pdf" class="hidden"
-               onchange="RecipeAdd.onFileSelect(this.files[0])"/>
-        <div id="mediaParseStatus" class="parse-status"></div>
+      <!-- Filter -->
+      <div class="filter-bar">
+        <button class="pill active" data-filter="all" onclick="Recipes.filter('all')" data-i18n="filter_all">全部</button>
+        <button class="pill" data-filter="high-protein" onclick="Recipes.filter('high-protein')">🥩 高蛋白</button>
+        <button class="pill" data-filter="low-fat" onclick="Recipes.filter('low-fat')">🥗 低脂</button>
+        <button class="pill" data-filter="low-carb" onclick="Recipes.filter('low-carb')">🥦 低碳</button>
+        <button class="pill" data-filter="high-carb" onclick="Recipes.filter('high-carb')">🍚 高碳</button>
+        <button class="pill" data-filter="vegetarian" onclick="Recipes.filter('vegetarian')">🌿 素食</button>
       </div>
 
-      <!-- Manual input -->
-      <div id="addPanel-manual" class="add-panel hidden">
-        <input id="rName" class="inp" placeholder="菜名" data-i18n-ph="ph_rname" />
-        <div class="inp-row">
-          <input id="rKcal"    type="number" class="inp" placeholder="热量(kcal)"  data-i18n-ph="ph_kcal" />
-          <input id="rProtein" type="number" class="inp" placeholder="蛋白质(g)"   data-i18n-ph="ph_protein" />
-        </div>
-        <div class="inp-row">
-          <input id="rCarbs" type="number" class="inp" placeholder="碳水(g)" data-i18n-ph="ph_carbs" />
-          <input id="rFat"   type="number" class="inp" placeholder="脂肪(g)"  data-i18n-ph="ph_fat" />
-        </div>
-
-        <!-- Dynamic ingredient rows with +/- buttons + voice -->
-        <div class="section-label">
-          <span data-i18n="ingredients_lbl">食材</span>
-          <button class="voice-btn" onclick="VoiceInput.start('ingredient')" title="语音输入">🎤</button>
-        </div>
-        <div id="ingredientRows" class="dynamic-rows">
-          <!-- rendered by RecipeAdd.renderIngredientRows() -->
-        </div>
-        <button class="add-row-btn" onclick="RecipeAdd.addIngredientRow()">＋ 添加食材</button>
-
-        <!-- Dynamic step rows with +/- buttons + voice -->
-        <div class="section-label" style="margin-top:10px">
-          <span data-i18n="steps_lbl">步骤</span>
-          <button class="voice-btn" onclick="VoiceInput.start('step')" title="语音输入">🎤</button>
-        </div>
-        <div id="stepRows" class="dynamic-rows">
-          <!-- rendered by RecipeAdd.renderStepRows() -->
-        </div>
-        <button class="add-row-btn" onclick="RecipeAdd.addStepRow()">＋ 添加步骤</button>
-
-        <div class="tag-select" id="tagSelect" style="margin-top:10px">
-          <button class="tag" data-tag="high-protein" onclick="RecipeAdd.toggleTag(this)">🥩 高蛋白</button>
-          <button class="tag" data-tag="low-fat"      onclick="RecipeAdd.toggleTag(this)">🥗 低脂</button>
-          <button class="tag" data-tag="low-carb"     onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
-          <button class="tag" data-tag="high-carb"    onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
-          <button class="tag" data-tag="vegetarian"   onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
-        </div>
-        <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save" style="margin-top:10px">💾 保存菜谱</button>
+      <!-- Recipe List -->
+      <div id="recipeList" class="recipe-grid">
+        <!-- rendered by Recipes.render() -->
       </div>
-    </div>
+    </section>
 
-    <!-- XHS Import -->
-    <div style="text-align:right; margin-bottom:8px;">
-      <button class="pill" style="background:linear-gradient(135deg,#ff2442,#ff6b81);color:#fff;border:none;padding:6px 14px;cursor:pointer;"
-              onclick="XhsImport.run()" title="从 xhs_import.json 批量导入小红书菜谱">
-        🍜 导入小红书菜谱
-      </button>
-      <input type="file" id="xhsFileInput" accept=".json" style="display:none" onchange="XhsImport.fromFile(this)">
-    </div>
-
-    <!-- Filter -->
-    <div class="filter-bar">
-      <button class="pill active" data-filter="all" onclick="Recipes.filter('all')" data-i18n="filter_all">全部</button>
-      <button class="pill" data-filter="high-protein" onclick="Recipes.filter('high-protein')">🥩 高蛋白</button>
-      <button class="pill" data-filter="low-fat" onclick="Recipes.filter('low-fat')">🥗 低脂</button>
-      <button class="pill" data-filter="low-carb" onclick="Recipes.filter('low-carb')">🥦 低碳</button>
-      <button class="pill" data-filter="high-carb" onclick="Recipes.filter('high-carb')">🍚 高碳</button>
-      <button class="pill" data-filter="vegetarian" onclick="Recipes.filter('vegetarian')">🌿 素食</button>
-    </div>
-
-    <!-- Recipe List -->
-    <div id="recipeList" class="recipe-grid">
-      <!-- rendered by Recipes.render() -->
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════
+    <!-- ═══════════════════════════════
        TAB: TRACKER (追踪)
        ═══════════════════════════════ -->
-  <section id="tab-tracker" class="tab-page">
-    <!-- Date nav -->
-    <div class="date-nav">
-      <button class="icon-btn" onclick="Tracker.prevDay()">◀</button>
-      <span id="trackerDate" class="date-label"></span>
-      <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
-    </div>
-
-    <!-- Quick import: CSV + image -->
-    <div class="card">
-      <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
-      <div class="import-row">
-        <label class="import-btn" onclick="document.getElementById('csvInput').click()">
-          📊 <span data-i18n="import_csv">导入 CSV</span>
-          <input id="csvInput" type="file" accept=".csv,.tsv" class="hidden"
-                 onchange="Tracker.importCSV(this.files[0])"/>
-        </label>
-        <label class="import-btn" onclick="document.getElementById('trackerImgInput').click()">
-          📷 <span data-i18n="import_photo">拍照/截图</span>
-          <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
-                 onchange="Tracker.importImage(this.files[0])"/>
-        </label>
+    <section id="tab-tracker" class="tab-page">
+      <!-- Date nav -->
+      <div class="date-nav">
+        <button class="icon-btn" onclick="Tracker.prevDay()">◀</button>
+        <span id="trackerDate" class="date-label"></span>
+        <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
       </div>
-      <div id="importStatus" class="parse-status"></div>
-    </div>
 
-    <!-- Meals -->
-    <div id="mealSections">
-      <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
-    </div>
+      <!-- Quick import: CSV + image -->
+      <div class="card">
+        <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
+        <div class="import-row">
+          <label class="import-btn" onclick="document.getElementById('csvInput').click()">
+            📊 <span data-i18n="import_csv">导入 CSV</span>
+            <input id="csvInput" type="file" accept=".csv,.tsv" class="hidden"
+              onchange="Tracker.importCSV(this.files[0])" />
+          </label>
+          <label class="import-btn" onclick="document.getElementById('trackerImgInput').click()">
+            📷 <span data-i18n="import_photo">拍照/截图</span>
+            <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
+              onchange="Tracker.importImage(this.files[0])" />
+          </label>
+        </div>
+        <div id="importStatus" class="parse-status"></div>
+      </div>
 
-    <!-- Daily totals chart -->
-    <div class="card">
-      <div class="card-title" data-i18n="nutrition_breakdown">📊 营养分布</div>
-      <canvas id="nutritionBar" height="120"></canvas>
-    </div>
+      <!-- Meals -->
+      <div id="mealSections">
+        <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
+      </div>
 
-    <!-- 7-day history -->
-    <div class="card">
-      <div class="card-title" data-i18n="weekly_kcal">📈 近7日热量</div>
-      <canvas id="weeklyKcalChart" height="120"></canvas>
-    </div>
-  </section>
+      <!-- Daily totals chart -->
+      <div class="card">
+        <div class="card-title" data-i18n="nutrition_breakdown">📊 营养分布</div>
+        <canvas id="nutritionBar" height="120"></canvas>
+      </div>
 
-  <!-- ═══════════════════════════════
+      <!-- 7-day history -->
+      <div class="card">
+        <div class="card-title" data-i18n="weekly_kcal">📈 近7日热量</div>
+        <canvas id="weeklyKcalChart" height="120"></canvas>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════
        TAB: PLANNER (周菜单)
        ═══════════════════════════════ -->
-  <section id="tab-planner" class="tab-page">
+    <section id="tab-planner" class="tab-page">
 
-    <!-- Sub-tabs: This Week / History -->
-    <div class="sub-tabs">
-      <button class="sub-tab active" id="subPlan-week"    onclick="Planner.showSub('week')"    data-i18n="this_week">本周</button>
-      <button class="sub-tab"        id="subPlan-history" onclick="Planner.showSub('history')" data-i18n="history">历史</button>
-      <button class="sub-tab"        id="subPlan-dining"  onclick="Planner.showSub('dining')"  data-i18n="dining_out">外食</button>
-    </div>
+      <!-- Sub-tabs: This Week / History -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" id="subPlan-week" onclick="Planner.showSub('week')"
+          data-i18n="this_week">本周</button>
+        <button class="sub-tab" id="subPlan-history" onclick="Planner.showSub('history')"
+          data-i18n="history">历史</button>
+        <button class="sub-tab" id="subPlan-dining" onclick="Planner.showSub('dining')"
+          data-i18n="dining_out">外食</button>
+      </div>
 
-    <!-- ── This week panel ── -->
-    <div id="planPanel-week" class="plan-panel">
-      <div class="card">
-        <div class="card-title" data-i18n="weekly_plan">📅 本周菜单</div>
-        <div class="mode-toggle-row">
-          <span data-i18n="plan_mode">菜单模式：</span>
-          <div class="mode-toggle">
-            <button class="mode-btn active" id="modeAdult" onclick="Planner.setMode('adult')">🧑 <span data-i18n="mode_adult">大人</span></button>
-            <button class="mode-btn"        id="modeKid"   onclick="Planner.setMode('kid')">👶 <span data-i18n="mode_kid">孩子</span></button>
+      <!-- ── This week panel ── -->
+      <div id="planPanel-week" class="plan-panel">
+        <div class="card">
+          <div class="card-title" data-i18n="weekly_plan">📅 本周菜单</div>
+          <div class="mode-toggle-row">
+            <span data-i18n="plan_mode">菜单模式：</span>
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="modeAdult" onclick="Planner.setMode('adult')">🧑 <span
+                  data-i18n="mode_adult">大人</span></button>
+              <button class="mode-btn" id="modeKid" onclick="Planner.setMode('kid')">👶 <span
+                  data-i18n="mode_kid">孩子</span></button>
+            </div>
+          </div>
+          <div class="planner-actions">
+            <button class="btn-primary" onclick="Planner.autoGenerate()" data-i18n="btn_auto_plan">✨ 自动生成</button>
+            <button class="btn-secondary" onclick="Planner.sendEmail()" data-i18n="btn_email_plan">📧 发送邮箱</button>
+          </div>
+          <div class="section-label" style="margin-top:4px">
+            <span data-i18n="send_to">发送邮箱</span>
+            <button class="add-row-btn-sm" onclick="Planner.addEmailRow()">＋</button>
+          </div>
+          <div id="emailRows" class="dynamic-rows"></div>
+          <div id="weeklyGrid" class="weekly-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── History panel ── -->
+      <div id="planPanel-history" class="plan-panel hidden">
+        <div class="card">
+          <div class="card-title" data-i18n="history_plans">📚 历史周菜单</div>
+          <p class="card-desc" data-i18n="history_hint">点击任意一周查看当时的菜单安排</p>
+          <div id="historyList" class="history-list">
+            <!-- rendered by Planner.renderHistory() -->
           </div>
         </div>
-        <div class="planner-actions">
-          <button class="btn-primary"   onclick="Planner.autoGenerate()" data-i18n="btn_auto_plan">✨ 自动生成</button>
-          <button class="btn-secondary" onclick="Planner.sendEmail()"    data-i18n="btn_email_plan">📧 发送邮箱</button>
-        </div>
-        <div class="section-label" style="margin-top:4px">
-          <span data-i18n="send_to">发送邮箱</span>
-          <button class="add-row-btn-sm" onclick="Planner.addEmailRow()">＋</button>
-        </div>
-        <div id="emailRows" class="dynamic-rows"></div>
-        <div id="weeklyGrid" class="weekly-grid"></div>
-      </div>
-    </div>
-
-    <!-- ── History panel ── -->
-    <div id="planPanel-history" class="plan-panel hidden">
-      <div class="card">
-        <div class="card-title" data-i18n="history_plans">📚 历史周菜单</div>
-        <p class="card-desc" data-i18n="history_hint">点击任意一周查看当时的菜单安排</p>
-        <div id="historyList" class="history-list">
-          <!-- rendered by Planner.renderHistory() -->
+        <!-- History detail -->
+        <div id="historyDetail" class="card hidden">
+          <div class="card-title" id="historyDetailTitle"></div>
+          <div id="historyDetailGrid" class="weekly-grid"></div>
+          <button class="btn-secondary" onclick="Planner.closeHistory()" style="margin-top:8px" data-i18n="btn_back">←
+            返回</button>
         </div>
       </div>
-      <!-- History detail -->
-      <div id="historyDetail" class="card hidden">
-        <div class="card-title" id="historyDetailTitle"></div>
-        <div id="historyDetailGrid" class="weekly-grid"></div>
-        <button class="btn-secondary" onclick="Planner.closeHistory()" style="margin-top:8px" data-i18n="btn_back">← 返回</button>
-      </div>
-    </div>
 
-    <!-- ── Dining out panel ── -->
-    <div id="planPanel-dining" class="plan-panel hidden">
-      <div class="card">
-        <div class="card-title" data-i18n="dining_out">🍜 外食选项</div>
-        <p class="card-desc" data-i18n="dining_desc">选择外食替换菜单中的一餐，系统会估算热量</p>
+      <!-- ── Dining out panel ── -->
+      <div id="planPanel-dining" class="plan-panel hidden">
+        <div class="card">
+          <div class="card-title" data-i18n="dining_out">🍜 外食选项</div>
+          <p class="card-desc" data-i18n="dining_desc">选择外食替换菜单中的一餐，系统会估算热量</p>
 
-        <!-- Category filter -->
-        <div class="dining-cats">
-          <button class="pill active" data-dcat="all"      onclick="DiningOut.filterCat('all')"      data-i18n="filter_all">全部</button>
-          <button class="pill"        data-dcat="fast"     onclick="DiningOut.filterCat('fast')">🍔 快餐</button>
-          <button class="pill"        data-dcat="japanese" onclick="DiningOut.filterCat('japanese')">🍣 日料</button>
-          <button class="pill"        data-dcat="chinese"  onclick="DiningOut.filterCat('chinese')">🥢 中餐</button>
-          <button class="pill"        data-dcat="western"  onclick="DiningOut.filterCat('western')">🍝 西餐</button>
-          <button class="pill"        data-dcat="custom"   onclick="DiningOut.filterCat('custom')">⭐ 自定义</button>
-        </div>
+          <!-- Category filter -->
+          <div class="dining-cats">
+            <button class="pill active" data-dcat="all" onclick="DiningOut.filterCat('all')"
+              data-i18n="filter_all">全部</button>
+            <button class="pill" data-dcat="fast" onclick="DiningOut.filterCat('fast')">🍔 快餐</button>
+            <button class="pill" data-dcat="japanese" onclick="DiningOut.filterCat('japanese')">🍣 日料</button>
+            <button class="pill" data-dcat="chinese" onclick="DiningOut.filterCat('chinese')">🥢 中餐</button>
+            <button class="pill" data-dcat="western" onclick="DiningOut.filterCat('western')">🍝 西餐</button>
+            <button class="pill" data-dcat="custom" onclick="DiningOut.filterCat('custom')">⭐ 自定义</button>
+          </div>
 
-        <div id="diningList" class="indulge-grid">
-          <!-- rendered by DiningOut.render() -->
-        </div>
+          <div id="diningList" class="indulge-grid">
+            <!-- rendered by DiningOut.render() -->
+          </div>
 
-        <!-- Add custom dining option -->
-        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
-          <div class="section-label"><span data-i18n="add_dining">添加自定义外食</span></div>
-          <div class="dynamic-row">
-            <input id="diningName" class="inp" placeholder="餐厅/菜名"/>
-            <input id="diningKcal" type="number" class="inp inp-gram" placeholder="kcal"/>
-            <button class="add-row-btn-sm" onclick="DiningOut.addCustom()" style="background:var(--green)">＋</button>
+          <!-- Add custom dining option -->
+          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+            <div class="section-label"><span data-i18n="add_dining">添加自定义外食</span></div>
+            <div class="dynamic-row">
+              <input id="diningName" class="inp" placeholder="餐厅/菜名" />
+              <input id="diningKcal" type="number" class="inp inp-gram" placeholder="kcal" />
+              <button class="add-row-btn-sm" onclick="DiningOut.addCustom()" style="background:var(--green)">＋</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ═══════════════════════════════
+    <!-- ═══════════════════════════════
        TAB: EXERCISE (运动)
        ═══════════════════════════════ -->
-  <section id="tab-exercise" class="tab-page">
-    <div class="card">
-      <div class="card-title" data-i18n="exercise_title">🏋️ 运动热量消耗</div>
-      <p class="card-desc" data-i18n="exercise_desc">根据你的体重和时长，计算各项运动消耗的卡路里</p>
+    <section id="tab-exercise" class="tab-page">
+      <div class="card">
+        <div class="card-title" data-i18n="exercise_title">🏋️ 运动热量消耗</div>
+        <p class="card-desc" data-i18n="exercise_desc">根据你的体重和时长，计算各项运动消耗的卡路里</p>
 
-      <!-- Exercise list -->
-      <div id="exerciseList" class="exercise-list">
-        <!-- rendered by Exercise.render() -->
-      </div>
+        <!-- Exercise list -->
+        <div id="exerciseList" class="exercise-list">
+          <!-- rendered by Exercise.render() -->
+        </div>
 
-      <!-- Add custom exercise -->
-      <div class="section-label" style="margin-top:10px">
-        <span data-i18n="add_exercise">添加运动</span>
-      </div>
-      <div class="dynamic-row">
-        <input id="exName" class="inp" placeholder="运动名称"/>
-        <input id="exMET"  type="number" step="0.1" class="inp inp-gram" placeholder="MET" title="代谢当量，跑步约9.8"/>
-        <button class="add-row-btn-sm" onclick="Exercise.addCustom()" style="background:var(--green)">＋</button>
-      </div>
+        <!-- Add custom exercise -->
+        <div class="section-label" style="margin-top:10px">
+          <span data-i18n="add_exercise">添加运动</span>
+        </div>
+        <div class="dynamic-row">
+          <input id="exName" class="inp" placeholder="运动名称" />
+          <input id="exMET" type="number" step="0.1" class="inp inp-gram" placeholder="MET" title="代谢当量，跑步约9.8" />
+          <button class="add-row-btn-sm" onclick="Exercise.addCustom()" style="background:var(--green)">＋</button>
+        </div>
 
-      <!-- Today's exercise log -->
-      <div class="card-title" style="margin-top:14px" data-i18n="exercise_log">📋 今日运动记录</div>
-      <div id="exerciseLog" class="exercise-log-list">
-        <!-- rendered by Exercise.renderLog() -->
+        <!-- Today's exercise log -->
+        <div class="card-title" style="margin-top:14px" data-i18n="exercise_log">📋 今日运动记录</div>
+        <div id="exerciseLog" class="exercise-log-list">
+          <!-- rendered by Exercise.renderLog() -->
+        </div>
+        <div class="exercise-total-row">
+          <span data-i18n="total_burned">今日消耗：</span>
+          <span id="totalBurned" class="highlight">0</span>
+          <span> kcal</span>
+        </div>
       </div>
-      <div class="exercise-total-row">
-        <span data-i18n="total_burned">今日消耗：</span>
-        <span id="totalBurned" class="highlight">0</span>
-        <span> kcal</span>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ═══════════════════════════════
+    <!-- ═══════════════════════════════
        TAB: INDULGENCE → 小奖励
        ═══════════════════════════════ -->
-  <section id="tab-indulgence" class="tab-page">
-    <div class="card">
-      <div class="card-title" data-i18n="indulgence_title">🎁 小奖励热量提示</div>
-      <p class="card-desc" data-i18n="indulgence_desc">偶尔犒劳自己没关系，但要知道吃了多少！</p>
-      <div class="search-row">
-        <input id="indulgeSearch" class="inp" placeholder="搜索..." data-i18n-ph="ph_search" oninput="Indulgence.search(this.value)" />
+    <section id="tab-indulgence" class="tab-page">
+      <div class="card">
+        <div class="card-title" data-i18n="indulgence_title">🎁 小奖励热量提示</div>
+        <p class="card-desc" data-i18n="indulgence_desc">偶尔犒劳自己没关系，但要知道吃了多少！</p>
+        <div class="search-row">
+          <input id="indulgeSearch" class="inp" placeholder="搜索..." data-i18n-ph="ph_search"
+            oninput="Indulgence.search(this.value)" />
+        </div>
+        <div class="indulge-cats">
+          <button class="pill active" data-cat="all" onclick="Indulgence.filterCat('all')"
+            data-i18n="filter_all">全部</button>
+          <button class="pill" data-cat="dessert" onclick="Indulgence.filterCat('dessert')">🍰 甜品</button>
+          <button class="pill" data-cat="drink" onclick="Indulgence.filterCat('drink')">🧋 饮料</button>
+          <button class="pill" data-cat="alcohol" onclick="Indulgence.filterCat('alcohol')">🍺 酒精</button>
+        </div>
+        <div id="indulgeList" class="indulge-grid">
+          <!-- rendered by Indulgence.render() -->
+        </div>
       </div>
-      <div class="indulge-cats">
-        <button class="pill active" data-cat="all" onclick="Indulgence.filterCat('all')" data-i18n="filter_all">全部</button>
-        <button class="pill" data-cat="dessert" onclick="Indulgence.filterCat('dessert')">🍰 甜品</button>
-        <button class="pill" data-cat="drink" onclick="Indulgence.filterCat('drink')">🧋 饮料</button>
-        <button class="pill" data-cat="alcohol" onclick="Indulgence.filterCat('alcohol')">🍺 酒精</button>
-      </div>
-      <div id="indulgeList" class="indulge-grid">
-        <!-- rendered by Indulgence.render() -->
-      </div>
-    </div>
-  </section>
+    </section>
 
-</div><!-- /mainApp -->
+  </div><!-- /mainApp -->
 
-<!-- ════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════
      MODALS
      ════════════════════════════════════════════ -->
 
-<!-- Recipe Detail Modal -->
-<div id="recipeModal" class="modal-overlay hidden" onclick="if(event.target===this)RecipeModal.close()">
-  <div class="modal-card">
-    <button class="modal-close" onclick="RecipeModal.close()">✕</button>
-    <div id="recipeModalContent"></div>
-  </div>
-</div>
-
-<!-- Parsed Recipe Preview Modal -->
-<!-- Buttons are rendered dynamically by ParseModal.show() — no static actions needed -->
-<!-- ボタンはParseModal.show()によって動的にレンダリングされる / 按钮由 ParseModal.show() 动态渲染 -->
-<div id="parseModal" class="modal-overlay hidden" onclick="if(event.target===this)ParseModal.close()">
-  <div class="modal-card">
-    <button class="modal-close" onclick="ParseModal.close()">✕</button>
-    <div id="parseModalContent"></div>
-  </div>
-</div>
-
-<!-- Tracker Image Import Review Modal -->
-<!-- 图片识别后的食物审阅/编辑弹窗 / 画像認識後の食物確認・編集モーダル -->
-<div id="trackerImportModal" class="modal-overlay hidden" onclick="if(event.target===this)TrackerImportModal.close()">
-  <div class="modal-card" style="max-width:560px">
-    <button class="modal-close" onclick="TrackerImportModal.close()">✕</button>
-    <div style="font-weight:800;font-size:1.05rem">
-      📷 <span data-i18n="import_review_title">识别结果 — 确认后保存</span>
-    </div>
-    <div id="trackerImportContent"></div>
-    <div class="modal-actions" style="margin-top:4px">
-      <button class="btn-secondary" onclick="TrackerImportModal.close()" data-i18n="btn_cancel">取消</button>
-      <button class="btn-primary" onclick="TrackerImportModal.saveAll()" data-i18n="btn_save_all">✅ 全部保存</button>
+  <!-- Recipe Detail Modal -->
+  <div id="recipeModal" class="modal-overlay hidden" onclick="if(event.target===this)RecipeModal.close()">
+    <div class="modal-card">
+      <button class="modal-close" onclick="RecipeModal.close()">✕</button>
+      <div id="recipeModalContent"></div>
     </div>
   </div>
-</div>
 
-<!-- Indulgence Warning Toast -->
-<div id="indulgeToast" class="toast hidden"></div>
+  <!-- Parsed Recipe Preview Modal -->
+  <!-- Buttons are rendered dynamically by ParseModal.show() — no static actions needed -->
+  <!-- ボタンはParseModal.show()によって動的にレンダリングされる / 按钮由 ParseModal.show() 动态渲染 -->
+  <div id="parseModal" class="modal-overlay hidden" onclick="if(event.target===this)ParseModal.close()">
+    <div class="modal-card">
+      <button class="modal-close" onclick="ParseModal.close()">✕</button>
+      <div id="parseModalContent"></div>
+    </div>
+  </div>
 
-<!-- ════════════════════════════════════════════
+  <!-- Tracker Image Import Review Modal -->
+  <!-- 图片识别后的食物审阅/编辑弹窗 / 画像認識後の食物確認・編集モーダル -->
+  <div id="trackerImportModal" class="modal-overlay hidden" onclick="if(event.target===this)TrackerImportModal.close()">
+    <div class="modal-card" style="max-width:560px">
+      <button class="modal-close" onclick="TrackerImportModal.close()">✕</button>
+      <div style="font-weight:800;font-size:1.05rem">
+        📷 <span data-i18n="import_review_title">识别结果 — 确认后保存</span>
+      </div>
+      <div id="trackerImportContent"></div>
+      <div class="modal-actions" style="margin-top:4px">
+        <button class="btn-secondary" onclick="TrackerImportModal.close()" data-i18n="btn_cancel">取消</button>
+        <button class="btn-primary" onclick="TrackerImportModal.saveAll()" data-i18n="btn_save_all">✅ 全部保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indulgence Warning Toast -->
+  <div id="indulgeToast" class="toast hidden"></div>
+
+  <!-- ════════════════════════════════════════════
      SCRIPTS — order matters
      ════════════════════════════════════════════ -->
-<script src="js/i18n.js"></script>
-<script src="js/state.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/firebase-config.js"></script>
-<script src="js/firebase-init.js"></script>
-<script src="js/bmi.js"></script>
-<script src="js/recipes.js"></script>
-<script src="js/tracker.js"></script>
-<script src="js/planner.js"></script>
-<script src="js/parser.js"></script>
-<script src="js/indulgence.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/motivate.js"></script>
-<script src="js/exercise.js"></script>
-<script src="js/background.js"></script>
-<script src="js/keys.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/bmi.js"></script>
+  <script src="js/recipes.js"></script>
+  <script src="js/tracker.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/indulgence.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/motivate.js"></script>
+  <script src="js/exercise.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/keys.js"></script>
+  <script src="js/app.js"></script>
 
-<script>
-// ── Scroll-reveal for .reveal-card elements ──────────────
-(function () {
-  const observer = new IntersectionObserver(
-    entries => entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
+  <script>
+    // ── Scroll-reveal for .reveal-card elements ──────────────
+    (function () {
+      const observer = new IntersectionObserver(
+        entries => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            observer.unobserve(e.target);
+          }
+        }),
+        { threshold: 0.12 }
+      );
+
+      function observe() {
+        document.querySelectorAll('.reveal-card').forEach(el => observer.observe(el));
       }
-    }),
-    { threshold: 0.12 }
-  );
 
-  function observe() {
-    document.querySelectorAll('.reveal-card').forEach(el => observer.observe(el));
-  }
-
-  // Run after app initialises (DOM is ready)
-  document.addEventListener('DOMContentLoaded', observe);
-  // Also re-run when dashboard tab becomes active (switchTab fires a custom event)
-  document.addEventListener('tabChanged', e => {
-    if (e.detail === 'dashboard') observe();
-  });
-})();
-</script>
+      // Run after app initialises (DOM is ready)
+      document.addEventListener('DOMContentLoaded', observe);
+      // Also re-run when dashboard tab becomes active (switchTab fires a custom event)
+      document.addEventListener('tabChanged', e => {
+        if (e.detail === 'dashboard') observe();
+      });
+    })();
+  </script>
 
 </body>
+
 </html>

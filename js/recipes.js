@@ -332,12 +332,20 @@ const XhsImport = (() => {
     const recipes = hm_data.recipes || [];
     if (!recipes.length) { App.toast('没有找到可导入的菜谱', 'warn'); return; }
 
+    // 如果已有小红书来源的菜谱，询问是否替换（避免旧数据残留）
+    const existingXhs = State.getRecipes().filter(r => r.source === '小红书' || (r.id || '').startsWith('xhs_'));
+    if (existingXhs.length > 0) {
+      const replace = confirm(`已有 ${existingXhs.length} 个小红书菜谱。\n点「确定」替换旧菜谱，点「取消」追加新菜谱。`);
+      if (replace) {
+        existingXhs.forEach(r => State.deleteRecipe(r.id));
+      }
+    }
+
     let added = 0, skipped = 0;
     const existing = new Set(State.getRecipes().map(r => r.name));
 
     recipes.forEach(r => {
-      if (existing.has(r.name)) { skipped++; return; }   // 同名不重复导入
-      // 确保字段合法
+      if (existing.has(r.name)) { skipped++; return; }
       const recipe = {
         id:          r.id || ('xhs_' + Math.random().toString(36).slice(2,10)),
         name:        r.name || '未知菜谱',

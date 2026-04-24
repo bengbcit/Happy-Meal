@@ -41,3 +41,7 @@ i18n-agent.py
 i18n-multiagent.py
 i18n-watcher.py
 .venv/
+
+# graphify — local background tool, not for GitHub
+graphify_python
+/graphify-out/
