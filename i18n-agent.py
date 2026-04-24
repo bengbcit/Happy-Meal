@@ -50,11 +50,11 @@ except ImportError:
 
 # ── Config ─────────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
-I18N_FILE  = SCRIPT_DIR / "js" / "i18n.js"
-JS_DIR     = SCRIPT_DIR / "js"
+I18N_FILE = SCRIPT_DIR / "js" / "i18n.js"
+JS_DIR = SCRIPT_DIR / "js"
 
-ALL_LANGS  = ["zh", "en", "ja"]
-MASTER     = "zh"
+ALL_LANGS = ["zh", "en", "ja"]
+MASTER = "zh"
 
 LANG_NAMES = {"zh": "Chinese (Simplified)", "en": "English", "ja": "Japanese"}
 
@@ -109,7 +109,7 @@ def extract_lang_block(content: str, lang: str):
 
     brace_open = start_m.end() - 1   # index of the opening {
     depth = 0
-    pos   = brace_open
+    pos = brace_open
 
     while pos < len(content):
         ch = content[pos]
@@ -118,7 +118,7 @@ def extract_lang_block(content: str, lang: str):
         elif ch == '}':
             depth -= 1
             if depth == 0:
-                inner = content[brace_open + 1 : pos]
+                inner = content[brace_open + 1: pos]
                 return inner, start_m.start(), pos + 1
         pos += 1
 
@@ -198,7 +198,7 @@ def _call_llm(client, provider: str, user_prompt: str) -> str:
     Unified LLM call — handles both Anthropic and OpenAI-compat clients.
     Returns the raw text response.
     """
-    cfg   = PROVIDERS[provider]
+    cfg = PROVIDERS[provider]
     model = cfg["model"]
 
     if cfg["sdk"] == "anthropic":
@@ -294,7 +294,7 @@ def patch_lang_block(content: str, lang: str, new_kv: dict) -> str:
 
     insert = "\n".join(lines)
     # end_idx points one past the closing } — insert just before it
-    return content[: end_idx - 1] + insert + content[end_idx - 1 :]
+    return content[: end_idx - 1] + insert + content[end_idx - 1:]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -320,7 +320,7 @@ def run_once(api_key: str | None, check_only: bool, provider: str = "claude") ->
     for lang in ALL_LANGS:
         print(f"  {lang}: {len(lang_kvs[lang])} keys")
 
-    zh_kv      = lang_kvs[MASTER]
+    zh_kv = lang_kvs[MASTER]
     master_keys = set(zh_kv.keys())
 
     # ── Find gaps in en / ja ───────────────────────────────────────
@@ -371,9 +371,10 @@ def run_once(api_key: str | None, check_only: bool, provider: str = "claude") ->
 
     # ── Translate ──────────────────────────────────────────────────
     cfg = PROVIDERS[provider]
-    print(f"\n🌐  Translating via [{provider}]  model={cfg['model']}  ({cfg['note']})")
+    print(
+        f"\n🌐  Translating via [{provider}]  model={cfg['model']}  ({cfg['note']})")
     client = _build_client(provider, api_key)
-    en_kv  = lang_kvs.get("en", {})
+    en_kv = lang_kvs.get("en", {})
     translations: dict[str, dict] = {}
 
     for lang, keys in missing_by_lang.items():
@@ -403,9 +404,9 @@ def run_once(api_key: str | None, check_only: bool, provider: str = "claude") ->
 
     # ── Verify ─────────────────────────────────────────────────────
     print(f"\n🔎  Verification pass …")
-    content2  = I18N_FILE.read_text(encoding="utf-8")
+    content2 = I18N_FILE.read_text(encoding="utf-8")
     lang_kvs2 = load_all_langs(content2)
-    all_ok    = True
+    all_ok = True
 
     for lang in ALL_LANGS:
         if lang == MASTER:
@@ -413,12 +414,14 @@ def run_once(api_key: str | None, check_only: bool, provider: str = "claude") ->
         still_missing = sorted(master_keys - set(lang_kvs2[lang].keys()))
         if still_missing:
             all_ok = False
-            print(f"  ⚠️  [{lang}] still missing {len(still_missing)} key(s): {still_missing}")
+            print(
+                f"  ⚠️  [{lang}] still missing {len(still_missing)} key(s): {still_missing}")
         else:
             print(f"  ✅  [{lang}]  {len(lang_kvs2[lang])} keys — complete")
 
     if all_ok:
-        print(f"\n🎉  i18n.js is fully complete in all {len(ALL_LANGS)} languages!")
+        print(
+            f"\n🎉  i18n.js is fully complete in all {len(ALL_LANGS)} languages!")
     else:
         print(f"\n⚠️  Some keys still missing — re-run to retry.")
 
@@ -449,7 +452,7 @@ def main():
 
     # Resolve API key: --key flag > env var for the chosen provider
     provider = args.provider
-    api_key  = args.key or os.environ.get(PROVIDERS[provider]["env_key"])
+    api_key = args.key or os.environ.get(PROVIDERS[provider]["env_key"])
 
     if not args.check:
         if not api_key:

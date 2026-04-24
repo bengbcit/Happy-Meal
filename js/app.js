@@ -65,6 +65,14 @@ const App = (() => {
       document.getElementById('langMenu')?.classList.add('hidden');
       document.getElementById('profilePanel')?.classList.add('hidden');
       document.getElementById('bgPanel')?.classList.add('hidden');
+      document.getElementById('switchPanel')?.classList.add('hidden');
+    }
+    // Clicking a panel item (not the toggle button itself) should also close the panel
+    if (e.target.closest('#switchPanel') && !e.target.closest('#profileName')) {
+      setTimeout(() => document.getElementById('switchPanel')?.classList.add('hidden'), 80);
+    }
+    if (e.target.closest('#profilePanel') && !e.target.closest('#avatarBtn')) {
+      setTimeout(() => document.getElementById('profilePanel')?.classList.add('hidden'), 80);
     }
   });
 
