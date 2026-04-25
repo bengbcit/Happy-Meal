@@ -156,6 +156,9 @@ function _enterApp(userInfo) {
       // Firebase モード: メール + "ログアウト" / Firebase 模式
       profileActionsEl.innerHTML = `
         <span style="font-size:.78rem;color:var(--text-muted);padding:4px 8px">${userInfo.email || ''}</span>
+        <button class="btn-small" onclick="Auth.addAccount()" style="background:var(--green-lt);color:var(--green-dk)">
+          🔄 ${I18n?.get('switch_account') || '切换账号'}
+        </button>
         <button class="btn-small" onclick="Auth.switchToLocal()">
           🏠 ${I18n?.get('switch_local') || '切换本地账号'}
         </button>

@@ -152,6 +152,38 @@
         // コンソールやボタンから呼び出せるようにグローバルに公開 / 暴露给控制台和按钮调用
         window.FirebaseSync = { push: _saveToFirestore };
 
+        // Patch State.save() once per session: every mutation triggers a debounced 30s cloud sync
+        if (!window._hmSyncPatched) {
+          window._hmSyncPatched = true;
+          const _origSave = State.save.bind(State);
+          let _debounceTimer = null;
+          State.save = function() {
+            _origSave();
+            clearTimeout(_debounceTimer);
+            _debounceTimer = setTimeout(() => window.FirebaseSync?.push?.(), 30000);
+          };
+        }
+
+        // Override logout + addAccount now that _saveToFirestore is in scope
+        Object.assign(Auth, {
+          async logout() {
+            try { await _saveToFirestore(); } catch {}
+            try { await signOut(auth); } catch {}
+            localStorage.removeItem('hm_localMode');
+            window.location.reload();
+          },
+          async addAccount() {
+            // Show login form first so there's no flash while waiting for signOut
+            document.getElementById('mainApp')?.classList.add('hidden');
+            document.getElementById('authGate')?.classList.remove('hidden');
+            Auth._showLoginForm();
+            // Save current account's data, then sign out silently
+            try { await _saveToFirestore(); } catch {}
+            try { await signOut(auth); } catch {}
+            // onAuthStateChanged(null) fires here — it does nothing, login form is already showing
+          },
+        });
+
         // Load Firestore data first, then save local data if cloud is empty
         // まずFirestoreからデータをロード、クラウドが空なら本地データを保存
         // 先加载云端数据，若云端为空则把本地数据上传
