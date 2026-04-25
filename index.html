@@ -389,7 +389,7 @@
           </label>
           <label class="import-btn" onclick="document.getElementById('trackerImgInput').click()">
             📷 <span data-i18n="import_photo">拍照/截图</span>
-            <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
+            <input id="trackerImgInput" type="file" accept="image/*" capture="environment" class="hidden"
               onchange="Tracker.importImage(this.files[0])" />
           </label>
         </div>
