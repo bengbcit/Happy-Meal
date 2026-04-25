@@ -56,8 +56,9 @@ const Planner = (() => {
     // 子供モード: 低カロリー + 野菜中心 / 孩子模式：优先低热量+蔬菜
     let pool = recipes;
     if (_mode === 'kid') {
-      const light = recipes.filter(r => (r.kcal||500) < 450);
-      if (light.length >= 3) pool = light;
+      const kidsPool = recipes.filter(r => !(r.tags||[]).includes('adults-only'));
+      const light = kidsPool.filter(r => (r.kcal||500) < 450);
+      pool = light.length >= 3 ? light : (kidsPool.length > 0 ? kidsPool : recipes);
     } else if (bmi > 24.9) {
       const healthy = recipes.filter(r => { const t=r.tags||[]; return t.includes('low-fat')||t.includes('high-protein')||t.includes('low-carb'); });
       if (healthy.length >= 3) pool = healthy;
@@ -96,10 +97,11 @@ const Planner = (() => {
       const meals = plan[day] || [null,null,null];
       const mealCards = MEAL_SLOTS.map((slot, si) => {
         const r = meals[si] ? recipes.find(x=>x.id===meals[si]) : null;
+        const adultBadge = r && (r.tags||[]).includes('adults-only') ? '<span class="meal-adult-badge" title="仅适合大人">🧑</span>' : '';
         return `
           <div class="week-meal">
             <span class="week-meal-label">${MEAL_LABELS[si]}</span>
-            <span class="week-meal-name">${r?r.name:'—'}</span>
+            <span class="week-meal-name">${r ? r.name : '—'}${adultBadge}</span>
             <span class="week-meal-kcal">${r?r.kcal+' kcal':''}</span>
             <button class="week-meal-btn" onclick="Planner.swapMeal('${day}',${si})">换一个</button>
           </div>`;
@@ -120,7 +122,7 @@ const Planner = (() => {
     const recipes = State.getRecipes();
     if (!recipes.length) return;
     const current = plan[day]?.[slotIdx];
-    const others  = recipes.filter(r=>r.id!==current);
+    const others  = recipes.filter(r => r.id !== current && (_mode !== 'kid' || !(r.tags||[]).includes('adults-only')));
     const next    = others[Math.floor(Math.random()*others.length)];
     if (!plan[day]) plan[day]=[null,null,null];
     plan[day][slotIdx] = next?.id || null;

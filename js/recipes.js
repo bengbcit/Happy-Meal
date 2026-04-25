@@ -28,7 +28,7 @@ const Recipes = (() => {
   }
 
   function _tagLabel(tag) {
-    const map = { 'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食' };
+    const map = { 'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人' };
     return map[tag] || tag;
   }
 
@@ -96,10 +96,23 @@ const RecipeAdd = (() => {
   function _setStep(i, v)         { _steps[i] = v; }
 
   // ── Tag toggle ───────────────────────────────────────
+  const _DIET_TAGS = ['low-fat', 'low-carb', 'high-protein'];
+
   function toggleTag(btn) {
     const tag = btn.dataset.tag;
-    _selectedTags.includes(tag) ? (_selectedTags = _selectedTags.filter(t=>t!==tag), btn.classList.remove('selected'))
-                                : (_selectedTags.push(tag), btn.classList.add('selected'));
+    if (_selectedTags.includes(tag)) {
+      _selectedTags = _selectedTags.filter(t => t !== tag);
+      btn.classList.remove('selected');
+    } else {
+      _selectedTags.push(tag);
+      btn.classList.add('selected');
+      // Auto-add adults-only when a diet tag is toggled on
+      if (_DIET_TAGS.includes(tag) && !_selectedTags.includes('adults-only')) {
+        _selectedTags.push('adults-only');
+        const adultBtn = document.querySelector('#tagSelect [data-tag="adults-only"]');
+        if (adultBtn) adultBtn.classList.add('selected');
+      }
+    }
   }
 
   // ── Save manual recipe ───────────────────────────────
@@ -158,8 +171,11 @@ const RecipeAdd = (() => {
     _steps = recipe.steps?.length ? [...recipe.steps] : [''];
     renderIngredientRows(); renderStepRows();
 
-    // Auto-select tags
+    // Auto-select tags; auto-add adults-only if diet tags are present
     _selectedTags = recipe.tags || [];
+    if (_DIET_TAGS.some(t => _selectedTags.includes(t)) && !_selectedTags.includes('adults-only')) {
+      _selectedTags.push('adults-only');
+    }
     document.querySelectorAll('#tagSelect .tag').forEach(b => {
       b.classList.toggle('selected', _selectedTags.includes(b.dataset.tag));
     });
@@ -314,7 +330,7 @@ const RecipeModal = (() => {
 
   function close() { document.getElementById('recipeModal').classList.add('hidden'); _currentId=null; }
   function _del()  { if(!_currentId)return; State.deleteRecipe(_currentId); Recipes.render(); close(); }
-  function _tl(tag) { const m={'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食'}; return m[tag]||tag; }
+  function _tl(tag) { const m={'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'}; return m[tag]||tag; }
 
   return { open, close, _del };
 })();
