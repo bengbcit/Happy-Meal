@@ -825,3 +825,25 @@ input, select, textarea { font: inherit; }
   .main-app { max-width: 800px; margin: 0 auto; }
   .tab-page { padding: 20px; }
 }
+
+/* Weight log history table */
+.weight-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  margin-top: 10px;
+}
+.weight-log-table th {
+  text-align: left;
+  color: var(--text-muted, #888);
+  font-weight: 500;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border, #eee);
+}
+.weight-log-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border, #eee);
+}
+.weight-log-table tr:last-child td { border-bottom: none; }
+.wl-actions { display: flex; gap: 4px; }
+.wl-actions .icon-btn { font-size: .85rem; padding: 0 4px; line-height: 1.6; }
