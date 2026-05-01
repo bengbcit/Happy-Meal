@@ -150,6 +150,16 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
     ja: 'レシピ名・食材・手順を日本語で出力してください',
   }[lang] || '用中文输出';
 
+  const nutritionHint = `
+Nutrition values may appear in a table or grid with Japanese labels:
+- エネルギー or カロリー → kcal value
+- たんぱく質 → protein (grams)
+- 脂質 → fat (grams)
+- 炭水化物 or 糖質 → carbs (grams)
+- 食塩相当量 → sodium (ignore, do not include in macros)
+If both per-serving and per-100g values appear, use per-serving values.
+Extract these numbers if present; otherwise estimate from the ingredient list.`;
+
   const systemPrompt = `You are an expert recipe data extractor. Extract a complete structured recipe from the given webpage text.
 
 IMPORTANT — Ingredients may appear under various section headings depending on the website and language:
@@ -174,8 +184,10 @@ Return ONLY valid JSON (no markdown, no explanation):
   "tags": []
 }
 
-Estimate reasonable nutrition values if not explicitly stated.
-tags must only contain values from: high-protein, low-fat, low-carb, high-carb, vegetarian.`;
+${nutritionHint}
+tags: pick ≤10 tags that clearly match this recipe from this vocabulary (mix Japanese/English as appropriate):
+料理、レシピ、献立、メニュー、おかず、惣菜、定食、弁当、作り置き、時短、簡単、本格的、プロ、家庭料理、和食、洋食、中華、アジア、エスニック、イタリアン、フレンチ、食材、肉、牛肉、豚肉、鶏肉、ひき肉、魚介、海鮮、魚、エビ、イカ、貝、海藻、野菜、葉物、根菜、きのこ、豆、卵、乳製品、チーズ、ヨーグルト、穀物、米、パン、麺、パスタ、粉類、調味料、ソース、たれ、つゆ、だし、スパイス、ハーブ、油、オイル、酢、酒、みりん、砂糖、塩、こしょう、醤油、味噌、焼く、煮る、蒸す、揚げる、炒める、茹でる、和える、漬ける、燻製、オーブン、電子レンジ、圧力鍋、フライパン、主菜、副菜、汁物、スープ、サラダ、前菜、おつまみ、デザート、スイーツ、ドリンク、丼、カレー、唐揚げ、天ぷら、餃子、チャーハン、炊き込みご飯、お好み焼き、たこ焼き、ラーメン、うどん、そば、お茶漬け、朝食、昼食、夕食、ランチ、ディナー、おやつ、パーティー、おもてなし、運動後、ダイエット、健康、美容、離乳食、子供、高齢者、一人暮らし、節約、冷凍、冷蔵、乾物、缶詰、レトルト、常備菜、ベジタリアン、ビーガン、グルテンフリー、低糖質、糖質制限、卵不使用、乳不使用、アレルギー対応、初心者向け、中級、上級、春、夏、秋、冬、旬、クリスマス、お正月、ひな祭り、バレンタイン、韓国料理、インド料理、メキシカン、スペイン料理、地中海、ケーキ、クッキー、チョコレート、プリン、アイス、和菓子、大福、どら焼き、high-protein、low-fat、low-carb、high-carb、vegetarian
+Only include tags clearly supported by the page content. Return [] if none apply clearly.`;
 
   try {
     let raw = '';
@@ -342,10 +354,11 @@ function _extractFocusedText(html) {
   // Try to find ingredient / step sections by keyword density
   // キーワード密度で食材・手順セクションを特定 / 通过关键词密度定位食材/步骤区块
   const INGREDIENT_KEYWORDS = /用料|食材|调料|主料|辅料|材料|配料|原料|食品|配方|Ingredients|ingredients|材料/;
+  const NUTRITION_KEYWORDS  = /エネルギー|カロリー|栄養|脂質|たんぱく質|糖質|食塩|kcal|栄養成分|熱量/;
   const STEP_KEYWORDS = /做法|步骤|方法|做好|烹饪|烹调|How to|Instructions|Steps|作り方|手順/;
 
-  const segments = text.split(/(?=用料|食材|调料|主料|材料|配料|做法|步骤|Ingredients|Instructions|作り方)/i);
-  const relevant = segments.filter(s => INGREDIENT_KEYWORDS.test(s) || STEP_KEYWORDS.test(s));
+  const segments = text.split(/(?=用料|食材|调料|主料|材料|配料|做法|步骤|Ingredients|Instructions|作り方|エネルギー|栄養成分|栄養|Nutrition)/i);
+  const relevant = segments.filter(s => INGREDIENT_KEYWORDS.test(s) || STEP_KEYWORDS.test(s) || NUTRITION_KEYWORDS.test(s));
 
   // Use focused segments if found, otherwise use full page text (truncated)
   const focused = relevant.length > 0 ? relevant.join('\n') : text;
