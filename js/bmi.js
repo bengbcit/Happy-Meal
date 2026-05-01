@@ -201,6 +201,7 @@ const BMI = (() => {
     calc();
 
     if (typeof Charts !== 'undefined') Charts.renderWeightChart();
+    renderWeightLog();
     App && App.toast && App.toast('✅ 体重已记录', 'success');
 
     // Update last-logged display
@@ -234,7 +235,75 @@ const BMI = (() => {
     }
 
     if (typeof Charts !== 'undefined') Charts.renderWeightChart();
+    renderWeightLog();
   }
 
-  return { calc, renderRecommend, init, logWeight };
+  // ── Weight Log History Table ─────────────────────────
+  function renderWeightLog() {
+    const el = document.getElementById('weightLogHistory');
+    if (!el) return;
+    const log = State.getWeightLog();
+    if (log.length === 0) { el.innerHTML = ''; return; }
+
+    const u  = State.get().user;
+    const hm = u.height > 0 ? (u.height / 100) ** 2 : 0;
+
+    const entries = log.slice(-14).reverse(); // newest first
+    el.innerHTML = `
+      <table class="weight-log-table">
+        <thead><tr>
+          <th>日期</th><th>体重(kg)</th><th>BMI</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${entries.map(e => {
+            const bmi = hm > 0 ? (e.weight / hm).toFixed(1) : '—';
+            return `<tr id="wlr-${e.date}">
+              <td>${e.date.slice(5)}</td>
+              <td class="wl-weight">${e.weight}</td>
+              <td>${bmi}</td>
+              <td class="wl-actions">
+                <button class="icon-btn" onclick="BMI.editWeightRow('${e.date}',${e.weight})" title="Edit">✏️</button>
+                <button class="icon-btn" onclick="BMI.deleteWeightRow('${e.date}')" title="Delete">🗑</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function editWeightRow(date, current) {
+    const row = document.getElementById(`wlr-${date}`);
+    if (!row) return;
+    row.innerHTML = `
+      <td>${date.slice(5)}</td>
+      <td colspan="2">
+        <input type="number" id="wl-edit-${date}" value="${current}"
+          step="0.1" min="20" max="500" style="width:80px;padding:2px 4px" />
+      </td>
+      <td style="display:flex;gap:4px">
+        <button class="btn-primary" style="padding:2px 10px;font-size:.8rem"
+          onclick="BMI.saveWeightRow('${date}')">保存</button>
+        <button class="btn-secondary" style="padding:2px 8px;font-size:.8rem"
+          onclick="BMI.renderWeightLog()">取消</button>
+      </td>`;
+    document.getElementById(`wl-edit-${date}`)?.focus();
+  }
+
+  function saveWeightRow(date) {
+    const input = document.getElementById(`wl-edit-${date}`);
+    const val   = input ? parseFloat(input.value) : NaN;
+    if (!val || val < 20 || val > 500) return;
+    State.addWeightEntry(date, val);
+    if (typeof Charts !== 'undefined') Charts.renderWeightChart();
+    renderWeightLog();
+  }
+
+  function deleteWeightRow(date) {
+    if (!confirm('删除这条体重记录？')) return;
+    State.removeWeightEntry(date);
+    if (typeof Charts !== 'undefined') Charts.renderWeightChart();
+    renderWeightLog();
+  }
+
+  return { calc, renderRecommend, init, logWeight, renderWeightLog, editWeightRow, saveWeightRow, deleteWeightRow };
 })();
