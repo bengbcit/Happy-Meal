@@ -159,6 +159,10 @@ const State = (() => {
       if (_s.weightLog.length > 90) _s.weightLog = _s.weightLog.slice(-90);
       _save();
     },
+    removeWeightEntry(dateStr) {
+      _s.weightLog = (_s.weightLog || []).filter(e => e.date !== dateStr);
+      _save();
+    },
 
     // User profile helpers
     // ユーザープロフィールヘルパー / 用户档案辅助
