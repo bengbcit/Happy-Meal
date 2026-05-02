@@ -133,24 +133,43 @@
        ═══════════════════════════════ -->
     <section id="tab-dashboard" class="tab-page active dash-page">
 
-      <!-- ── Video Hero ── -->
+      <!-- ── Kinetic Hero ── -->
       <div class="hero-section">
-        <video class="hero-video" autoplay muted loop playsinline>
-          <source src="img_vid/fitness.mp4" type="video/mp4" />
-          <source src="img_vid/fitness2.mp4.mp4" type="video/mp4" />
-        </video>
-        <div class="hero-overlay"></div>
+        <div class="hero-bg">
+          <div class="hero-blob hero-blob-1"></div>
+          <div class="hero-blob hero-blob-2"></div>
+          <div class="hero-blob hero-blob-3"></div>
+          <div class="hero-grid"></div>
+        </div>
+
         <div class="hero-content">
-          <div class="hero-logo">🥗</div>
-          <h1 class="hero-title" data-i18n="app_name">Happy Meal</h1>
-          <p class="hero-sub" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
-          <div class="hero-quote">
+          <div class="hero-eyebrow" style="--i:0">NUTRITION · TRACKING · HEALTH</div>
+          <h1 class="hero-headline">
+            <span class="hw"><span class="hw-inner" style="--i:1">HAPPY</span></span>
+            <span class="hw"><span class="hw-inner hw-accent" style="--i:2">MEAL.</span></span>
+          </h1>
+          <p class="hero-tagline" style="--i:3">健康饮食 · 轻松减肥</p>
+          <div class="hero-quote" style="--i:4">
             <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
           </div>
-          <button class="hero-scroll-btn"
-            onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
-            ↓ 开始追踪
-          </button>
+          <div class="hero-cta" style="--i:5">
+            <button class="hero-btn-primary"
+              onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
+              开始追踪
+            </button>
+            <button class="hero-btn-ghost" onclick="App.switchTab('recipes')">
+              浏览菜谱 →
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-scroll-indicator">
+          <span class="hero-scroll-text">SCROLL</span>
+          <div class="hero-chevrons">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </div>
 
@@ -636,6 +655,7 @@
   <script src="js/background.js"></script>
   <script src="js/keys.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/kinetic.js"></script>
 
   <script>
     // ── Scroll-reveal for .reveal-card elements ──────────────
