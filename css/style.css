@@ -802,10 +802,10 @@ input, select, textarea { font: inherit; }
   overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
+  align-items: stretch;
   margin-top: -112px;
   padding-top: 112px;
-  background: #030C05;
+  background: #040F05;
 }
 .hero-bg {
   position: absolute;
@@ -822,7 +822,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-1 {
   width: min(65vw, 600px);
   height: min(65vw, 600px);
-  background: radial-gradient(circle, rgba(124,181,24,0.32) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(106,190,20,0.52) 0%, transparent 70%);
   top: -15%;
   left: -10%;
   animation: blobFloat1 20s ease-in-out infinite;
@@ -830,7 +830,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-2 {
   width: min(50vw, 500px);
   height: min(50vw, 500px);
-  background: radial-gradient(circle, rgba(76,175,80,0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(55,175,55,0.42) 0%, transparent 70%);
   top: 10%;
   right: -8%;
   animation: blobFloat2 25s ease-in-out infinite;
@@ -838,7 +838,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-3 {
   width: min(40vw, 400px);
   height: min(40vw, 400px);
-  background: radial-gradient(circle, rgba(200,230,60,0.20) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(175,230,40,0.38) 0%, transparent 70%);
   bottom: 5%;
   left: 25%;
   animation: blobFloat3 30s ease-in-out infinite;
@@ -867,10 +867,11 @@ input, select, textarea { font: inherit; }
   position: relative;
   z-index: 2;
   text-align: left;
-  padding: 20px 16px 20px 28px;
+  padding: 20px 24px 20px 32px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 14px;
 }
 .hero-eyebrow {
@@ -898,7 +899,7 @@ input, select, textarea { font: inherit; }
 .hero-headline {
   font-family: var(--font-tight);
   font-weight: 900;
-  font-size: clamp(4rem, 17vw, 9.5rem);
+  font-size: clamp(2.8rem, 13vw, 7rem);
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -990,18 +991,26 @@ input, select, textarea { font: inherit; }
 .hero-video-panel {
   position: relative;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 16px 24px 16px 8px;
-  height: 100%;
+  overflow: hidden;
+}
+.hero-video-panel::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 140px;
+  background: linear-gradient(to right, #040F05, transparent);
+  z-index: 1;
+  pointer-events: none;
 }
 .hero-video-clip {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: clamp(280px, 54vh, 520px);
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+  border-radius: 0;
+  box-shadow: none;
+  display: block;
 }
 @media (max-width: 768px) {
   .hero-section {
@@ -1135,8 +1144,7 @@ input, select, textarea { font: inherit; }
   .bmi-inputs { grid-template-columns: repeat(4, 1fr); }
 }
 @media (min-width: 900px) {
-  .main-app { max-width: 800px; margin: 0 auto; }
-  .tab-page { padding: 20px; }
+  .tab-page { padding: 20px 32px; }
 }
 
 /* Weight log history table */
