@@ -45,3 +45,4 @@ i18n-watcher.py
 # graphify — local background tool, not for GitHub
 graphify_python
 /graphify-out/
+graphify-repo-clone/
