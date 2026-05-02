@@ -797,13 +797,15 @@ input, select, textarea { font: inherit; }
 .hero-section {
   position: relative;
   width: 100%;
-  height: calc(100vh - 112px);
-  min-height: 420px;
+  height: 100vh;
+  min-height: 560px;
   overflow: hidden;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  justify-content: flex-start;
-  background: #09090B;
+  margin-top: -112px;
+  padding-top: 112px;
+  background: #030C05;
 }
 .hero-bg {
   position: absolute;
@@ -820,7 +822,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-1 {
   width: min(65vw, 600px);
   height: min(65vw, 600px);
-  background: radial-gradient(circle, rgba(255,77,0,0.28) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124,181,24,0.32) 0%, transparent 70%);
   top: -15%;
   left: -10%;
   animation: blobFloat1 20s ease-in-out infinite;
@@ -828,7 +830,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-2 {
   width: min(50vw, 500px);
   height: min(50vw, 500px);
-  background: radial-gradient(circle, rgba(0,198,255,0.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(76,175,80,0.22) 0%, transparent 70%);
   top: 10%;
   right: -8%;
   animation: blobFloat2 25s ease-in-out infinite;
@@ -836,7 +838,7 @@ input, select, textarea { font: inherit; }
 .hero-blob-3 {
   width: min(40vw, 400px);
   height: min(40vw, 400px);
-  background: radial-gradient(circle, rgba(0,232,122,0.14) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200,230,60,0.20) 0%, transparent 70%);
   bottom: 5%;
   left: 25%;
   animation: blobFloat3 30s ease-in-out infinite;
@@ -844,7 +846,7 @@ input, select, textarea { font: inherit; }
 .hero-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(120,200,50,0.08) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 @keyframes blobFloat1 {
@@ -865,9 +867,7 @@ input, select, textarea { font: inherit; }
   position: relative;
   z-index: 2;
   text-align: left;
-  padding: 20px 28px;
-  max-width: 720px;
-  width: 100%;
+  padding: 20px 16px 20px 28px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -986,6 +986,30 @@ input, select, textarea { font: inherit; }
 .hero-btn-ghost:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+.hero-video-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 16px 24px 16px 8px;
+  height: 100%;
+}
+.hero-video-clip {
+  width: 100%;
+  height: clamp(280px, 54vh, 520px);
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+}
+@media (max-width: 768px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+  }
+  .hero-video-panel {
+    display: none;
+  }
 }
 .hero-scroll-indicator {
   position: absolute;
