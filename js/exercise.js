@@ -22,8 +22,10 @@ const Exercise = (() => {
     { id:'stretch',  icon:'🤸', zh:'拉伸',        en:'Stretching',      ja:'ストレッチ',     met:2.5,  cat:'flex' },
     { id:'badminton',icon:'🏸', zh:'羽毛球',      en:'Badminton',       ja:'バドミントン',   met:5.5,  cat:'sport' },
     { id:'basketball',icon:'🏀',zh:'篮球',        en:'Basketball',      ja:'バスケ',         met:8.0,  cat:'sport' },
-    { id:'dance',    icon:'💃', zh:'跳舞',        en:'Dancing',         ja:'ダンス',         met:5.0,  cat:'sport' },
-    { id:'stairs',   icon:'🪜', zh:'爬楼梯',      en:'Stair Climbing',  ja:'階段昇降',       met:8.8,  cat:'cardio' },
+    { id:'dance',     icon:'💃', zh:'跳舞',            en:'Dancing',              ja:'ダンス',           met:5.0,  cat:'sport' },
+    { id:'dance_med', icon:'💃', zh:'跳舞（中等强度）', en:'Dancing (Moderate)',  ja:'ダンス（中等）',   met:5.5,  cat:'sport' },
+    { id:'dance_hi',  icon:'🕺', zh:'跳舞（高等强度）', en:'Dancing (High Int.)', ja:'ダンス（高強度）', met:6.8,  cat:'sport' },
+    { id:'stairs',    icon:'🪜', zh:'爬楼梯',          en:'Stair Climbing',       ja:'階段昇降',         met:8.8,  cat:'cardio' },
   ];
 
   // Load custom exercises + today's log from state
@@ -188,7 +190,32 @@ const Exercise = (() => {
 
   function init() { render(); renderLog(); }
 
-  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init };
+  // Daily exercise recommendation for home dashboard
+  // ホーム用今日の運動おすすめ / 主页今日运动推荐
+  function renderExerciseRecommend() {
+    const el = document.getElementById('exerciseRecommendList');
+    if (!el) return;
+    const lang = I18n.current();
+    const POOL_IDS = ['walk','run','hiit','stairs','swim','dance_med','dance_hi'];
+    const pool = EXERCISES.filter(e => POOL_IDS.includes(e.id));
+
+    // Date-seeded shuffle so picks are consistent within the day
+    const seed = parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''));
+    const shuffled = [...pool].sort((a,b) => ((seed * a.met * 31) % 97) - ((seed * b.met * 17) % 97));
+    const picks = shuffled.slice(0, 3);
+
+    const weight = State.get().user.weight || 65;
+    el.innerHTML = picks.map(ex => {
+      const name = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
+      const kcal = Math.round(ex.met * weight * 0.5); // 30 min
+      return `<div class="recipe-list-item" style="cursor:default">
+        <span>${ex.icon} ${name} <span style="font-size:.75rem;color:var(--text-faint)">30分钟</span></span>
+        <span style="color:var(--accent-warm,#FF7A45);font-weight:600">${kcal} 千卡</span>
+      </div>`;
+    }).join('');
+  }
+
+  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init, renderExerciseRecommend };
 })();
 
 // ── DiningOut — restaurant meal options ───────────────

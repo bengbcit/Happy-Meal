@@ -128,6 +128,7 @@ const BMI = (() => {
 
     // Refresh recommendations
     renderRecommend(bmiVal);
+    if (typeof Exercise !== 'undefined') Exercise.renderExerciseRecommend();
   }
 
   // Render recommended recipes on dashboard with priority label

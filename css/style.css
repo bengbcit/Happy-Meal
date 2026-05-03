@@ -408,6 +408,13 @@ input, select, textarea { font: inherit; }
 .recipe-card-macro { font-size: .78rem; color: var(--text-muted); }
 .recipe-card-kcal { font-size: .85rem; font-weight: 700; color: var(--green-dk); }
 .recipe-list-small { display: flex; flex-direction: column; gap: 8px; }
+.recipe-list-item { display:flex; justify-content:space-between; align-items:center; padding:6px 2px; border-bottom:1px solid var(--border-lt); font-size:.88rem; }
+.recipe-list-item:last-child { border-bottom:none; }
+
+/* Dual recommend grid: recipe + exercise side by side */
+.dual-recommend { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:560px) { .dual-recommend { grid-template-columns:1fr; } }
+.dual-recommend > .card { margin:0; }
 .recipe-small-row {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px; background: var(--bg);

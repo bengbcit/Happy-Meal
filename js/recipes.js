@@ -28,7 +28,7 @@ const Recipes = (() => {
   }
 
   function _tagLabel(tag) {
-    const map = { 'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人' };
+    const map = { 'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','kids-favorite':'😋 孩子喜爱','adults-only':'🧑 仅大人' };
     return map[tag] || tag;
   }
 
@@ -329,7 +329,7 @@ const VoiceInput = (() => {
 const RecipeModal = (() => {
   let _currentId = null;
   let _editData  = null;
-  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'};
+  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','kids-favorite':'😋 孩子喜爱','adults-only':'🧑 仅大人'};
 
   function open(id) {
     const r = State.getRecipes().find(x => x.id === id);

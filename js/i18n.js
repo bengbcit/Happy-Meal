@@ -111,6 +111,10 @@ const I18n = (() => {
       weight_log_title: '体重记录',
       btn_log_weight: '记录今日体重',
       invalid_weight: '请输入有效体重 (20–500 kg)',
+      hero_start_track: '开始追踪',
+      hero_browse_recipes: '浏览菜谱 →',
+      recommend_exercise: '🏃 今日运动推荐',
+      kids_favorite_tag: '😋 孩子喜爱',
     },
 
     en: {
@@ -212,6 +216,10 @@ const I18n = (() => {
       weight_log_title: 'Weight Log',
       btn_log_weight: 'Log Today\'s Weight',
       invalid_weight: 'Please enter a valid weight (20–500 kg)',
+      hero_start_track: 'Start Tracking',
+      hero_browse_recipes: 'Browse Recipes →',
+      recommend_exercise: '🏃 Exercise Pick',
+      kids_favorite_tag: '😋 Kids\' Fave',
     },
 
     ja: {
@@ -319,6 +327,10 @@ const I18n = (() => {
       dining_desc: '外食でメニューの1食を置き換える',
       add_dining: '自定義外食を追加',
       btn_back: '← 戻る',
+      hero_start_track: '追跡開始',
+      hero_browse_recipes: 'レシピを見る →',
+      recommend_exercise: '🏃 今日の運動',
+      kids_favorite_tag: '😋 子供のお気に入り',
     }
   };
 

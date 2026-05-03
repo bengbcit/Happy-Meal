@@ -84,6 +84,7 @@ const App = (() => {
     Motivate.render();   // daily quote — language-aware / 每日鼓励语
     BgPanel.init();      // restore saved background / 恢复已保存背景
     BMI.init();
+    Exercise.renderExerciseRecommend();
     Recipes.render();
     Tracker.init();
     Planner.init();

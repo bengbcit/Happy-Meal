@@ -141,7 +141,7 @@ const Parser = (() => {
 // 解析预览：数值可直接修改，标签可删除/新增 / パース結果プレビュー：数値・タグ編集可能
 const ParseModal = (() => {
   let _pending = null;
-  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'};
+  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','kids-favorite':'😋 孩子喜爱','adults-only':'🧑 仅大人'};
 
   function show(recipe) {
     _pending = Object.assign({}, recipe, { tags: [...(recipe.tags || [])] });

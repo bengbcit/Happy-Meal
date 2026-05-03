@@ -152,16 +152,18 @@
             <span class="hw"><span class="hw-inner" style="--i:1">HAPPY</span></span>
             <span class="hw"><span class="hw-inner hw-accent" style="--i:2">MEAL.</span></span>
           </h1>
-          <p class="hero-tagline" style="--i:3">健康饮食 · 轻松减肥</p>
+          <p class="hero-tagline" style="--i:3" data-i18n="app_sub">健康饮食 · 轻松减肥</p>
           <div class="hero-quote" style="--i:4">
             <span id="motivateText">💪 每减少 500 大卡，就离目标更近一步！</span>
           </div>
           <div class="hero-cta" style="--i:5">
             <button class="hero-btn-primary"
-              onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})">
+              onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})"
+              data-i18n="hero_start_track">
               开始追踪
             </button>
-            <button class="hero-btn-ghost" onclick="App.switchTab('recipes')">
+            <button class="hero-btn-ghost" onclick="App.switchTab('recipes')"
+              data-i18n="hero_browse_recipes">
               浏览菜谱 →
             </button>
           </div>
@@ -258,12 +260,19 @@
           </div>
         </div>
 
-        <!-- Recommended Recipes -->
-        <div class="card reveal-card">
-          <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
-          <div id="recommendList" class="recipe-list-small">
-            <!-- rendered by BMI.renderRecommend() -->
-            <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+        <!-- Recommended Recipes + Exercise side by side -->
+        <div class="dual-recommend reveal-card">
+          <div class="card">
+            <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
+            <div id="recommendList" class="recipe-list-small">
+              <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" data-i18n="recommend_exercise">🏃 今日运动推荐</div>
+            <div id="exerciseRecommendList" class="recipe-list-small">
+              <p class="placeholder-text">—</p>
+            </div>
           </div>
         </div>
 
@@ -368,6 +377,7 @@
             <button class="tag" data-tag="low-carb" onclick="RecipeAdd.toggleTag(this)">🥦 低碳</button>
             <button class="tag" data-tag="high-carb" onclick="RecipeAdd.toggleTag(this)">🍚 高碳</button>
             <button class="tag" data-tag="vegetarian" onclick="RecipeAdd.toggleTag(this)">🌿 素食</button>
+            <button class="tag" data-tag="kids-favorite" onclick="RecipeAdd.toggleTag(this)">😋 孩子喜爱</button>
             <button class="tag" data-tag="adults-only" onclick="RecipeAdd.toggleTag(this)">🧑 仅大人</button>
           </div>
           <button class="btn-primary w100" onclick="RecipeAdd.save()" data-i18n="btn_save" style="margin-top:10px">💾
@@ -393,6 +403,7 @@
         <button class="pill" data-filter="low-carb" onclick="Recipes.filter('low-carb')">🥦 低碳</button>
         <button class="pill" data-filter="high-carb" onclick="Recipes.filter('high-carb')">🍚 高碳</button>
         <button class="pill" data-filter="vegetarian" onclick="Recipes.filter('vegetarian')">🌿 素食</button>
+        <button class="pill" data-filter="kids-favorite" onclick="Recipes.filter('kids-favorite')">😋 孩子喜爱</button>
       </div>
 
       <!-- Recipe List -->

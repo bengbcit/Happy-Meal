@@ -57,8 +57,10 @@ const Planner = (() => {
     let pool = recipes;
     if (_mode === 'kid') {
       const kidsPool = recipes.filter(r => !(r.tags||[]).includes('adults-only'));
+      const favs  = kidsPool.filter(r => (r.tags||[]).includes('kids-favorite'));
       const light = kidsPool.filter(r => (r.kcal||500) < 450);
-      pool = light.length >= 3 ? light : (kidsPool.length > 0 ? kidsPool : recipes);
+      const kidsPriority = favs.length >= 3 ? favs : (light.length >= 3 ? light : kidsPool);
+      pool = kidsPriority.length > 0 ? kidsPriority : (kidsPool.length > 0 ? kidsPool : recipes);
     } else if (bmi > 24.9) {
       const healthy = recipes.filter(r => { const t=r.tags||[]; return t.includes('low-fat')||t.includes('high-protein')||t.includes('low-carb'); });
       if (healthy.length >= 3) pool = healthy;
