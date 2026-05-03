@@ -328,16 +328,22 @@ const VoiceInput = (() => {
 // ── RecipeModal ───────────────────────────────────────
 const RecipeModal = (() => {
   let _currentId = null;
+  let _editData  = null;
+  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'};
 
   function open(id) {
     const r = State.getRecipes().find(x => x.id === id);
     if (!r) return;
     _currentId = id;
+    _editData  = null;
+    _renderView(r);
+    document.getElementById('recipeModal').classList.remove('hidden');
+  }
 
+  function _renderView(r) {
     const tags = (r.tags||[]).map(t=>`<span class="recipe-card-tag">${_tl(t)}</span>`).join('');
     const ings = (r.ingredients||[]).map(i=>`<li>${i}</li>`).join('');
     const stps = (r.steps||[]).map((s,i)=>`<li>${s}</li>`).join('');
-
     document.getElementById('recipeModalContent').innerHTML = `
       <div class="recipe-detail-name">${r.name}</div>
       <div class="recipe-detail-tags">${tags}</div>
@@ -351,19 +357,163 @@ const RecipeModal = (() => {
       ${stps?`<div class="recipe-detail-section"><h4>${I18n.get('steps_lbl')}</h4><ol>${stps}</ol></div>`:''}
       ${r.sourceUrl?`<p class="text-muted mt-8">🔗 <a href="${r.sourceUrl}" target="_blank">来源</a></p>`:''}
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-        <button class="add-to-meal-btn" onclick="Tracker.addFromRecipe('${id}');RecipeModal.close()">
+        <button class="add-to-meal-btn" onclick="Tracker.addFromRecipe('${r.id}');RecipeModal.close()">
           ${I18n.get('add_to_meal')}</button>
+        <button class="btn-small" onclick="RecipeModal.startEdit()">✏️ 编辑</button>
         <button class="btn-small" style="color:#e74c3c;background:#fdecea"
           onclick="if(confirm('${I18n.get('delete_confirm')}'))RecipeModal._del()">🗑 删除</button>
       </div>`;
-    document.getElementById('recipeModal').classList.remove('hidden');
   }
 
-  function close() { document.getElementById('recipeModal').classList.add('hidden'); _currentId=null; }
-  function _del()  { if(!_currentId)return; State.deleteRecipe(_currentId); Recipes.render(); close(); }
-  function _tl(tag) { const m={'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'}; return m[tag]||tag; }
+  // ── Edit mode ────────────────────────────────────────
+  function startEdit() {
+    const r = State.getRecipes().find(x => x.id === _currentId);
+    if (!r) return;
+    _editData = {
+      name:        r.name,
+      kcal:        r.kcal    || 0,
+      protein:     r.protein || 0,
+      carbs:       r.carbs   || 0,
+      fat:         r.fat     || 0,
+      tags:        [...(r.tags        || [])],
+      ingredients: [...(r.ingredients || [''])],
+      steps:       [...(r.steps       || [''])],
+    };
+    _renderEdit();
+  }
 
-  return { open, close, _del };
+  function _renderEdit() {
+    const d = _editData;
+    document.getElementById('recipeModalContent').innerHTML = `
+      <input class="inp" style="width:100%;font-weight:700;font-size:1rem;margin-bottom:8px"
+        value="${d.name.replace(/"/g,'&quot;')}" oninput="RecipeModal._setField('name',this.value)">
+      <div class="macro-chips" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span class="macro-chip kcal" style="display:inline-flex;align-items:center;gap:4px">🔥
+          <input type="number" class="parse-num-inp" value="${d.kcal}"
+            oninput="RecipeModal._setField('kcal',+this.value)"> kcal</span>
+        <span class="macro-chip protein" style="display:inline-flex;align-items:center;gap:4px">🥩
+          <input type="number" class="parse-num-inp" value="${d.protein}"
+            oninput="RecipeModal._setField('protein',+this.value)"> g</span>
+        <span class="macro-chip carb" style="display:inline-flex;align-items:center;gap:4px">🍚
+          <input type="number" class="parse-num-inp" value="${d.carbs}"
+            oninput="RecipeModal._setField('carbs',+this.value)"> g</span>
+        <span class="macro-chip fat" style="display:inline-flex;align-items:center;gap:4px">🧈
+          <input type="number" class="parse-num-inp" value="${d.fat}"
+            oninput="RecipeModal._setField('fat',+this.value)"> g</span>
+      </div>
+      <div id="editTagArea"></div>
+      <div style="font-size:.8rem;color:var(--text-muted);margin:6px 0 3px">食材</div>
+      <div id="editIngRows"></div>
+      <button class="btn-secondary" style="font-size:.8rem;padding:3px 10px;margin-bottom:10px"
+        onclick="RecipeModal._addIng()">+ 食材</button>
+      <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:3px">步骤</div>
+      <div id="editStepRows"></div>
+      <button class="btn-secondary" style="font-size:.8rem;padding:3px 10px;margin-bottom:12px"
+        onclick="RecipeModal._addStep()">+ 步骤</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1" onclick="RecipeModal.saveEdit()">💾 保存</button>
+        <button class="btn-secondary" style="flex:1" onclick="RecipeModal._cancelEdit()">取消</button>
+      </div>`;
+    _refreshEditTags();
+    _refreshEditIngRows();
+    _refreshEditStepRows();
+  }
+
+  function _refreshEditTags() {
+    const el = document.getElementById('editTagArea');
+    if (!el) return;
+    const chips = (_editData.tags || []).map((t, i) =>
+      `<span class="macro-chip" style="display:inline-flex;align-items:center;gap:2px">${TAG_MAP[t]||t
+      }<button style="border:none;background:none;cursor:pointer;padding:0 2px;color:var(--text-muted)"
+        onclick="RecipeModal._removeEditTag(${i})">×</button></span>`
+    ).join('');
+    el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:8px">
+      ${chips}
+      <span style="display:inline-flex;gap:4px;align-items:center">
+        <input id="editTagInput" class="inp" style="width:88px;font-size:.78rem;padding:3px 7px" placeholder="添加标签…"
+          onkeydown="if(event.key==='Enter')RecipeModal._addEditTag()"/>
+        <button class="btn-secondary" style="padding:3px 10px;font-size:.8rem" onclick="RecipeModal._addEditTag()">+</button>
+      </span>
+    </div>`;
+  }
+
+  function _refreshEditIngRows() {
+    const el = document.getElementById('editIngRows');
+    if (!el) return;
+    el.innerHTML = (_editData.ingredients).map((ing, i) => {
+      const parts = (ing || '').split('|');
+      const name = (parts[0] || '').replace(/"/g,'&quot;');
+      const amt  = (parts[1] || '').replace(/"/g,'&quot;');
+      return `<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center">
+        <input class="inp" style="flex:1;padding:4px 8px" value="${name}"
+          oninput="RecipeModal._setIngName(${i},this.value)" placeholder="食材名">
+        <input class="inp" style="width:70px;padding:4px 8px" value="${amt}"
+          oninput="RecipeModal._setIngAmt(${i},this.value)" placeholder="用量">
+        <button onclick="RecipeModal._removeIng(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;line-height:1">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function _refreshEditStepRows() {
+    const el = document.getElementById('editStepRows');
+    if (!el) return;
+    el.innerHTML = (_editData.steps).map((s, i) =>
+      `<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center">
+        <span style="color:var(--text-muted);font-size:.8rem;min-width:16px">${i+1}.</span>
+        <input class="inp" style="flex:1;padding:4px 8px" value="${(s||'').replace(/"/g,'&quot;')}"
+          oninput="RecipeModal._setStep(${i},this.value)" placeholder="步骤">
+        <button onclick="RecipeModal._removeStep(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;line-height:1">×</button>
+      </div>`
+    ).join('');
+  }
+
+  function _setField(k, v)    { if (_editData) _editData[k] = v; }
+  function _setIngName(i, v)  { if (!_editData) return; const p=(_editData.ingredients[i]||'').split('|'); p[0]=v; _editData.ingredients[i]=p.join('|'); }
+  function _setIngAmt(i, v)   { if (!_editData) return; const p=(_editData.ingredients[i]||'').split('|'); p[0]=p[0]||''; p[1]=v; _editData.ingredients[i]=p.join('|'); }
+  function _setStep(i, v)     { if (_editData) _editData.steps[i] = v; }
+  function _addIng()          { if (!_editData) return; _editData.ingredients.push(''); _refreshEditIngRows(); }
+  function _removeIng(i)      { if (!_editData) return; _editData.ingredients.splice(i,1); _refreshEditIngRows(); }
+  function _addStep()         { if (!_editData) return; _editData.steps.push(''); _refreshEditStepRows(); }
+  function _removeStep(i)     { if (!_editData) return; _editData.steps.splice(i,1); _refreshEditStepRows(); }
+  function _removeEditTag(i)  { if (!_editData) return; _editData.tags.splice(i,1); _refreshEditTags(); }
+  function _addEditTag() {
+    if (!_editData) return;
+    const inp = document.getElementById('editTagInput');
+    const val = inp?.value.trim();
+    if (!val) return;
+    if (!_editData.tags.includes(val)) _editData.tags.push(val);
+    inp.value = '';
+    _refreshEditTags();
+  }
+
+  function saveEdit() {
+    if (!_editData || !_currentId) return;
+    State.updateRecipe(_currentId, {
+      name:        _editData.name,
+      kcal:        _editData.kcal,
+      protein:     _editData.protein,
+      carbs:       _editData.carbs,
+      fat:         _editData.fat,
+      tags:        _editData.tags,
+      ingredients: _editData.ingredients.filter(s => (s||'').replace('|','').trim()),
+      steps:       _editData.steps.filter(s => (s||'').trim()),
+    });
+    Recipes.render();
+    _editData = null;
+    open(_currentId);
+    App.showToast('✅ 菜谱已更新');
+  }
+
+  function _cancelEdit() { _editData = null; open(_currentId); }
+
+  function close() { document.getElementById('recipeModal').classList.add('hidden'); _currentId=null; _editData=null; }
+  function _del()  { if(!_currentId)return; State.deleteRecipe(_currentId); Recipes.render(); close(); }
+  function _tl(tag) { return TAG_MAP[tag] || tag; }
+
+  return { open, close, _del, startEdit, saveEdit, _cancelEdit,
+           _setField, _setIngName, _setIngAmt, _setStep,
+           _addIng, _removeIng, _addStep, _removeStep,
+           _removeEditTag, _addEditTag };
 })();
 
 // ParseModal is defined in parser.js — do not redeclare here
