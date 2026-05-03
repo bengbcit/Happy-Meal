@@ -1099,6 +1099,24 @@ body.hero-light .bg-option-btn--active { background: rgba(46,125,50,0.14); color
 }
 
 /* ── Hero Light Green Theme ─────────────────────────── */
+body.hero-light {
+  --bg:         #F0FAF0;
+  --card-bg:    #E6F5E6;
+  --surface-el: #DAF0DA;
+  --surface-hi: #CCE8CC;
+  --text:       #1B3A22;
+  --text-muted: #3D6B40;
+  --text-faint: #6A9B6E;
+  --border:     #B8D9B8;
+  --border-lt:  #CCE8CC;
+  background: #F0FAF0;
+}
+body.hero-light #mainApp,
+body.hero-light #authGate {
+  background: #F0FAF0 !important;
+  background-image: none !important;
+}
+
 body.hero-light .hero-section {
   background: #EDF7E8;
 }
