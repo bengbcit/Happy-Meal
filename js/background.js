@@ -6,11 +6,15 @@
 const BgPanel = (() => {
   const BG_KEY = 'hm_background';
 
-  // Apply saved background on load
-  // ロード時に保存済み背景を適用 / 加载时应用已保存的背景
+  const THEME_KEY = 'hm_hero_theme';
+
+  // Apply saved background and theme on load
   function init() {
     const saved = localStorage.getItem(BG_KEY);
     if (saved) _applyBg(saved);
+    if (localStorage.getItem(THEME_KEY) === 'light') {
+      document.body.classList.add('hero-light');
+    }
   }
 
   function _applyBg(url) {
@@ -117,6 +121,18 @@ const BgPanel = (() => {
     return result + ', high quality, 4k';
   }
 
+  // Switch hero theme preset (dark default / light green)
+  function setTheme(theme) {
+    if (theme === 'light') {
+      document.body.classList.add('hero-light');
+      localStorage.setItem(THEME_KEY, 'light');
+    } else {
+      document.body.classList.remove('hero-light');
+      localStorage.removeItem(THEME_KEY);
+    }
+    document.getElementById('bgPanel')?.classList.add('hidden');
+  }
+
   // Clear background
   // 背景をクリア / 清除背景
   function clearBg() {
@@ -129,5 +145,5 @@ const BgPanel = (() => {
     document.getElementById('bgPanel')?.classList.add('hidden');
   }
 
-  return { init, toggle, uploadBg, showAIPrompt, generateAI, clearBg };
+  return { init, toggle, uploadBg, showAIPrompt, generateAI, clearBg, setTheme };
 })();

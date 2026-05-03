@@ -66,6 +66,10 @@
         <button class="icon-btn" onclick="BgPanel.toggle()" title="Background">🎨</button>
         <div id="bgPanel" class="dropdown hidden" style="min-width:200px;right:0">
           <div style="padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text-muted)">背景 / Background</div>
+          <div style="padding:2px 10px 2px;font-size:.73rem;color:var(--text-faint)">主题预设</div>
+          <button class="bg-option-btn" onclick="BgPanel.setTheme('dark')">🌑 深色默认</button>
+          <button class="bg-option-btn" onclick="BgPanel.setTheme('light')">🌿 淡绿色</button>
+          <hr style="border:none;border-top:1px solid var(--border);margin:2px 0">
           <label class="bg-option-btn" onclick="document.getElementById('bgFileInput').click()">
             🖼 上传图片
             <input id="bgFileInput" type="file" accept="image/*" class="hidden"

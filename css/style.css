@@ -1080,6 +1080,49 @@ input, select, textarea { font: inherit; }
   border-color: var(--secondary);
 }
 
+/* ── Hero Light Green Theme ─────────────────────────── */
+body.hero-light .hero-section {
+  background: #EDF7E8;
+}
+body.hero-light .hero-blob-1 {
+  background: radial-gradient(circle, rgba(34,139,34,0.20) 0%, transparent 70%);
+}
+body.hero-light .hero-blob-2 {
+  background: radial-gradient(circle, rgba(46,125,50,0.15) 0%, transparent 70%);
+}
+body.hero-light .hero-blob-3 {
+  background: radial-gradient(circle, rgba(100,180,40,0.18) 0%, transparent 70%);
+}
+body.hero-light .hero-grid {
+  background-image: radial-gradient(circle, rgba(30,100,30,0.06) 1px, transparent 1px);
+}
+body.hero-light .hero-eyebrow { color: #2E7D32; }
+body.hero-light .hero-eyebrow::before { background: #2E7D32; }
+body.hero-light .hero-headline { color: #1B3A22; }
+body.hero-light .hw-accent { color: #2E7D32; }
+body.hero-light .hero-tagline { color: #3D6B40; }
+body.hero-light .hero-quote {
+  background: rgba(30,80,30,0.06);
+  border-left-color: #4CAF50;
+  color: #2D5A30;
+}
+body.hero-light .hero-btn-ghost {
+  color: #1B3A22;
+  border-color: rgba(27,58,34,0.28);
+}
+body.hero-light .hero-btn-ghost:hover {
+  border-color: #2E7D32;
+  color: #2E7D32;
+}
+body.hero-light .hero-video-panel::before {
+  background: linear-gradient(to right, #EDF7E8, transparent);
+}
+body.hero-light .hero-scroll-text { color: #3D6B40; }
+body.hero-light .hero-chevrons span {
+  border-right-color: #2E7D32;
+  border-bottom-color: #2E7D32;
+}
+
 /* ── Dash Content (below hero) ────────────────────── */
 .dash-content {
   display: flex; flex-direction: column; gap: 14px;
