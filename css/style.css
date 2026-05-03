@@ -644,7 +644,25 @@ input, select, textarea { font: inherit; }
 /* ── Dining out ─────────────────────────────────────── */
 .dining-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; }
 
+/* ── Parse modal number inputs ──────────────────────── */
+.parse-num-inp {
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: inherit;
+  padding: 1px 4px;
+  font: inherit;
+  font-size: .82rem;
+  width: 62px;
+  -moz-appearance: textfield;
+}
+.parse-num-inp:focus { outline: none; border-color: var(--primary); }
+.parse-num-inp::-webkit-inner-spin-button { opacity: 0.5; }
+body.hero-light .parse-num-inp { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.15); color: #1B3A22; }
+
 /* ── Background panel button ────────────────────────── */
+.bg-option-btn--active { background: rgba(0,232,122,0.13); color: var(--accent); font-weight: 600; }
+body.hero-light .bg-option-btn--active { background: rgba(46,125,50,0.14); color: #2E7D32; }
 .bg-option-btn {
   display:flex; align-items:center; gap:6px;
   width:100%; padding:8px 12px; border-radius:6px;

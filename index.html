@@ -67,8 +67,8 @@
         <div id="bgPanel" class="dropdown hidden" style="min-width:200px;right:0">
           <div style="padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text-muted)">背景 / Background</div>
           <div style="padding:2px 10px 2px;font-size:.73rem;color:var(--text-faint)">主题预设</div>
-          <button class="bg-option-btn" onclick="BgPanel.setTheme('dark')">🌑 深色默认</button>
-          <button class="bg-option-btn" onclick="BgPanel.setTheme('light')">🌿 淡绿色</button>
+          <button class="bg-option-btn" data-preset-theme="dark" onclick="BgPanel.setTheme('dark')">🌑 深色默认</button>
+          <button class="bg-option-btn" data-preset-theme="light" onclick="BgPanel.setTheme('light')">🌿 淡绿色</button>
           <hr style="border:none;border-top:1px solid var(--border);margin:2px 0">
           <label class="bg-option-btn" onclick="document.getElementById('bgFileInput').click()">
             🖼 上传图片
@@ -323,9 +323,9 @@
             ondrop="RecipeAdd.onDrop(event)" onclick="document.getElementById('mediaFileInput').click()">
             <span class="upload-icon">📷</span>
             <span data-i18n="drop_media">拖入图片 / PDF，或点击选择</span>
-            <span class="text-muted" style="font-size:.78rem">支持 JPG, PNG, WEBP, PDF</span>
+            <span class="text-muted" style="font-size:.78rem">支持 JPG / PNG / WEBP / AVIF / PDF</span>
           </label>
-          <input id="mediaFileInput" type="file" accept="image/*,.pdf" class="hidden"
+          <input id="mediaFileInput" type="file" accept="image/*,.avif,.pdf" class="hidden"
             onchange="RecipeAdd.onFileSelect(this.files[0])" />
           <div id="mediaParseStatus" class="parse-status"></div>
         </div>

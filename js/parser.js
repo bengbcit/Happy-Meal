@@ -43,8 +43,8 @@ const Parser = (() => {
   // ファイル（画像・PDF）から解析 / 从文件（图片/PDF）解析
   async function fromFile(file) {
     if (!file) return null;
-    const isImage = file.type.startsWith('image/');
-    const isPDF   = file.type === 'application/pdf';
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp)$/i.test(file.name);
+    const isPDF   = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     if (!isImage && !isPDF) throw new Error('Unsupported file type');
 
     // Convert to base64
@@ -137,28 +137,42 @@ const Parser = (() => {
 })();
 
 // ── ParseModal ─────────────────────────────────────────
-// Shows parsed recipe preview with two actions:
-// プレビューを表示し、2つのアクションを提供 / 显示解析预览，提供两个操作
-//   1. 填入表单 — populate manual form for review/edit
-//   2. 直接保存 — save directly to recipe list
+// Shows parsed recipe preview with editable macros + tag chips
+// 解析预览：数值可直接修改，标签可删除/新增 / パース結果プレビュー：数値・タグ編集可能
 const ParseModal = (() => {
   let _pending = null;
+  const TAG_MAP = {'high-protein':'🥩 高蛋白','low-fat':'🥗 低脂','low-carb':'🥦 低碳','high-carb':'🍚 高碳','vegetarian':'🌿 素食','adults-only':'🧑 仅大人'};
 
   function show(recipe) {
-    _pending = recipe;
-    const ings = (recipe.ingredients || []).map(i => `<li>${i}</li>`).join('');
-    const stps = (recipe.steps || []).map((s, i) => `<li>${s}</li>`).join('');
-    const provider = recipe._provider ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:6px">via ${recipe._provider}</span>` : '';
+    _pending = Object.assign({}, recipe, { tags: [...(recipe.tags || [])] });
+    _render();
+    document.getElementById('parseModal').classList.remove('hidden');
+  }
+
+  function _render() {
+    const r = _pending;
+    const provider = r._provider ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:6px">via ${r._provider}</span>` : '';
+    const ings = (r.ingredients || []).map(i => `<li>${i}</li>`).join('');
+    const stps = (r.steps || []).map((s, i) => `<li>${s}</li>`).join('');
 
     document.getElementById('parseModalContent').innerHTML = `
-      <div style="font-weight:800;font-size:1.1rem">${recipe.name}${provider}</div>
-      <div class="macro-chips">
-        <span class="macro-chip kcal">🔥 ${recipe.kcal || '—'} kcal</span>
-        <span class="macro-chip protein">🥩 ${recipe.protein || 0}g</span>
-        <span class="macro-chip carb">🍚 ${recipe.carbs || 0}g</span>
-        <span class="macro-chip fat">🧈 ${recipe.fat || 0}g</span>
+      <div style="font-weight:800;font-size:1.1rem">${r.name}${provider}</div>
+      <div class="macro-chips" style="flex-wrap:wrap;gap:6px;margin:8px 0">
+        <span class="macro-chip kcal" style="display:inline-flex;align-items:center;gap:4px">🔥
+          <input type="number" class="parse-num-inp" value="${r.kcal||0}"
+            oninput="ParseModal._set('kcal',+this.value)"> kcal</span>
+        <span class="macro-chip protein" style="display:inline-flex;align-items:center;gap:4px">🥩
+          <input type="number" class="parse-num-inp" value="${r.protein||0}"
+            oninput="ParseModal._set('protein',+this.value)"> g</span>
+        <span class="macro-chip carb" style="display:inline-flex;align-items:center;gap:4px">🍚
+          <input type="number" class="parse-num-inp" value="${r.carbs||0}"
+            oninput="ParseModal._set('carbs',+this.value)"> g</span>
+        <span class="macro-chip fat" style="display:inline-flex;align-items:center;gap:4px">🧈
+          <input type="number" class="parse-num-inp" value="${r.fat||0}"
+            oninput="ParseModal._set('fat',+this.value)"> g</span>
       </div>
-      ${ings ? `<div class="recipe-detail-section"><h4>${I18n.get('ingredients_lbl')} (${recipe.ingredients.length})</h4><ul>${ings}</ul></div>` : ''}
+      <div id="parseTagEditor">${_tagEditorHTML()}</div>
+      ${ings ? `<div class="recipe-detail-section"><h4>${I18n.get('ingredients_lbl')} (${r.ingredients.length})</h4><ul>${ings}</ul></div>` : ''}
       ${stps ? `<div class="recipe-detail-section"><h4>${I18n.get('steps_lbl')}</h4><ol>${stps}</ol></div>` : ''}
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button class="btn-primary" style="flex:1" onclick="ParseModal.fillForm()">
@@ -168,19 +182,46 @@ const ParseModal = (() => {
           💾 ${I18n.get('btn_save_recipe') || '直接保存'}
         </button>
       </div>`;
-
-    document.getElementById('parseModal').classList.remove('hidden');
   }
 
-  // Fill manual-entry form with parsed data, switch to manual tab for review
-  // パース済みデータを手動入力フォームに入力し、レビュー用に手動タブへ切り替え
-  // 将解析结果填入手动录入表单，切换到手动Tab供用户审查编辑
+  function _tagEditorHTML() {
+    const chips = (_pending.tags || []).map((t, i) =>
+      `<span class="macro-chip" style="display:inline-flex;align-items:center;gap:2px">${TAG_MAP[t]||t
+        }<button style="border:none;background:none;cursor:pointer;padding:0 2px;line-height:1;color:var(--text-muted)"
+          onclick="ParseModal._removeTag(${i})" title="删除">×</button></span>`
+    ).join('');
+    return `<div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px">
+      ${chips}
+      <span style="display:inline-flex;gap:4px;align-items:center">
+        <input id="parseTagInput" class="inp" style="width:88px;font-size:.78rem;padding:3px 7px"
+          placeholder="添加标签…" onkeydown="if(event.key==='Enter')ParseModal._addTag()"/>
+        <button class="btn-secondary" style="padding:3px 10px;font-size:.8rem" onclick="ParseModal._addTag()">+</button>
+      </span>
+    </div>`;
+  }
+
+  function _refreshTagEditor() {
+    const el = document.getElementById('parseTagEditor');
+    if (el) el.innerHTML = _tagEditorHTML();
+  }
+
+  function _set(field, value)  { if (_pending) _pending[field] = value; }
+  function _removeTag(i)       { if (!_pending) return; _pending.tags.splice(i, 1); _refreshTagEditor(); }
+  function _addTag() {
+    if (!_pending) return;
+    const inp = document.getElementById('parseTagInput');
+    const val = inp?.value.trim();
+    if (!val) return;
+    if (!_pending.tags) _pending.tags = [];
+    if (!_pending.tags.includes(val)) _pending.tags.push(val);
+    inp.value = '';
+    _refreshTagEditor();
+  }
+
   function fillForm() {
     if (!_pending) return;
     RecipeAdd.populateFromParsed(_pending);
-    // Switch to manual tab inside the AddRecipe panel
     RecipeAdd.showTab('manual');
-    // Scroll to the add-recipe section so user sees the form
     document.getElementById('addRecipeSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     close();
     App.showToast('✅ ' + (I18n.get('filled_form') || '已填入手动录入，可继续编辑'));
@@ -188,5 +229,5 @@ const ParseModal = (() => {
 
   function save()  { if (!_pending) return; RecipeAdd.saveFromParsed(_pending); close(); }
   function close() { document.getElementById('parseModal').classList.add('hidden'); _pending = null; }
-  return { show, save, fillForm, close };
+  return { show, save, fillForm, close, _set, _removeTag, _addTag };
 })();

@@ -12,9 +12,15 @@ const BgPanel = (() => {
   function init() {
     const saved = localStorage.getItem(BG_KEY);
     if (saved) _applyBg(saved);
-    if (localStorage.getItem(THEME_KEY) === 'light') {
-      document.body.classList.add('hero-light');
-    }
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme === 'light') document.body.classList.add('hero-light');
+    requestAnimationFrame(() => _markActivePreset(savedTheme || 'dark'));
+  }
+
+  function _markActivePreset(theme) {
+    document.querySelectorAll('[data-preset-theme]').forEach(btn => {
+      btn.classList.toggle('bg-option-btn--active', btn.dataset.presetTheme === theme);
+    });
   }
 
   function _applyBg(url) {
@@ -130,6 +136,7 @@ const BgPanel = (() => {
       document.body.classList.remove('hero-light');
       localStorage.removeItem(THEME_KEY);
     }
+    _markActivePreset(theme);
     document.getElementById('bgPanel')?.classList.add('hidden');
   }
 

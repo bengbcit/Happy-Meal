@@ -200,6 +200,19 @@ const RecipeAdd = (() => {
   async function onFileSelect(file) {
     if (!file) return;
     const statusEl = document.getElementById('mediaParseStatus');
+
+    // Pre-validate before sending to API
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp)$/i.test(file.name);
+    const isPDF   = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isImage && !isPDF) {
+      if (statusEl) statusEl.textContent = '❌ 格式不对（支持 JPG / PNG / WEBP / AVIF / PDF）';
+      return;
+    }
+    if (isImage && file.size < 20 * 1024) {
+      if (statusEl) statusEl.textContent = '❌ 图片太小，无法识别（建议 > 20 KB）';
+      return;
+    }
+
     if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> ${I18n.get('parse_loading')}`;
 
     try {
@@ -208,15 +221,45 @@ const RecipeAdd = (() => {
       ParseModal.show(parsed);
       if (statusEl) statusEl.textContent = '';
     } catch(e) {
-      if (statusEl) statusEl.textContent = I18n.get('parse_error');
+      let msg;
+      if (e.message === 'Unsupported file type')  msg = '❌ 格式不对（支持 JPG / PNG / WEBP / AVIF / PDF）';
+      else if (e.message === 'empty')              msg = '❌ 未识别到菜谱内容（图片不清楚或内容不足）';
+      else                                         msg = '❌ 解析失败，请重试';
+      if (statusEl) statusEl.textContent = msg;
     }
+  }
+
+  // ── Voice input helpers (called by VoiceInput) ───────
+  // Fills into the last empty row, or appends a new one if last is occupied
+  function addVoiceIngredient(name, gram) {
+    const last = _ingredients.length - 1;
+    if (_ingredients[last] === '' || _ingredients[last] === '|' || !_ingredients[last]) {
+      _ingredients[last] = `${name}|${gram || ''}`;
+    } else {
+      _ingredients.push(`${name}|${gram || ''}`);
+    }
+    renderIngredientRows();
+    const inputs = document.querySelectorAll('#ingredientRows .dynamic-row input.inp:not(.inp-gram)');
+    inputs[inputs.length - 1]?.focus();
+  }
+
+  function addVoiceStep(text) {
+    const last = _steps.length - 1;
+    if (!_steps[last] || _steps[last].trim() === '') {
+      _steps[last] = text;
+    } else {
+      _steps.push(text);
+    }
+    renderStepRows();
+    const inputs = document.querySelectorAll('#stepRows .dynamic-row input.inp');
+    inputs[inputs.length - 1]?.focus();
   }
 
   function _esc(s) { return (s||'').replace(/"/g,'&quot;'); }
 
   return { showTab, renderIngredientRows, renderStepRows, addIngredientRow, removeIngredientRow,
            addStepRow, removeStepRow, toggleTag, save, populateFromParsed, saveFromParsed,
-           onDragOver, onDrop, onFileSelect,
+           onDragOver, onDrop, onFileSelect, addVoiceIngredient, addVoiceStep,
            _setIngredientName, _setIngredientGram, _setStep };
 })();
 
@@ -264,29 +307,17 @@ const VoiceInput = (() => {
     return { zh:'zh-CN', en:'en-US', ja:'ja-JP' }[I18n.current()] || 'zh-CN';
   }
 
-  // Parse voice text into ingredient rows or step rows
-  // 音声テキストを食材行またはステップ行にパース / 将语音文本解析为食材行或步骤行
+  // Route voice transcript into the correct input rows
+  // 音声テキストを食材/手順入力欄へ反映 / 将语音文本填入对应输入框
   function _insertVoiceText(text) {
-    // Split by common delimiters
     const parts = text.split(/[，,、。；;]+/).map(s => s.trim()).filter(Boolean);
     if (_target === 'ingredient') {
       parts.forEach(part => {
-        // Try to extract "食材 数字g" pattern
         const m = part.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*[克gG]/);
-        const name = m ? m[1].trim() : part;
-        const gram = m ? m[2] : '';
-        // Add to rows
-        const idx = RecipeAdd._getIngredients ? RecipeAdd._getIngredients().length : 0;
-        RecipeAdd._ingredients = RecipeAdd._ingredients || [''];
-        RecipeAdd._ingredients.push(`${name}|${gram}`);
+        RecipeAdd.addVoiceIngredient(m ? m[1].trim() : part, m ? m[2] : '');
       });
-      // Remove empty first entry if still blank
-      if (RecipeAdd._ingredients?.[0] === '') RecipeAdd._ingredients.shift();
-      RecipeAdd.renderIngredientRows();
     } else {
-      parts.forEach(part => RecipeAdd._steps.push(part));
-      if (RecipeAdd._steps?.[0] === '') RecipeAdd._steps.shift();
-      RecipeAdd.renderStepRows();
+      parts.forEach(part => RecipeAdd.addVoiceStep(part));
     }
     App.showToast(`🎤 识别: "${text}"`);
   }
