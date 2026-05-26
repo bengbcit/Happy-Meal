@@ -213,7 +213,7 @@ input, select, textarea { font: inherit; }
 #tabScrollContainer {
   flex: 1;
   overflow-y: scroll;
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: y proximity;
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
 }
@@ -314,7 +314,7 @@ input, select, textarea { font: inherit; }
      topbar ≈57px + tabnav ≈52px = 109px offset */
   min-height: calc(100dvh - 109px);
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
   box-sizing: border-box;
 }
 /* .active only drives tab-btn highlight styling — no longer hides/shows pages */

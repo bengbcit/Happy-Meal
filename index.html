@@ -303,6 +303,48 @@
     </section>
 
     <!-- ═══════════════════════════════
+       TAB: TRACKER (追踪)
+       ═══════════════════════════════ -->
+    <section id="tab-tracker" class="tab-page">
+      <!-- Date nav — use touchstart to prevent mobile double-fire -->
+      <div class="date-nav">
+        <button class="icon-btn" id="btnPrevDay">◀</button>
+        <span id="trackerDate" class="date-label"></span>
+        <button class="icon-btn" id="btnNextDay">▶</button>
+      </div>
+
+      <!-- Quick import: image only -->
+      <div class="card">
+        <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
+        <div class="import-row">
+          <label class="import-btn" for="trackerImgInput">
+            🖼 <span data-i18n="import_photo">上传图片</span>
+          </label>
+          <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
+            onchange="Tracker.importImage(this.files[0])" />
+        </div>
+        <div id="importStatus" class="parse-status"></div>
+      </div>
+
+      <!-- Meals -->
+      <div id="mealSections">
+        <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
+      </div>
+
+      <!-- Daily totals chart -->
+      <div class="card">
+        <div class="card-title" data-i18n="nutrition_breakdown">📊 营养分布</div>
+        <canvas id="nutritionBar" height="120"></canvas>
+      </div>
+
+      <!-- 7-day history -->
+      <div class="card">
+        <div class="card-title" data-i18n="weekly_kcal">📈 近7日热量</div>
+        <canvas id="weeklyKcalChart" height="120"></canvas>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════
        TAB: RECIPES (菜谱)
        ═══════════════════════════════ -->
     <section id="tab-recipes" class="tab-page">
@@ -408,48 +450,6 @@
       <!-- Recipe List -->
       <div id="recipeList" class="recipe-grid">
         <!-- rendered by Recipes.render() -->
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════
-       TAB: TRACKER (追踪)
-       ═══════════════════════════════ -->
-    <section id="tab-tracker" class="tab-page">
-      <!-- Date nav — use touchstart to prevent mobile double-fire -->
-      <div class="date-nav">
-        <button class="icon-btn" id="btnPrevDay">◀</button>
-        <span id="trackerDate" class="date-label"></span>
-        <button class="icon-btn" id="btnNextDay">▶</button>
-      </div>
-
-      <!-- Quick import: image only -->
-      <div class="card">
-        <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
-        <div class="import-row">
-          <label class="import-btn" for="trackerImgInput">
-            🖼 <span data-i18n="import_photo">上传图片</span>
-          </label>
-          <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
-            onchange="Tracker.importImage(this.files[0])" />
-        </div>
-        <div id="importStatus" class="parse-status"></div>
-      </div>
-
-      <!-- Meals -->
-      <div id="mealSections">
-        <!-- Breakfast / Lunch / Dinner / Snack cards rendered by Tracker.renderMeals() -->
-      </div>
-
-      <!-- Daily totals chart -->
-      <div class="card">
-        <div class="card-title" data-i18n="nutrition_breakdown">📊 营养分布</div>
-        <canvas id="nutritionBar" height="120"></canvas>
-      </div>
-
-      <!-- 7-day history -->
-      <div class="card">
-        <div class="card-title" data-i18n="weekly_kcal">📈 近7日热量</div>
-        <canvas id="weeklyKcalChart" height="120"></canvas>
       </div>
     </section>
 
