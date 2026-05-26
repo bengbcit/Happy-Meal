@@ -255,7 +255,7 @@ Only include tags clearly supported by the page content. Return [] if none apply
       raw = (await r.json()).content?.[0]?.text || '';
     }
 
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const jsonMatch = _cleanJson(raw).match(/\{[\s\S]*\}/);
     if (!jsonMatch) return res.status(422).json({ error:'No JSON in response', raw });
 
     const recipe = JSON.parse(jsonMatch[0]);
@@ -363,4 +363,18 @@ function _extractFocusedText(html) {
   // Use focused segments if found, otherwise use full page text (truncated)
   const focused = relevant.length > 0 ? relevant.join('\n') : text;
   return focused.slice(0, 8000);
+}
+
+// ── JSON cleaner — fixes common AI output issues before parse ────────────────
+function _cleanJson(raw) {
+  return raw
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/,\s*([}\]])/g, '$1')
+    .replace(/\.\.\.\s*,?/g, '')
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'")
+    .trim();
 }

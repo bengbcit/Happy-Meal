@@ -47,7 +47,7 @@ Return ONLY a JSON array, no explanation, no markdown:
 
     try {
       const raw = await _callAI(provider, { GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, CLAUDE_API_KEY }, prompt);
-      const match = raw.match(/\[[\s\S]*\]/);
+      const match = _cleanJson(raw).match(/\[[\s\S]*\]/);
       if (!match) return res.status(422).json({ error: 'No JSON array in response', raw });
       const variants = JSON.parse(match[0]);
       return res.status(200).json({ variants, _provider: provider });
@@ -93,10 +93,12 @@ Fill in reasonable estimated values.`;
         _callAI(provider, keys, pairPrompt),
         _callAI(provider, keys, selfPrompt),
       ]);
-      const pairMatch = pairRaw.match(/\[[\s\S]*\]/);
+      const pairClean = _cleanJson(pairRaw);
+      const pairMatch = pairClean.match(/\[[\s\S]*\]/);
       if (!pairMatch) return res.status(422).json({ error: 'No JSON array in pairings response', pairRaw });
       const pairings = JSON.parse(pairMatch[0]);
-      const selfMatch = selfRaw.match(/\{[\s\S]*\}/);
+      const selfClean = _cleanJson(selfRaw);
+      const selfMatch = selfClean.match(/\{[\s\S]*\}/);
       const selfItem  = selfMatch
         ? JSON.parse(selfMatch[0])
         : { name: food, grams: 100, kcal: 0, protein: 0, carbs: 0, fat: 0 };
@@ -107,6 +109,21 @@ Fill in reasonable estimated values.`;
   }
 
   return res.status(400).json({ error: `Unknown mode: ${mode}` });
+}
+
+// ── JSON cleaner — fixes common AI output issues before parse ────────────────
+// AIの出力によく見られるJSON問題を修正 / 修复 AI 输出中常见的 JSON 格式问题
+function _cleanJson(raw) {
+  return raw
+    .replace(/```json\s*/gi, '')   // strip markdown code fences
+    .replace(/```\s*/g, '')
+    .replace(/\/\/[^\n]*/g, '')    // strip // comments
+    .replace(/\/\*[\s\S]*?\*\//g, '') // strip /* */ comments
+    .replace(/,\s*([}\]])/g, '$1') // remove trailing commas before } or ]
+    .replace(/\.\.\.\s*,?/g, '')   // remove ... ellipsis placeholders
+    .replace(/[“”]/g, '"') // replace curly quotes
+    .replace(/[‘’]/g, "'")
+    .trim();
 }
 
 // ── Unified AI caller (same providers as parse-recipe.js) ────────────────────
