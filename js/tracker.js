@@ -18,34 +18,37 @@ const Tracker = (() => {
   }
 
   // ── Navigate dates ───────────────────────────────────
-  // Debounce guard: ignore rapid repeated calls within 400ms (prevents double-fire on mobile tap)
-  let _navBusy = false;
-  function _navGuard(fn) {
-    if (_navBusy) return;
-    _navBusy = true;
-    fn();
-    setTimeout(() => { _navBusy = false; }, 400);
+  // Bound once in init() using touchstart (+ preventDefault to block the synthetic click).
+  // This is the only reliable way to prevent mobile double-fire on iOS/Android.
+  function prevDay() {
+    const d = new Date(_date + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    _date = d.toISOString().slice(0, 10);
+    render();
+  }
+  function nextDay() {
+    const today = _todayStr();
+    if (_date >= today) return;
+    const d = new Date(_date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    _date = d.toISOString().slice(0, 10);
+    render();
   }
 
-  function prevDay(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    _navGuard(() => {
-      const d = new Date(_date + 'T00:00:00');
-      d.setDate(d.getDate() - 1);
-      _date = d.toISOString().slice(0, 10);
-      render();
-    });
-  }
-  function nextDay(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    _navGuard(() => {
-      const today = _todayStr();
-      if (_date >= today) return;
-      const d = new Date(_date + 'T00:00:00');
-      d.setDate(d.getDate() + 1);
-      _date = d.toISOString().slice(0, 10);
-      render();
-    });
+  function _bindNavButtons() {
+    function _bind(id, fn) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      // touchstart fires first — call fn and prevent the click that follows
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        fn();
+      }, { passive: false });
+      // click handles mouse / keyboard / assistive tech (won't fire after touchstart+preventDefault)
+      btn.addEventListener('click', fn);
+    }
+    _bind('btnPrevDay', prevDay);
+    _bind('btnNextDay', nextDay);
   }
 
   // ── Totals for a date ────────────────────────────────
@@ -336,6 +339,7 @@ const Tracker = (() => {
 
   function init() {
     _date = _todayStr();
+    _bindNavButtons();
     render();
     renderSummary();
   }

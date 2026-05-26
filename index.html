@@ -409,11 +409,11 @@
        TAB: TRACKER (追踪)
        ═══════════════════════════════ -->
     <section id="tab-tracker" class="tab-page">
-      <!-- Date nav -->
+      <!-- Date nav — use touchstart to prevent mobile double-fire -->
       <div class="date-nav">
-        <button class="icon-btn" onclick="Tracker.prevDay(event)">◀</button>
+        <button class="icon-btn" id="btnPrevDay">◀</button>
         <span id="trackerDate" class="date-label"></span>
-        <button class="icon-btn" onclick="Tracker.nextDay(event)">▶</button>
+        <button class="icon-btn" id="btnNextDay">▶</button>
       </div>
 
       <!-- Quick import: image only -->

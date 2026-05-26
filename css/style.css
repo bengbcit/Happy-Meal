@@ -1275,15 +1275,23 @@ body.hero-light .hero-chevrons span {
   display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
 }
 
-/* Weight chart + history table side-by-side inside one card, each 50% */
+/* Weight chart (2/3) + history table (1/3) side-by-side inside one card */
 .dash-weight-split {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  align-items: start; margin-top: 8px;
+  display: grid; grid-template-columns: 2fr 1fr; gap: 12px;
+  align-items: stretch; /* both columns same height */
+  margin-top: 8px;
 }
-.dash-weight-split canvas { width: 100% !important; }
-.dash-weight-split #weightLogHistory { overflow-y: auto; max-height: 220px; }
+.dash-weight-split canvas { width: 100% !important; display: block; }
+.dash-weight-split #weightLogHistory {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  overflow-y: auto;
+}
+.dash-weight-split #weightLogHistory .weight-log-table {
+  margin-top: 0;  /* remove default top margin so it sits at the bottom */
+}
 @media (max-width: 520px) {
   .dash-weight-split { grid-template-columns: 1fr; }
+  .dash-weight-split #weightLogHistory { justify-content: flex-start; }
 }
 
 /* BMI + Today's Summary side-by-side */

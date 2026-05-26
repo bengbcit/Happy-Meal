@@ -80,37 +80,85 @@ Return ONLY valid JSON (no markdown):
 ${lang==='zh'?'菜名和食材用中文':lang==='ja'?'日本語で出力':'Output in English'}
 Estimate nutrition if not provided. tags may include: high-protein, low-fat, low-carb, high-carb, vegetarian.`;
 
+    // Helper: call Gemini vision, returns raw text or throws
+    async function _geminiVision(prompt, b64, mime) {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contents:[{ parts:[
+            { text: prompt },
+            { inline_data: { mime_type: mime, data: b64 } }
+          ]}] }) }
+      );
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Gemini vision ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    // Helper: call Claude vision, returns raw text or throws
+    async function _claudeVision(prompt, b64, mime) {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
+        body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2048,
+          messages:[{ role:'user', content:[
+            { type:'image', source:{ type:'base64', media_type: mime, data: b64 } },
+            { type:'text', text: prompt }
+          ]}]
+        })
+      });
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Claude vision ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).content?.[0]?.text || '';
+    }
+
+    // Retry-with-fallback:
+    //   1. Try primary provider (Gemini preferred)
+    //   2. On 5xx/network error → wait 1s, retry once
+    //   3. If still failing and a second provider is available → fall through to it
+    const mime = fileType || 'image/jpeg';
+    let raw = '';
+    let usedProvider = visionProvider;
+    let lastErr = null;
+
+    const _sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function _tryProvider(prov) {
+      if (prov === 'gemini' && GEMINI_API_KEY) return _geminiVision(visionPrompt, fileBase64, mime);
+      if (prov === 'claude' && CLAUDE_API_KEY)  return _claudeVision(visionPrompt, fileBase64, mime);
+      throw new Error(`Provider ${prov} not available`);
+    }
+
     try {
-      let raw = '';
-      if (visionProvider === 'gemini') {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-          { method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ contents:[{ parts:[
-              { text: visionPrompt },
-              { inline_data: { mime_type: fileType, data: fileBase64 } }
-            ]}] }) }
-        );
-        if (!r.ok) throw new Error(`Gemini vision ${r.status}`);
-        raw = (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
-      } else {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST',
-          headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
-          body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2048,
-            messages:[{ role:'user', content:[
-              { type:'image', source:{ type:'base64', media_type:fileType, data:fileBase64 } },
-              { type:'text', text: visionPrompt }
-            ]}]
-          })
-        });
-        if (!r.ok) throw new Error(`Claude vision ${r.status}`);
-        raw = (await r.json()).content?.[0]?.text || '';
+      // Attempt 1: primary provider
+      try {
+        raw = await _tryProvider(visionProvider);
+        usedProvider = visionProvider;
+      } catch (e1) {
+        lastErr = e1;
+        // Retry primary once after 1s (handles transient 503/429)
+        try {
+          await _sleep(1000);
+          raw = await _tryProvider(visionProvider);
+          usedProvider = visionProvider;
+          lastErr = null;
+        } catch (e2) {
+          lastErr = e2;
+          // Fallback to the other provider if available
+          const fallback = (visionProvider === 'gemini' && CLAUDE_API_KEY)  ? 'claude'
+                         : (visionProvider === 'claude' && GEMINI_API_KEY)  ? 'gemini'
+                         : null;
+          if (fallback) {
+            raw = await _tryProvider(fallback);
+            usedProvider = fallback + '-fallback';
+            lastErr = null;
+          } else {
+            throw e2;
+          }
+        }
       }
 
       const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);
       if (!jsonMatch) return res.status(422).json({ error:'No JSON in vision response', raw });
-      return res.status(200).json({ ...JSON.parse(jsonMatch[0]), _provider: visionProvider + '-vision' });
+      return res.status(200).json({ ...JSON.parse(jsonMatch[0]), _provider: usedProvider + '-vision' });
     } catch(e) {
       return res.status(500).json({ error: e.message });
     }
