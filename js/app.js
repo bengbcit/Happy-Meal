@@ -113,22 +113,39 @@ const App = (() => {
   });
 
   // Initialize after login
-  // ログイン後に初期化 / 登录后初始化
+  // App.init() may be called more than once (auth.js + firebase-init.js both call it).
+  // _appInited guards one-time setup; subsequent calls only re-render data.
+  // App.init()は複数回呼ばれる可能性がある。_appInitedで1回限りの初期化を保護する。
+  // App.init() 可能被多次调用，_appInited 保护只初始化一次，后续只刷新数据
+  let _appInited = false;
   function init() {
     I18n.init();
     ThemeManager.init();
     Motivate.render();
     BgPanel.init();
+
+    if (!_appInited) {
+      _appInited = true;
+      // One-time setup: register observers, init modules that set up state/event listeners
+      // 一回限りの初期化：状態やイベントリスナーを設定するモジュールを初期化
+      // 一次性初始化：设置状态和事件监听器
+      Tracker.init();       // sets _date = today, binds nothing (onclick in HTML)
+      Planner.init();
+      Indulgence.init();
+      _setupScrollObserver();
+    }
+
+    // Always re-render on every login (data may have changed from cloud sync)
+    // ログインのたびに再レンダリング（クラウド同期でデータが変わっている可能性がある）
+    // 每次登录都重新渲染（云端同步后数据可能已更新）
     BMI.init();
     Exercise.renderExerciseRecommend();
     Recipes.render();
-    Tracker.init();
-    Planner.init();
-    Indulgence.init();
     Charts.renderMacroRing();
     Charts.renderWeeklyKcal();
     Charts.renderWeightChart();
-    _setupScrollObserver();
+    Tracker.render();
+    Tracker.renderSummary();
   }
 
   window.addEventListener('DOMContentLoaded', () => {
