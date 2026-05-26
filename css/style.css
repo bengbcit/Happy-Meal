@@ -660,6 +660,7 @@ input, select, textarea { font: inherit; }
 .exercise-list { display:flex; flex-direction:column; gap:8px; }
 .exercise-cats { display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
 .exercise-card {
+  position: relative;
   display:flex; align-items:center; gap:8px;
   background:var(--card-bg); border-radius:var(--radius-sm);
   padding:10px 12px; border:1px solid var(--border);
@@ -697,28 +698,34 @@ input, select, textarea { font: inherit; }
 }
 .ex-kcal-inp:focus { border-color: var(--accent); outline: none; }
 .ex-kcal-unit { font-size:.75rem; color:var(--text-muted); }
-/* Exercise edit/lock mode toggle buttons */
-.ex-mode-btn {
-  padding: 4px 12px; border-radius: 9999px; font-size: .78rem; font-weight: 600;
-  border: 1.5px solid transparent; cursor: pointer; transition: all .18s;
-  min-width: 72px; flex-shrink: 0;
+/* Per-card lock button — sits right of kcal input */
+.ex-lock-btn {
+  background: none; border: 1.5px solid var(--border); border-radius: 6px;
+  padding: 2px 5px; font-size: .85rem; cursor: pointer; line-height: 1;
+  color: var(--text-muted); transition: all .15s; flex-shrink: 0;
 }
-.ex-mode-edit {
-  background: #fff0ee; color: #c0392b; border-color: #e8a89c;
-}
-.ex-mode-edit:hover, .ex-mode-edit.active {
-  background: #e74c3c; color: #fff; border-color: #e74c3c;
-}
-.ex-mode-lock {
-  background: #f0fff4; color: #27ae60; border-color: #a9dfbf;
-}
-.ex-mode-lock:hover, .ex-mode-lock.ex-mode-lock-active {
-  background: #27ae60; color: #fff; border-color: #27ae60;
+.ex-lock-btn:hover { border-color: #27ae60; background: #f0fff4; }
+.ex-lock-btn.ex-lock-active {
+  border-color: #27ae60; background: #eafaf1; color: #27ae60;
 }
 /* Locked kcal field: subtle visual indicator */
 .ex-kcal-inp.ex-kcal-locked {
   color: var(--text-muted); border-color: #d0d0d0; background: var(--bg-alt);
   cursor: not-allowed; opacity: .85;
+}
+/* Per-card delete/hide button — top-right corner of card */
+.ex-del-card-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: none; border: none; font-size: .78rem; color: var(--text-muted);
+  cursor: pointer; padding: 2px 4px; border-radius: 4px; line-height: 1;
+  opacity: 0; transition: opacity .15s, color .15s;
+}
+.exercise-card:hover .ex-del-card-btn { opacity: 1; }
+.ex-del-card-btn:hover { color: #e74c3c; background: #fdf0f0; }
+/* Restore button in filter row */
+.ex-restore-btn {
+  background: #fff8e1; color: #e67e22; border-color: #f5cba7;
+  font-size: .75rem;
 }
 .ex-log-btn {
   padding:5px 10px; border-radius:9999px; font-size:.78rem;

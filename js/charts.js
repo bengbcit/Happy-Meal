@@ -34,9 +34,11 @@ const Charts = (() => {
     const proteinKcal = Math.round(totals.protein * 4);
     const carbsKcal   = Math.round(totals.carbs   * 4);
     const fatKcal     = Math.round(totals.fat     * 9);
-    const eaten       = proteinKcal + carbsKcal + fatKcal;
-    // Remaining = base target minus eaten (clamped to 0)
-    const remaining   = Math.max(0, ringTarget - eaten);
+    // Use totals.kcal (the recorded value, e.g. recipe's 300 kcal) for remaining calc,
+    // not the macro-recalc sum — avoids discrepancy when macros are 0 but kcal is set.
+    // 用记录的kcal原值计算剩余，避免宏量缺失时算错
+    const recordedKcal = Math.round(totals.kcal || 0);
+    const remaining    = Math.max(0, ringTarget - recordedKcal);
 
     const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
     const labels = {
@@ -51,7 +53,7 @@ const Charts = (() => {
     const dataLabels = [labels.protein, labels.carbs, labels.fat];
     const dataColors = ['#3498db', '#f39c12', '#e74c3c'];
 
-    // Remaining (grey) — base budget minus eaten
+    // Remaining (grey) — base target minus recorded kcal (not macro-recalc)
     dataValues.push(remaining);
     dataLabels.push(labels.remaining);
     dataColors.push('#ecf0f1');

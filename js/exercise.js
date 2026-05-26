@@ -60,43 +60,88 @@ const Exercise = (() => {
 
   let _catFilter = 'all';
 
-  // Per-card lock state + global edit/lock mode toggle
-  // ロック状態 / 锁定状态：调整分钟时按比例缩放kcal
-  const _locked = new Set();   // ids of locked cards
-  let   _editMode = false;     // false = locked mode (green active), true = edit mode (red active)
+  // Per-card lock state: Set of locked exercise ids
+  // 每张卡片独立的锁定状态 / カードごとの個別ロック状態
+  const _locked = new Set();
+
+  // Hidden (deleted) built-in exercise ids — persisted so they don't come back on reload
+  // 隐藏的内置运动ID（用户删除后持久保存）/ 非表示にした内置運動ID
+  const KEY_HIDDEN = 'hm_hidden_exercises';
+  function _hiddenSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(KEY_HIDDEN) || '[]')); } catch { return new Set(); }
+  }
+  function _hideExercise(id) {
+    const h = _hiddenSet(); h.add(id);
+    localStorage.setItem(KEY_HIDDEN, JSON.stringify([...h]));
+    render();
+  }
+  function restoreAll() {
+    localStorage.removeItem(KEY_HIDDEN);
+    render();
+  }
 
   // ── Render exercise list ─────────────────────────────
-  // 運動リストをレンダリング / 渲染运动列表
   function render() {
     const el = document.getElementById('exerciseList');
     if (!el) return;
-    const lang = I18n.current();
-    const all  = [...EXERCISES, ..._customList()];
+    const lang   = I18n.current();
+    const hidden = _hiddenSet();
+    const all    = [
+      ...EXERCISES.filter(e => !hidden.has(e.id)),
+      ..._customList(),
+    ];
     const list = _catFilter === 'all' ? all : all.filter(e => e.cat === _catFilter || e.cat === 'custom');
 
-    const editActive = _editMode  ? ' active' : '';
-    const lockActive = !_editMode ? ' ex-mode-lock-active' : '';
+    const hasHidden = hidden.size > 0;
+    const restoreLbl = lang==='en' ? 'Restore all' : lang==='ja' ? '全て復元' : '恢复全部';
+
     el.innerHTML = `
-      <!-- Category filter + mode toggle -->
       <div class="exercise-cats">
         ${[['all','全部/All'],['cardio','有氧'],['strength','力量'],['flex','柔韧'],['sport','运动'],['custom','自定义']]
           .map(([c,l]) => `<button class="pill${_catFilter===c?' active':''}" onclick="Exercise.filterCat('${c}')">${l}</button>`).join('')}
-        <span style="flex:1"></span>
-        <button class="ex-mode-btn ex-mode-edit${editActive}" onclick="Exercise.setMode('edit')" title="${lang==='en'?'Edit kcal':lang==='ja'?'kcal編集':'可修改kcal'}">✏️ ${lang==='en'?'Edit':lang==='ja'?'編集':'修改'}</button>
-        <button class="ex-mode-btn ex-mode-lock${lockActive}" onclick="Exercise.setMode('lock')" title="${lang==='en'?'Lock kcal':lang==='ja'?'kcalロック':'锁定kcal'}">🔒 ${lang==='en'?'Lock':lang==='ja'?'ロック':'锁定'}</button>
+        ${hasHidden ? `<button class="pill ex-restore-btn" onclick="Exercise.restoreAll()" title="${restoreLbl}">↩ ${restoreLbl}</button>` : ''}
       </div>
       ${list.map(ex => _exCardHTML(ex, lang)).join('')}`;
   }
 
+  // Per-card lock toggle — locks/unlocks just this card's kcal
+  // 各カードの個別ロック切替 / 单卡片锁定切换
+  function toggleLock(id) {
+    const kcalInp = document.getElementById(`exKcal-${id}`);
+    const minInp  = document.getElementById(`exMin-${id}`);
+    const btn     = document.getElementById(`exLockBtn-${id}`);
+    if (!kcalInp) return;
+
+    if (_locked.has(id)) {
+      // Unlock: make editable
+      _locked.delete(id);
+      kcalInp.readOnly = false;
+      kcalInp.classList.remove('ex-kcal-locked');
+      if (btn) { btn.textContent = '🔓'; btn.title = '点击锁定'; btn.classList.remove('ex-lock-active'); }
+    } else {
+      // Lock: snapshot current values as new base, then make read-only
+      const curKcal = parseFloat(kcalInp.value) || 0;
+      const curMin  = parseFloat(minInp?.value) || 30;
+      kcalInp.dataset.baseKcal = curKcal;
+      kcalInp.dataset.baseMin  = curMin;
+      _locked.add(id);
+      kcalInp.readOnly = true;
+      kcalInp.classList.add('ex-kcal-locked');
+      if (btn) { btn.textContent = '🔒'; btn.title = '点击解锁'; btn.classList.add('ex-lock-active'); }
+    }
+  }
+
   function _exCardHTML(ex, lang) {
-    const name = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
+    const name     = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
     const defaultMin  = 30;
     const defaultKcal = _calcKcal(ex.met, defaultMin);
-    const minLbl  = lang==='en' ? 'min' : lang==='ja' ? '分' : '分钟';
-    const logLbl  = lang==='en' ? '+ Log' : lang==='ja' ? '＋記録' : '＋记录';
-    const isLocked = !_editMode;   // lock mode = read-only kcal by default
-    const lockedClass = isLocked ? ' ex-kcal-locked' : '';
-    const readOnly    = isLocked ? ' readonly' : '';
+    const minLbl   = lang==='en' ? 'min' : lang==='ja' ? '分' : '分钟';
+    const logLbl   = lang==='en' ? '+ Log' : lang==='ja' ? '＋記録' : '＋记录';
+    const isLocked = _locked.has(ex.id);
+    const lockIcon = isLocked ? '🔒' : '🔓';
+    const lockTitle = isLocked ? '点击解锁' : '点击锁定';
+    const isCustom = ex.cat === 'custom';
+    const delLbl   = lang==='en' ? 'Delete' : lang==='ja' ? '削除' : '删除';
     return `
       <div class="exercise-card" id="exCard-${ex.id}">
         <span class="ex-icon">${ex.icon}</span>
@@ -112,41 +157,20 @@ const Exercise = (() => {
           <button class="ex-min-btn" onclick="Exercise.adjMin('${ex.id}',5)">＋</button>
         </div>
         <div class="ex-kcal-row">
-          <input class="ex-kcal-inp${lockedClass}" id="exKcal-${ex.id}" type="number" min="0"
-                 value="${defaultKcal}"${readOnly}
-                 data-base-kcal="${defaultKcal}" data-base-min="${defaultMin}"
-                 title="${isLocked ? (lang==='en'?'Locked — click 🔒 to edit':lang==='ja'?'ロック中':'锁定中，点修改按钮可编辑') : (lang==='en'?'Editable':'可编辑')}"/>
+          <input class="ex-kcal-inp${isLocked?' ex-kcal-locked':''}" id="exKcal-${ex.id}" type="number" min="0"
+                 value="${defaultKcal}"${isLocked?' readonly':''}
+                 data-base-kcal="${defaultKcal}" data-base-min="${defaultMin}"/>
           <span class="ex-kcal-unit">kcal</span>
+          <button class="ex-lock-btn${isLocked?' ex-lock-active':''}" id="exLockBtn-${ex.id}"
+                  onclick="Exercise.toggleLock('${ex.id}')" title="${lockTitle}">${lockIcon}</button>
         </div>
         <button class="ex-log-btn" onclick="Exercise.logEntry('${ex.id}')">${logLbl}</button>
-        ${ex.cat==='custom' ? `<button class="row-del-btn" onclick="Exercise.deleteCustom('${ex.id}')" style="margin-left:4px">−</button>` : ''}
+        <button class="ex-del-card-btn" onclick="Exercise.${isCustom?`deleteCustom('${ex.id}')`:`_hideExercise('${ex.id}')`}"
+                title="${delLbl}">✕</button>
       </div>`;
   }
 
   function filterCat(cat) { _catFilter = cat; render(); }
-
-  // Toggle global edit/lock mode
-  // 編集/ロックモードを切り替え / 切换全局编辑/锁定模式
-  function setMode(mode) {
-    _editMode = (mode === 'edit');
-    // Update button appearance without full re-render
-    document.querySelectorAll('.ex-mode-edit').forEach(b => {
-      b.classList.toggle('active', _editMode);
-    });
-    document.querySelectorAll('.ex-mode-lock').forEach(b => {
-      b.classList.toggle('ex-mode-lock-active', !_editMode);
-    });
-    // Update all kcal inputs: edit mode → editable; lock mode → read-only
-    document.querySelectorAll('.ex-kcal-inp').forEach(inp => {
-      inp.readOnly = !_editMode;
-      inp.classList.toggle('ex-kcal-locked', !_editMode);
-      // In edit mode, update title to reflect editable state
-      const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
-      inp.title = _editMode
-        ? (lang==='en' ? 'Editable' : lang==='ja' ? '編集可能' : '可编辑')
-        : (lang==='en' ? 'Locked — click ✏️ to edit' : lang==='ja' ? 'ロック中' : '锁定中，点✏️修改可编辑');
-    });
-  }
 
   // Adjust minutes with +/- buttons
   // +/-ボタンで分数を調整 / 用 +/- 按钮调整分钟数
@@ -158,21 +182,26 @@ const Exercise = (() => {
     updateKcal(id);
   }
 
-  // Recalculate kcal from minutes change
-  // Lock mode: scale proportionally from base values  |  Edit mode: don't auto-update (user controls kcal)
-  // ロックモード: 比例スケーリング / 锁定模式：按比例缩放；编辑模式：不自动更新
+  // Recalculate kcal when minutes change
+  // Locked card: scale proportionally from the snapshotted base values
+  // Unlocked card: auto-calculate from MET formula (since user hasn't pinned a custom value)
+  // ロック済: 基準値から比例計算 / アンロック: MET式で再計算
   function updateKcal(id) {
     const minInp  = document.getElementById(`exMin-${id}`);
     const kcalInp = document.getElementById(`exKcal-${id}`);
     if (!minInp || !kcalInp) return;
     const newMin = parseInt(minInp.value) || 30;
-    if (!_editMode) {
-      // Lock mode: scale kcal proportionally based on base values stored in data attributes
+    if (_locked.has(id)) {
+      // Locked: scale kcal proportionally from snapshotted base
       const baseKcal = parseFloat(kcalInp.dataset.baseKcal) || 0;
       const baseMin  = parseFloat(kcalInp.dataset.baseMin)  || 30;
       kcalInp.value  = Math.round(baseKcal * newMin / baseMin);
+    } else {
+      // Unlocked: recalculate from MET (user hasn't locked a custom value)
+      const all = [...EXERCISES, ..._customList()];
+      const ex  = all.find(e => e.id === id);
+      if (ex) kcalInp.value = _calcKcal(ex.met, newMin);
     }
-    // Edit mode: user controls kcal directly — do not overwrite
   }
 
   // Log an exercise entry to today's record
@@ -318,7 +347,8 @@ const Exercise = (() => {
     renderExerciseRecommend();
   }
 
-  return { render, renderLog, filterCat, setMode, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init,
+  return { render, renderLog, filterCat, toggleLock, _hideExercise, restoreAll,
+           adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init,
            getTodayBurned, getTodayExerciseNames,
            renderExerciseRecommend, dismissExerciseRecommend, refreshExerciseRecommend };
 })();

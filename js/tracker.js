@@ -227,13 +227,6 @@ const Tracker = (() => {
       }
     }
 
-    // Remaining = base target minus food eaten (not affected by exercise)
-    const remainEl = document.getElementById('remainKcal');
-    if (remainEl) {
-      const remaining = baseTarget - Math.round(t.kcal);
-      remainEl.textContent = remaining;
-      remainEl.style.color = remaining >= 0 ? 'var(--green)' : '#e74c3c';
-    }
 
     // Macro bars
     const macroBarsEl = document.getElementById('macroBars');
