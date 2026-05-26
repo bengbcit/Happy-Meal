@@ -84,7 +84,7 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
       let raw = '';
       if (visionProvider === 'gemini') {
         const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
           { method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ contents:[{ parts:[
               { text: visionPrompt },
@@ -217,7 +217,7 @@ Only include tags clearly supported by the page content. Return [] if none apply
 
     else if (provider === 'gemini') {
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         { method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             contents:[{ parts:[{ text: systemPrompt + '\n\n---\n\n' + sourceContent }] }],
