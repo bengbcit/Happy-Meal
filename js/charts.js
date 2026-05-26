@@ -22,8 +22,10 @@ const Charts = (() => {
     if (!canvas) return;
 
     if (!totals) totals = Tracker.getTotals(new Date().toISOString().slice(0, 10));
-    const baseTarget = State.get().settings.targetKcal || 1800;
-    if (!target) target = baseTarget;
+    const settingsTarget = State.get().settings.targetKcal || 1800;
+    // Always use the base target (not adjTarget) for the ring budget
+    // Exercise burned is shown as a separate grey segment beyond the budget
+    const ringTarget = settingsTarget;
     // Auto-fetch burned from Exercise if not passed — ensures any caller gets up-to-date ring
     if (burned === undefined || burned === null) {
       burned = (typeof Exercise !== 'undefined') ? Exercise.getTodayBurned() : 0;
@@ -33,14 +35,15 @@ const Charts = (() => {
     const carbsKcal   = Math.round(totals.carbs   * 4);
     const fatKcal     = Math.round(totals.fat     * 9);
     const eaten       = proteinKcal + carbsKcal + fatKcal;
-    const remaining   = Math.max(0, target - eaten);
+    // Remaining = base target minus eaten (clamped to 0)
+    const remaining   = Math.max(0, ringTarget - eaten);
 
     const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
     const labels = {
       protein:   lang==='en' ? 'Protein'   : lang==='ja' ? 'タンパク質' : '蛋白质',
       carbs:     lang==='en' ? 'Carbs'     : lang==='ja' ? '炭水化物'   : '碳水',
       fat:       lang==='en' ? 'Fat'       : lang==='ja' ? '脂質'       : '脂肪',
-      exercise:  lang==='en' ? 'Exercise+' : lang==='ja' ? '運動+'      : '运动+',
+      exercise:  lang==='en' ? 'Exercise'  : lang==='ja' ? '運動'       : '运动',
       remaining: lang==='en' ? 'Remaining' : lang==='ja' ? '残り'       : '剩余',
     };
 
@@ -48,17 +51,17 @@ const Charts = (() => {
     const dataLabels = [labels.protein, labels.carbs, labels.fat];
     const dataColors = ['#3498db', '#f39c12', '#e74c3c'];
 
-    // Add exercise segment (orange) when burned > 0
-    if (burned > 0) {
-      dataValues.push(burned);
-      dataLabels.push(labels.exercise);
-      dataColors.push('#FF7A45');
-    }
-
-    // Remaining (grey)
+    // Remaining (grey) — base budget minus eaten
     dataValues.push(remaining);
     dataLabels.push(labels.remaining);
     dataColors.push('#ecf0f1');
+
+    // Exercise burned — extra grey segment outside the base budget
+    if (burned > 0) {
+      dataValues.push(burned);
+      dataLabels.push(labels.exercise);
+      dataColors.push('#b0bec5');
+    }
 
     _macroRingChart = _destroy(_macroRingChart);
     _macroRingChart = new Chart(canvas, {

@@ -658,7 +658,7 @@ input, select, textarea { font: inherit; }
 
 /* ── Exercise tab ───────────────────────────────────── */
 .exercise-list { display:flex; flex-direction:column; gap:8px; }
-.exercise-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; margin-bottom:8px; }
+.exercise-cats { display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
 .exercise-card {
   display:flex; align-items:center; gap:8px;
   background:var(--card-bg); border-radius:var(--radius-sm);

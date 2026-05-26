@@ -130,12 +130,21 @@ const Exercise = (() => {
   function setMode(mode) {
     _editMode = (mode === 'edit');
     // Update button appearance without full re-render
-    document.querySelectorAll('.ex-mode-edit').forEach(b => b.classList.toggle('active',  _editMode));
-    document.querySelectorAll('.ex-mode-lock').forEach(b => b.classList.toggle('ex-mode-lock-active', !_editMode));
+    document.querySelectorAll('.ex-mode-edit').forEach(b => {
+      b.classList.toggle('active', _editMode);
+    });
+    document.querySelectorAll('.ex-mode-lock').forEach(b => {
+      b.classList.toggle('ex-mode-lock-active', !_editMode);
+    });
     // Update all kcal inputs: edit mode → editable; lock mode → read-only
     document.querySelectorAll('.ex-kcal-inp').forEach(inp => {
       inp.readOnly = !_editMode;
       inp.classList.toggle('ex-kcal-locked', !_editMode);
+      // In edit mode, update title to reflect editable state
+      const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
+      inp.title = _editMode
+        ? (lang==='en' ? 'Editable' : lang==='ja' ? '編集可能' : '可编辑')
+        : (lang==='en' ? 'Locked — click ✏️ to edit' : lang==='ja' ? 'ロック中' : '锁定中，点✏️修改可编辑');
     });
   }
 
