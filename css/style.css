@@ -697,6 +697,29 @@ input, select, textarea { font: inherit; }
 }
 .ex-kcal-inp:focus { border-color: var(--accent); outline: none; }
 .ex-kcal-unit { font-size:.75rem; color:var(--text-muted); }
+/* Exercise edit/lock mode toggle buttons */
+.ex-mode-btn {
+  padding: 4px 12px; border-radius: 9999px; font-size: .78rem; font-weight: 600;
+  border: 1.5px solid transparent; cursor: pointer; transition: all .18s;
+  min-width: 72px; flex-shrink: 0;
+}
+.ex-mode-edit {
+  background: #fff0ee; color: #c0392b; border-color: #e8a89c;
+}
+.ex-mode-edit:hover, .ex-mode-edit.active {
+  background: #e74c3c; color: #fff; border-color: #e74c3c;
+}
+.ex-mode-lock {
+  background: #f0fff4; color: #27ae60; border-color: #a9dfbf;
+}
+.ex-mode-lock:hover, .ex-mode-lock.ex-mode-lock-active {
+  background: #27ae60; color: #fff; border-color: #27ae60;
+}
+/* Locked kcal field: subtle visual indicator */
+.ex-kcal-inp.ex-kcal-locked {
+  color: var(--text-muted); border-color: #d0d0d0; background: var(--bg-alt);
+  cursor: not-allowed; opacity: .85;
+}
 .ex-log-btn {
   padding:5px 10px; border-radius:9999px; font-size:.78rem;
   background:var(--primary); color:#fff; font-weight:600; flex-shrink:0;

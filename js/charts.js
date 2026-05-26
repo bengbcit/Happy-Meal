@@ -24,7 +24,10 @@ const Charts = (() => {
     if (!totals) totals = Tracker.getTotals(new Date().toISOString().slice(0, 10));
     const baseTarget = State.get().settings.targetKcal || 1800;
     if (!target) target = baseTarget;
-    burned = burned || 0;
+    // Auto-fetch burned from Exercise if not passed — ensures any caller gets up-to-date ring
+    if (burned === undefined || burned === null) {
+      burned = (typeof Exercise !== 'undefined') ? Exercise.getTodayBurned() : 0;
+    }
 
     const proteinKcal = Math.round(totals.protein * 4);
     const carbsKcal   = Math.round(totals.carbs   * 4);
