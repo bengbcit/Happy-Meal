@@ -2,42 +2,61 @@
 // 日次カロリー・栄養素追跡 / 每日卡路里与营养素追踪
 
 const Tracker = (() => {
-  // Today's date string YYYY-MM-DD
-  // 今日の日付文字列 / 今日日期字符串
-  let _date = _todayStr();
+  // _date lives on the DOM element so it survives re-renders and multiple init() calls
+  // _date は DOM 要素に保存 — 再レンダリングや複数回の init() 呼び出しに耐える
+  // _date 存在 DOM 上，不受模块重新初始化影响
 
   function _todayStr() {
-    return new Date().toISOString().slice(0, 10);
+    // Use local date (not UTC) to match the user's timezone
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function _getDate() {
+    const el = document.getElementById('trackerDate');
+    return el?.dataset.date || _todayStr();
+  }
+
+  function _setDate(val) {
+    const el = document.getElementById('trackerDate');
+    if (el) el.dataset.date = val;
   }
 
   function _fmtDate(d) {
-    // Format date for display: 4/15 (Mon)
     const dt = new Date(d + 'T00:00:00');
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     return `${dt.getMonth()+1}/${dt.getDate()} (${days[dt.getDay()]})`;
   }
 
-  // ── Navigate dates ───────────────────────────────────
-  // Bound once in init() using touchstart (+ preventDefault to block the synthetic click).
-  // This is the only reliable way to prevent mobile double-fire on iOS/Android.
   function prevDay() {
-    const d = new Date(_date + 'T00:00:00');
+    const cur = _getDate();
+    const d = new Date(cur + 'T00:00:00');
     d.setDate(d.getDate() - 1);
-    _date = d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    _setDate(`${y}-${m}-${dd}`);
     render();
   }
+
   function nextDay() {
+    const cur = _getDate();
     const today = _todayStr();
-    if (_date >= today) return;
-    const d = new Date(_date + 'T00:00:00');
+    if (cur >= today) return;
+    const d = new Date(cur + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    _date = d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    _setDate(`${y}-${m}-${dd}`);
     render();
   }
 
   function _bindNavButtons() {
-    // Buttons use onclick in HTML — nothing to bind here
-    // 按钮在 HTML 里用 onclick，这里不需要绑定
+    // onclick in HTML handles clicks — nothing to bind here
   }
 
   // ── Totals for a date ────────────────────────────────
@@ -75,7 +94,7 @@ const Tracker = (() => {
     const r = State.getRecipes().find(x => x.id === recipeId);
     if (!r) return;
     _promptMealSelect(entry => {
-      State.addLogEntry(_date, entry, {
+      State.addLogEntry(_getDate(), entry, {
         name: r.name, kcal: r.kcal, protein: r.protein,
         carbs: r.carbs, fat: r.fat, recipeId: r.id,
       });
@@ -98,7 +117,7 @@ const Tracker = (() => {
   function render() {
     // Date label
     const dateEl = document.getElementById('trackerDate');
-    if (dateEl) dateEl.textContent = _fmtDate(_date);
+    if (dateEl) dateEl.textContent = _fmtDate(_getDate());
 
     // Meal sections
     const container = document.getElementById('mealSections');
@@ -109,11 +128,11 @@ const Tracker = (() => {
       { key: 'dinner',    label: I18n.get('meal_dinner') },
       { key: 'snack',     label: I18n.get('meal_snack') },
     ];
-    const log = State.getLog(_date);
-    container.innerHTML = meals.map(m => _mealCardHTML(m, log.meals[m.key] || [], _date)).join('');
+    const log = State.getLog(_getDate());
+    container.innerHTML = meals.map(m => _mealCardHTML(m, log.meals[m.key] || [], _getDate())).join('');
 
     // Render charts
-    Charts.renderNutritionBar(getTotals(_date));
+    Charts.renderNutritionBar(getTotals(_getDate()));
     Charts.renderWeeklyKcal();
 
     // Dashboard ring update
@@ -292,7 +311,7 @@ const Tracker = (() => {
       const mealChoice = prompt(`CSV 解析到 ${items.length} 条食物，添加到哪一餐？\n1 早餐  2 午餐  3 晚餐  4 零食`, '4');
       const mealMap = {'1':'breakfast','2':'lunch','3':'dinner','4':'snack'};
       const meal = mealMap[mealChoice?.trim()] || 'snack';
-      items.forEach(item => State.addLogEntry(_date, meal, item));
+      items.forEach(item => State.addLogEntry(_getDate(), meal, item));
       render();
       Charts.renderMacroRing();
       if (statusEl) statusEl.textContent = `✅ 已导入 ${items.length} 条 → ${meal}`;
@@ -313,7 +332,7 @@ const Tracker = (() => {
       const result = await Parser.fromImageForTracker(file);
       if (!result) throw new Error('empty');
       if (statusEl) statusEl.textContent = '';
-      TrackerImportModal.show(result, _date);
+      TrackerImportModal.show(result, _getDate());
     } catch(e) {
       const msg = e.message || '';
       if (msg.includes('Vision requires') || msg.includes('No AI API key')) {
@@ -329,8 +348,10 @@ const Tracker = (() => {
   }
 
   function init() {
-    _date = _todayStr();
-    _bindNavButtons();
+    // Only reset date to today if not already set (first init)
+    if (!document.getElementById('trackerDate')?.dataset.date) {
+      _setDate(_todayStr());
+    }
     render();
     renderSummary();
   }
