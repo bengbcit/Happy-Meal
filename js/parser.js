@@ -126,13 +126,31 @@ const Parser = (() => {
     return await resp.json();
   }
 
-  // Helper: file → base64 string
+  // Helper: file → base64 string, resized to max 1280px and compressed to JPEG 0.82
+  // Prevents HTTP 413 on mobile: phone cameras produce 3-10MB files → 4-14MB base64 → exceeds Vercel 4.5MB body limit
+  // モバイル413対策：最大1280pxにリサイズしてJPEG圧縮 / 移动端413防护：压缩后再上传
   function _fileToBase64(file) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result.split(',')[1]); // strip "data:...;base64,"
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1280;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else                { width  = Math.round(width  * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width  = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        // Use JPEG 0.82 quality — good visual quality, ~3-5× smaller than raw PNG
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        resolve(dataUrl.split(',')[1]);
+      };
+      img.onerror = reject;
+      img.src = url;
     });
   }
 

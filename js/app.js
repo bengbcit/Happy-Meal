@@ -113,7 +113,7 @@ const App = (() => {
   // ── Wheel-to-tab navigation ──────────────────────────
   // Scrolling down at bottom of page → next tab; scrolling up at top → prev tab
   // タブのホイールナビゲーション / 滚轮切换 Tab
-  const TAB_ORDER = ['dashboard','recipes','tracker','planner','exercise','indulgence'];
+  const TAB_ORDER = ['dashboard','tracker','recipes','planner','exercise','indulgence'];
   let _wheelCooldown = false;
 
   function _setupWheelNav() {

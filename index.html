@@ -117,11 +117,11 @@
       <button class="tab-btn active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
         <span class="tab-icon">🏠</span><span class="tab-label" data-i18n="tab_home">主页</span>
       </button>
-      <button class="tab-btn" data-tab="recipes" onclick="App.switchTab('recipes')">
-        <span class="tab-icon">📖</span><span class="tab-label" data-i18n="tab_recipes">菜谱</span>
-      </button>
       <button class="tab-btn" data-tab="tracker" onclick="App.switchTab('tracker')">
         <span class="tab-icon">📊</span><span class="tab-label" data-i18n="tab_tracker">追踪</span>
+      </button>
+      <button class="tab-btn" data-tab="recipes" onclick="App.switchTab('recipes')">
+        <span class="tab-icon">📖</span><span class="tab-label" data-i18n="tab_recipes">菜谱</span>
       </button>
       <button class="tab-btn" data-tab="planner" onclick="App.switchTab('planner')">
         <span class="tab-icon">📅</span><span class="tab-label" data-i18n="tab_planner">周菜单</span>
@@ -189,7 +189,7 @@
       <!-- ── Dashboard Content (below hero) ── -->
       <div id="dashContent" class="dash-content">
 
-        <!-- Weight Log Card — chart left, table right -->
+        <!-- Weight Log Card -->
         <div class="card reveal-card">
           <div class="card-title">⚖️ <span data-i18n="weight_log_title">体重记录</span></div>
           <div class="weight-log-row">
@@ -199,8 +199,8 @@
           </div>
           <div id="weightLogLast" class="text-muted" style="font-size:.8rem"></div>
           <div class="dash-weight-split">
-            <canvas id="weightHistoryChart" height="160" style="flex:1;min-width:0"></canvas>
-            <div id="weightLogHistory" style="flex:0 0 auto;max-width:200px;overflow-y:auto;max-height:200px"></div>
+            <canvas id="weightHistoryChart" height="160"></canvas>
+            <div id="weightLogHistory"></div>
           </div>
         </div>
 
