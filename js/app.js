@@ -3,29 +3,66 @@
 
 const App = (() => {
   let _currentTab = 'dashboard';
+  const TAB_ORDER = ['dashboard','tracker','recipes','planner','exercise','indulgence'];
 
-  // Switch between main tabs
-  // メインタブを切り替え / 切换主 Tab
+  // Switch between main tabs — CSS Scroll Snap version
+  // scrollIntoView() lets the browser handle smooth snap natively (zero JS jank)
+  // CSS スクロールスナップでタブ切替 / 用浏览器原生滚动吸附切换 Tab
   function switchTab(tabId) {
-    document.querySelectorAll('.tab-page').forEach(el => {
-      el.classList.toggle('active', el.id === `tab-${tabId}`);
-    });
+    _currentTab = tabId;
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
-    _currentTab = tabId;
 
-    // Fire custom event so scroll-reveal observer can re-run
+    // Scroll inside #tabScrollContainer
+    const container = document.getElementById('tabScrollContainer');
+    const el = document.getElementById(`tab-${tabId}`);
+    if (container && el) {
+      // el.offsetTop is relative to offsetParent; subtract container's offsetTop to get scroll position
+      const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+      container.scrollTo({ top, behavior: 'smooth' });
+    }
+
     document.dispatchEvent(new CustomEvent('tabChanged', { detail: tabId }));
+    _lazyRender(tabId);
+  }
 
-    // Lazy render on tab switch
-    // タブ切り替え時に遅延レンダリング / Tab 切换时懒渲染
+  function _lazyRender(tabId) {
     if (tabId === 'recipes')    Recipes.render();
     if (tabId === 'tracker')    Tracker.render();
     if (tabId === 'planner')    Planner.render();
     if (tabId === 'exercise')   { Exercise.render(); Exercise.renderLog(); }
     if (tabId === 'indulgence') Indulgence.render();
     if (tabId === 'dashboard')  { BMI.init(); Tracker.renderSummary(); Charts.renderMacroRing(); Charts.renderWeightChart(); }
+  }
+
+  // Update active tab-btn as user freely scrolls (IntersectionObserver on scroll container)
+  // 自由スクロール中にアクティブタブを更新 / 用户自由滚动时同步更新 Tab 高亮
+  function _setupScrollObserver() {
+    const container = document.getElementById('tabScrollContainer');
+    if (!container) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          const tabId = entry.target.id.replace('tab-', '');
+          if (tabId === _currentTab) return;
+          _currentTab = tabId;
+          document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId);
+          });
+          _lazyRender(tabId);
+        }
+      });
+    }, {
+      root: container,    // observe within #tabScrollContainer, not the viewport
+      threshold: 0.5,
+    });
+
+    TAB_ORDER.forEach(id => {
+      const el = document.getElementById(`tab-${id}`);
+      if (el) observer.observe(el);
+    });
   }
 
   // Toast notification
@@ -67,7 +104,6 @@ const App = (() => {
       document.getElementById('bgPanel')?.classList.add('hidden');
       document.getElementById('switchPanel')?.classList.add('hidden');
     }
-    // Clicking a panel item (not the toggle button itself) should also close the panel
     if (e.target.closest('#switchPanel') && !e.target.closest('#profileName')) {
       setTimeout(() => document.getElementById('switchPanel')?.classList.add('hidden'), 80);
     }
@@ -81,8 +117,8 @@ const App = (() => {
   function init() {
     I18n.init();
     ThemeManager.init();
-    Motivate.render();   // daily quote — language-aware / 每日鼓励语
-    BgPanel.init();      // restore saved background / 恢复已保存背景
+    Motivate.render();
+    BgPanel.init();
     BMI.init();
     Exercise.renderExerciseRecommend();
     Recipes.render();
@@ -92,64 +128,16 @@ const App = (() => {
     Charts.renderMacroRing();
     Charts.renderWeeklyKcal();
     Charts.renderWeightChart();
+    _setupScrollObserver();
   }
 
-  // Auto-enter if Firebase auth persists (checked by firebase-init.js)
-  // Firebase認証が持続する場合は自動ログイン / 如果 Firebase 认证持久化则自动登录
-  // If no Firebase config, show auth gate with local option visible
   window.addEventListener('DOMContentLoaded', () => {
     I18n.init();
-    App._setupWheelNav();
-
-    // Check if we have a persisted local session
-    // 永続化されたローカルセッションを確認 / 检查是否有持久化的本地会话
     const savedUser = State.get().user;
-    if (savedUser.displayName && savedUser.displayName !== '' && savedUser.displayName !== 'Guest') {
-      // Will be handled by Firebase onAuthStateChanged
-      // Firebase の onAuthStateChanged で処理 / 由 Firebase onAuthStateChanged 处理
-    }
+    // Firebase onAuthStateChanged handles auto-login; nothing needed here
   });
 
-  // ── Wheel-to-tab navigation ──────────────────────────
-  // Scrolling down at bottom of page → next tab; scrolling up at top → prev tab
-  // タブのホイールナビゲーション / 滚轮切换 Tab
-  const TAB_ORDER = ['dashboard','tracker','recipes','planner','exercise','indulgence'];
-  let _wheelCooldown = false;
-
-  function _setupWheelNav() {
-    window.addEventListener('wheel', (e) => {
-      if (_wheelCooldown) return;
-
-      // Only trigger when the page is scrolled to its boundary
-      const scrollEl = document.scrollingElement || document.documentElement;
-      const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 8;
-      const atTop    = scrollEl.scrollTop <= 8;
-
-      if (e.deltaY > 20 && atBottom) {
-        // Scroll down at bottom → next tab
-        const idx = TAB_ORDER.indexOf(_currentTab);
-        if (idx < TAB_ORDER.length - 1) {
-          _wheelCooldown = true;
-          switchTab(TAB_ORDER[idx + 1]);
-          // Immediately snap new tab to top with no scroll animation (avoids flash)
-          requestAnimationFrame(() => { window.scrollTo(0, 0); });
-          setTimeout(() => { _wheelCooldown = false; }, 1000);
-        }
-      } else if (e.deltaY < -20 && atTop) {
-        // Scroll up at top → prev tab
-        const idx = TAB_ORDER.indexOf(_currentTab);
-        if (idx > 0) {
-          _wheelCooldown = true;
-          switchTab(TAB_ORDER[idx - 1]);
-          // Snap to bottom of previous tab
-          requestAnimationFrame(() => { window.scrollTo(0, document.body.scrollHeight); });
-          setTimeout(() => { _wheelCooldown = false; }, 1000);
-        }
-      }
-    }, { passive: true });
-  }
-
-  return { switchTab, showToast, init, _setupWheelNav };
+  return { switchTab, showToast, init };
 })();
 
 // Make ProfilePanel and LangMenu globally accessible

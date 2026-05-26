@@ -39,18 +39,10 @@ const Tracker = (() => {
     function _bind(id, fn) {
       const btn = document.getElementById(id);
       if (!btn) return;
-      let _wasTouched = false;
-      // touchstart: set flag, call fn, preventDefault blocks scroll and the synthetic click
-      btn.addEventListener('touchstart', (e) => {
+      // pointerdown fires exactly once for both mouse AND touch — no double-fire ever
+      // ポインターダウンはマウスとタッチ両方で1度だけ発火 / pointerdown 鼠标/触摸只触发一次
+      btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        _wasTouched = true;
-        fn();
-        // Reset flag after the synthetic-click window (300ms)
-        setTimeout(() => { _wasTouched = false; }, 350);
-      }, { passive: false });
-      // click: only fire if not already handled by touchstart
-      btn.addEventListener('click', () => {
-        if (_wasTouched) return;
         fn();
       });
     }

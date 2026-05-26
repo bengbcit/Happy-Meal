@@ -200,12 +200,28 @@ input, select, textarea { font: inherit; }
   background: rgba(255,77,0,0.12); border-color: var(--primary); color: var(--primary);
 }
 
-/* ── Main App Layout ────────────────────────────────── */
-.main-app { display: flex; flex-direction: column; min-height: 100vh; }
+/* ── Main App Layout ─────────────────────────────────── */
+.main-app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── Tab Scroll Container — CSS Scroll Snap ──────────── */
+/* topbar + tabnav stay in normal flow above this div,    */
+/* so position:sticky works correctly for them.           */
+#tabScrollContainer {
+  flex: 1;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
 
 /* ── Topbar ─────────────────────────────────────────── */
 .topbar {
-  position: sticky; top: 0; z-index: 100;
+  position: relative; z-index: 100;
+  flex-shrink: 0;
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px;
   background: rgba(9,9,11,0.88);
@@ -263,7 +279,8 @@ input, select, textarea { font: inherit; }
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   scrollbar-width: none;
-  position: sticky; top: 57px; z-index: 90;
+  position: relative; z-index: 90;
+  flex-shrink: 0;
 }
 .tab-nav::-webkit-scrollbar { display: none; }
 .tab-btn {
@@ -287,9 +304,20 @@ input, select, textarea { font: inherit; }
 }
 .tab-btn:hover:not(.active) { background: var(--surface-hi); color: var(--text); }
 
-/* ── Tab Pages ──────────────────────────────────────── */
-.tab-page { display: none; padding: 14px; flex-direction: column; gap: 14px; }
-.tab-page.active { display: flex; }
+/* ── Tab Pages — always in DOM, scroll-snapped ──────── */
+.tab-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  /* fill exactly one "screen" inside the scroll container
+     topbar ≈57px + tabnav ≈52px = 109px offset */
+  min-height: calc(100dvh - 109px);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  box-sizing: border-box;
+}
+/* .active only drives tab-btn highlight styling — no longer hides/shows pages */
 
 /* ── Cards ──────────────────────────────────────────── */
 .card {
