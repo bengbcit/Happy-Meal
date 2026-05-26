@@ -213,18 +213,36 @@ const Tracker = (() => {
     const targetEl     = document.getElementById('targetKcal');
     const targetRowEl  = document.getElementById('targetKcalRow');
 
-    if (targetEl) {
+    // Row 1: 目标热量 = 1507
+    if (targetEl) targetEl.textContent = baseTarget;
+
+    // Row 2: 可用热量 = 剩余(目标-已吃) + 运动消耗  格式: 可用热量: (1507-300)+312（篮球）= 1519
+    const availEl    = document.getElementById('availableKcal');
+    const availLabel = document.getElementById('availableKcalLabel');
+    if (availEl) {
+      const eaten     = Math.round(t.kcal);
+      const remaining = baseTarget - eaten;          // may be negative if over budget
+      const available = remaining + burned;          // remaining budget + exercise bonus
+      const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
+
       if (burned > 0) {
-        // Show base + exercise breakdown
         const names = (typeof Exercise !== 'undefined') ? Exercise.getTodayExerciseNames() : [];
         const uniqueNames = [...new Set(names)];
-        const exerciseNote = uniqueNames.length
-          ? `+${burned}（${uniqueNames.join('、')}）`
-          : `+${burned}`;
-        targetEl.innerHTML = `${baseTarget} <span style="color:var(--accent-warm,#FF7A45);font-size:.82em">${exerciseNote}</span> = ${adjTarget}`;
+        const exLabel  = lang==='en' ? 'Exercise' : lang==='ja' ? '運動' : '运动';
+        const exNames  = uniqueNames.length ? uniqueNames.join('、') : exLabel;
+        // Label: 可用热量 / Available / 利用可能
+        const rowLabel = lang==='en' ? 'Available: ' : lang==='ja' ? '利用可能：' : '可用热量：';
+        if (availLabel) availLabel.textContent = rowLabel;
+        availEl.innerHTML =
+          `(${baseTarget}−${eaten})+` +
+          `<span style="color:var(--accent-warm,#FF7A45)">${burned}（${exNames}）</span>` +
+          ` = ${available}`;
       } else {
-        targetEl.textContent = baseTarget;
+        const rowLabel = lang==='en' ? 'Remaining: ' : lang==='ja' ? '残り：' : '剩余热量：';
+        if (availLabel) availLabel.textContent = rowLabel;
+        availEl.textContent = remaining;
       }
+      availEl.style.color = available >= 0 ? 'var(--green)' : '#e74c3c';
     }
 
 
