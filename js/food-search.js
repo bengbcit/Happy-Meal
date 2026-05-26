@@ -66,6 +66,8 @@ const FoodSearch = (() => {
       carbs_lbl:    { zh: '碳水g', en: 'carbs g', ja: '炭水g' },
       fat_lbl:      { zh: '脂肪g', en: 'fat g', ja: '脂質g' },
       back_err:     { zh: '← 返回搜索', en: '← Back', ja: '← 戻る' },
+      your_food:    { zh: '✅ 你选择的食物', en: '✅ Your selected food', ja: '✅ 選択した食物' },
+      ai_pairings:  { zh: '🤖 AI 推荐搭配（含饮品）', en: '🤖 AI recommended pairings (incl. drink)', ja: '🤖 AIおすすめ組み合わせ（飲み物含む）' },
     };
     const row = MAP[key];
     if (!row) return key;
@@ -155,13 +157,18 @@ const FoodSearch = (() => {
     const allOptions = variants.includes(originalFood) ? variants : [originalFood, ...variants];
     body.innerHTML = `
       <p class="fs-hint">「${originalFood}」— ${_ui('choose_method')}</p>
-      <div class="fs-variants">
+      <div class="fs-variants" id="fsVariantsList">
         ${allOptions.map(v => `
-          <button class="fs-variant-btn" onclick="FoodSearch._selectVariant(${JSON.stringify(v)})">
-            ${v}
-          </button>`).join('')}
+          <button class="fs-variant-btn" data-variant="${_esc(v)}">${v}</button>`
+        ).join('')}
       </div>
       <button class="fs-back-btn" onclick="FoodSearch._backToSearch()">${_ui('back_search')}</button>`;
+
+    // 用事件委托绑定点击，避免 onclick 属性的引号冲突
+    document.getElementById('fsVariantsList')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-variant]');
+      if (btn) _selectVariant(btn.dataset.variant);
+    });
   }
 
   // ── Step 2: select variant → fetch pairings ──────────
@@ -205,15 +212,29 @@ const FoodSearch = (() => {
   function _renderItemsTable() {
     const body = document.getElementById('fsBody');
     if (!body) return;
+
+    // 第一项是选中的食物本身，其余是搭配建议
+    const [mainItem, ...pairingItems] = _items;
+
+    const mainHTML = mainItem ? `
+      <div class="fs-section-label">${_ui('your_food')}</div>
+      <div class="fs-items-list" id="fsMainItem">
+        ${_itemRowHTML(mainItem)}
+      </div>` : '';
+
+    const pairingsHTML = pairingItems.length ? `
+      <div class="fs-section-label">${_ui('ai_pairings')}</div>
+      <div class="fs-items-list" id="fsItemsList">
+        ${pairingItems.map(item => _itemRowHTML(item)).join('')}
+      </div>` : '';
+
     body.innerHTML = `
       <div class="fs-pairings-header">
-        <span class="fs-selected-label">「${_selectedVariant}」${_ui('pairing_label')}</span>
+        <span class="fs-selected-label">「${_selectedVariant}」</span>
         <span class="fs-meal-badge">${_mealLabel(_meal)}</span>
       </div>
-      <p class="fs-hint">${_ui('hint_edit')}</p>
-      <div class="fs-items-list" id="fsItemsList">
-        ${_items.map(item => _itemRowHTML(item)).join('')}
-      </div>
+      ${mainHTML}
+      ${pairingsHTML}
       <button class="fs-add-row-btn" onclick="FoodSearch._addEmptyRow()">${_ui('add_manual')}</button>
       <div class="fs-actions">
         <button class="btn-secondary" onclick="FoodSearch._backToSearch()">${_ui('back_search')}</button>
@@ -290,10 +311,11 @@ const FoodSearch = (() => {
   function _addEmptyRow() {
     const newItem = { id: _nextId++, name: '', grams: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, checked: true };
     _items.push(newItem);
-    const list = document.getElementById('fsItemsList');
+    // 优先插到搭配列表，没有则插到主食物列表后
+    const list = document.getElementById('fsItemsList') || document.getElementById('fsMainItem');
     if (list) {
       list.insertAdjacentHTML('beforeend', _itemRowHTML(newItem));
-      list.querySelector(`#fsRow-${newItem.id} .fs-name-inp`)?.focus();
+      document.querySelector(`#fsRow-${newItem.id} .fs-name-inp`)?.focus();
     }
   }
 

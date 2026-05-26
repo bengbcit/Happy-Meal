@@ -70,9 +70,10 @@ Return ONLY a JSON array, no explanation, no markdown:
       ? 'Prefer low-oil, low-salt, low-sugar, nutritionally balanced foods'
       : '优先推荐少油炸、少盐、少糖、营养均衡的食物';
 
-    const pairPrompt = `The user selected: "${food}"
-Recommend 4-6 healthy pairing foods. ${healthyNote}.
-For each, provide a typical single-serving weight (grams) and estimated nutrition.
+    const pairPrompt = `The user selected the food: "${food}"
+Generate 4-6 healthy pairing items that commonly go together with "${food}" as a complete meal. ${healthyNote}.
+Include a mix of: side dishes, vegetables, and at least one drink (e.g. water, milk, tea, juice).
+For each item, provide a typical single-serving weight (grams) and estimated nutrition.
 ${langHint}
 Return ONLY a JSON array, no explanation, no markdown:
 [
