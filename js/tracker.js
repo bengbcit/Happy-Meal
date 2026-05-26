@@ -115,12 +115,55 @@ const Tracker = (() => {
 
   function _mealCardHTML(meal, items, dateStr) {
     const mealKcal = items.reduce((s, i) => s + (i.kcal || 0), 0);
-    const itemsHTML = items.map((item, idx) => `
-      <div class="meal-item">
-        <span class="meal-item-name">${item.name}</span>
-        <span class="meal-item-kcal">${item.kcal || 0} kcal</span>
-        <button class="meal-item-del" onclick="Tracker.removeEntry('${dateStr}','${meal.key}',${idx})">✕</button>
-      </div>`).join('');
+
+    // Group items by groupId; ungrouped items each get their own solo group
+    const groups = [];
+    const seen = {};
+    items.forEach((item, idx) => {
+      const gid = item.groupId || ('solo_' + idx);
+      if (!seen[gid]) {
+        seen[gid] = { groupId: gid, name: item.groupName || null, items: [], indices: [] };
+        groups.push(seen[gid]);
+      }
+      seen[gid].items.push(item);
+      seen[gid].indices.push(idx);
+    });
+
+    const groupsHTML = groups.map(g => {
+      const gKcal = g.items.reduce((s, i) => s + (i.kcal || 0), 0);
+      const hasName = g.name && g.name.trim();
+
+      if (hasName) {
+        // Named group — show as a clickable badge + expandable list
+        const detailId = `grp-${meal.key}-${g.groupId}`;
+        const itemsDetail = g.items.map((item, i) => `
+          <div class="meal-item meal-item-sub">
+            <span class="meal-item-name">${item.name}</span>
+            <span class="meal-item-kcal">${item.kcal || 0} kcal</span>
+            <button class="meal-item-del" onclick="Tracker.removeEntry('${dateStr}','${meal.key}',${g.indices[i]});event.stopPropagation()">✕</button>
+          </div>`).join('');
+        return `
+          <div class="meal-group">
+            <div class="meal-group-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
+              <span class="meal-group-name">🍱 ${g.name}</span>
+              <span class="meal-group-kcal">${gKcal} kcal</span>
+              <span class="meal-group-toggle">▾</span>
+            </div>
+            <div class="meal-group-detail hidden" id="${detailId}">
+              ${itemsDetail}
+              <button class="meal-group-edit-btn" onclick="Tracker._editGroup('${dateStr}','${meal.key}','${g.groupId}');event.stopPropagation()">✏️ ${I18n.get('edit') || '编辑'}</button>
+            </div>
+          </div>`;
+      } else {
+        // Ungrouped — show items directly as before
+        return g.items.map((item, i) => `
+          <div class="meal-item">
+            <span class="meal-item-name">${item.name}</span>
+            <span class="meal-item-kcal">${item.kcal || 0} kcal</span>
+            <button class="meal-item-del" onclick="Tracker.removeEntry('${dateStr}','${meal.key}',${g.indices[i]})">✕</button>
+          </div>`).join('');
+      }
+    }).join('');
 
     return `
       <div class="meal-card">
@@ -128,11 +171,18 @@ const Tracker = (() => {
           <span class="meal-title">${meal.label}</span>
           <span class="meal-kcal">${mealKcal} kcal</span>
         </div>
-        <div class="meal-items">${itemsHTML}</div>
+        <div class="meal-items">${groupsHTML}</div>
         <button class="meal-add-btn" onclick="Tracker.addManual('${dateStr}','${meal.key}')">
           + ${I18n.get('add_food')}
         </button>
       </div>`;
+  }
+
+  // Edit group — re-open FoodSearch modal pre-filled with group items
+  function _editGroup(dateStr, mealKey, groupId) {
+    const log   = State.getLog(dateStr);
+    const items = (log.meals[mealKey] || []).filter(i => i.groupId === groupId);
+    FoodSearch.openEdit(dateStr, mealKey, groupId, items);
   }
 
   // Remove a log entry
@@ -230,7 +280,7 @@ const Tracker = (() => {
   }
 
   return { prevDay, nextDay, addFromRecipe, addManual, removeEntry,
-           getTotals, getTodayMacros, renderSummary, render, importCSV, importImage, init };
+           getTotals, getTodayMacros, renderSummary, render, importCSV, importImage, init, _editGroup };
 })();
 
 // ── TrackerImportModal ────────────────────────────────
@@ -365,31 +415,96 @@ const TrackerImportModal = (() => {
     _render();
   }
 
-  // Save all valid items to their respective meal buckets
-  // すべての有効なアイテムをそれぞれの食事バケツに保存 / 将所有有效条目保存到对应餐次
+  // Step 1: show naming + meal-assignment UI before saving
   function saveAll() {
     const valid = _items.filter(x => (x.name||'').trim());
     if (!valid.length) { close(); return; }
+
+    // Auto-suggest group name from first 3 item names
+    const suggested = valid.slice(0, 3).map(x => x.name.trim()).join('+');
+
+    const el = document.getElementById('trackerImportContent');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="tim-save-section">
+        <label class="tim-save-label">套餐名称</label>
+        <input class="inp" id="timGroupName" value="${_esc(suggested)}" placeholder="给这组食物起个名字" />
+      </div>
+      <div class="tim-save-section">
+        <label class="tim-save-label">分配到哪一餐？</label>
+        <div class="tim-meal-btns">
+          ${MEAL_KEYS.map(m => `
+            <button class="tim-meal-pick" data-meal="${m}"
+              onclick="TrackerImportModal._pickMeal('${m}',this)">
+              ${_mealLabel(m)}
+            </button>`).join('')}
+        </div>
+      </div>
+      <p class="tim-hint" style="margin-top:6px">识别到 ${valid.length} 个食物，确认后保存为一个套餐</p>`;
+
+    _pendingSave = valid;
+    _pickedMeal  = 'breakfast';
+
+    // Activate first meal button
+    setTimeout(() => {
+      const first = document.querySelector('.tim-meal-pick');
+      if (first) first.classList.add('active');
+    }, 0);
+
+    const footer = document.querySelector('#trackerImportModal .modal-actions');
+    if (footer) footer.innerHTML = `
+      <button class="btn-secondary" onclick="TrackerImportModal._backToEdit()">← 返回编辑</button>
+      <button class="btn-primary"   onclick="TrackerImportModal._doSave()">✅ 确认保存</button>`;
+  }
+
+  let _pendingSave = [];
+  let _pickedMeal  = 'breakfast';
+
+  function _pickMeal(meal, btn) {
+    _pickedMeal = meal;
+    document.querySelectorAll('.tim-meal-pick').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function _backToEdit() {
+    _pendingSave = [];
+    _render();
+    const footer = document.querySelector('#trackerImportModal .modal-actions');
+    if (footer) footer.innerHTML = `
+      <button class="btn-secondary" onclick="TrackerImportModal.close()" data-i18n="btn_cancel">取消</button>
+      <button class="btn-primary" onclick="TrackerImportModal.saveAll()" data-i18n="btn_save_all">✅ 全部保存</button>`;
+  }
+
+  function _doSave() {
+    const valid = _pendingSave;
+    if (!valid.length) { close(); return; }
+    const groupName = (document.getElementById('timGroupName')?.value || '').trim()
+                      || valid.slice(0,3).map(x=>x.name.trim()).join('+');
+    const groupId   = 'img_' + Date.now().toString(36);
     valid.forEach(item => {
-      State.addLogEntry(_date, item.meal, {
-        name:    item.name.trim(),
-        kcal:    item.kcal    || 0,
-        protein: item.protein || 0,
-        carbs:   item.carbs   || 0,
-        fat:     item.fat     || 0,
-        grams:   item.grams   || 0,
+      State.addLogEntry(_date, _pickedMeal, {
+        name:      item.name.trim(),
+        kcal:      item.kcal    || 0,
+        protein:   item.protein || 0,
+        carbs:     item.carbs   || 0,
+        fat:       item.fat     || 0,
+        grams:     item.grams   || 0,
+        groupId,
+        groupName,
       });
     });
+    _pendingSave = [];
     close();
     Tracker.render();
     Charts.renderMacroRing();
-    App.showToast(`✅ ${I18n.get('saved_ok')||'已保存'} — ${valid.length} ${I18n.get('items_saved')||'个食物'}`);
+    App.showToast(`✅ 已保存「${groupName}」→ ${_mealLabel(_pickedMeal)}`);
   }
 
   function close() {
     document.getElementById('trackerImportModal')?.classList.add('hidden');
     _items = [];
+    _pendingSave = [];
   }
 
-  return { show, saveAll, addEmpty, close, _upd, _del };
+  return { show, saveAll, addEmpty, close, _upd, _del, _pickMeal, _backToEdit, _doSave };
 })();

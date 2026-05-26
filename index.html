@@ -424,21 +424,14 @@
         <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
       </div>
 
-      <!-- Quick import: CSV + image -->
+      <!-- Quick import: image only -->
       <div class="card">
         <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
-        <div class="import-row">
-          <label class="import-btn" onclick="document.getElementById('csvInput').click()">
-            📊 <span data-i18n="import_csv">导入 CSV</span>
-            <input id="csvInput" type="file" accept=".csv,.tsv" class="hidden"
-              onchange="Tracker.importCSV(this.files[0])" />
-          </label>
-          <label class="import-btn" onclick="document.getElementById('trackerImgInput').click()">
-            📷 <span data-i18n="import_photo">拍照/截图</span>
-            <input id="trackerImgInput" type="file" accept="image/*" capture="environment" class="hidden"
-              onchange="Tracker.importImage(this.files[0])" />
-          </label>
-        </div>
+        <label class="import-btn import-btn-full" onclick="document.getElementById('trackerImgInput').click()">
+          📷 <span data-i18n="import_photo">拍照 / 截图识别</span>
+          <input id="trackerImgInput" type="file" accept="image/*" capture="environment" class="hidden"
+            onchange="Tracker.importImage(this.files[0])" />
+        </label>
         <div id="importStatus" class="parse-status"></div>
       </div>
 

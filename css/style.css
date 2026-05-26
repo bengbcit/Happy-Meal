@@ -1480,3 +1480,127 @@ body.hero-light .hero-chevrons span {
   margin-top: 8px;
   margin-bottom: 2px;
 }
+
+/* Group name input row */
+.fs-group-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-el);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+}
+.fs-group-name-label {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.fs-group-name-inp {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: .9rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+/* Meal-group in tracker card */
+.meal-group {
+  margin-bottom: 4px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.meal-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface-hi);
+  cursor: pointer;
+  user-select: none;
+}
+.meal-group-header:hover { background: var(--overlay); }
+.meal-group-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text);
+}
+.meal-group-kcal {
+  font-size: .82rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+.meal-group-toggle {
+  font-size: .75rem;
+  color: var(--text-muted);
+}
+.meal-group-detail {
+  background: var(--surface-el);
+  padding: 4px 0 4px 8px;
+}
+.meal-item-sub {
+  padding-left: 12px;
+  font-size: .85rem;
+}
+.meal-group-edit-btn {
+  font-size: .78rem;
+  color: var(--secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px 6px;
+  display: block;
+}
+.meal-group-edit-btn:hover { text-decoration: underline; }
+
+/* Import button full-width */
+.import-btn-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* TrackerImportModal — save step */
+.tim-save-section {
+  margin-bottom: 12px;
+}
+.tim-save-label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.tim-meal-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tim-meal-pick {
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-el);
+  color: var(--text);
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.tim-meal-pick:hover,
+.tim-meal-pick.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}

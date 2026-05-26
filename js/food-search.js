@@ -10,8 +10,10 @@ const FoodSearch = (() => {
   let _items    = [];   // [{id, name, grams, kcal, protein, carbs, fat, checked}]
   let _step     = 'search'; // 'search' | 'variants' | 'pairings'
   let _selectedVariant = '';
+  let _groupNameInput  = '';   // user-typed group name
+  let _editGroupId     = null; // set when editing existing group
 
-  // pending recipe for duplicate-overwrite (stored on returned object after init)
+  // pending recipe for duplicate-overwrite
   let _pendingRecipe   = null;
   let _pendingRecipeId = null;
 
@@ -65,9 +67,12 @@ const FoodSearch = (() => {
       protein_lbl:  { zh: '蛋白g', en: 'prot.g', ja: 'たんぱくg' },
       carbs_lbl:    { zh: '碳水g', en: 'carbs g', ja: '炭水g' },
       fat_lbl:      { zh: '脂肪g', en: 'fat g', ja: '脂質g' },
-      back_err:     { zh: '← 返回搜索', en: '← Back', ja: '← 戻る' },
-      your_food:    { zh: '✅ 你选择的食物', en: '✅ Your selected food', ja: '✅ 選択した食物' },
-      ai_pairings:  { zh: '🤖 AI 推荐搭配（含饮品）', en: '🤖 AI recommended pairings (incl. drink)', ja: '🤖 AIおすすめ組み合わせ（飲み物含む）' },
+      back_err:          { zh: '← 返回搜索', en: '← Back', ja: '← 戻る' },
+      your_food:         { zh: '✅ 你选择的食物', en: '✅ Your selected food', ja: '✅ 選択した食物' },
+      ai_pairings:       { zh: '🤖 AI 推荐搭配（含饮品）', en: '🤖 AI recommended pairings (incl. drink)', ja: '🤖 AIおすすめ組み合わせ（飲み物含む）' },
+      group_name_label:  { zh: '套餐名称', en: 'Meal name', ja: 'セット名' },
+      group_name_ph:     { zh: '如：煎蛋生菜肠（留空自动生成）', en: 'e.g. Eggs & Salad (auto if empty)', ja: '例：目玉焼きセット（空白で自動）' },
+      edit_group:        { zh: '编辑套餐', en: 'Edit meal set', ja: 'セットを編集' },
     };
     const row = MAP[key];
     if (!row) return key;
@@ -76,11 +81,13 @@ const FoodSearch = (() => {
 
   // ── Public: open modal ───────────────────────────────
   function open(dateStr, meal) {
-    _dateStr = dateStr;
-    _meal    = meal;
-    _items   = [];
-    _step    = 'search';
+    _dateStr         = dateStr;
+    _meal            = meal;
+    _items           = [];
+    _step            = 'search';
     _selectedVariant = '';
+    _groupNameInput  = '';
+    _editGroupId     = null;
     _pendingRecipe   = null;
     _pendingRecipeId = null;
 
@@ -95,10 +102,40 @@ const FoodSearch = (() => {
 
   function close() {
     document.getElementById('fsMaskOverlay')?.classList.add('hidden');
-    _items = [];
-    _step  = 'search';
+    _items           = [];
+    _step            = 'search';
+    _groupNameInput  = '';
+    _editGroupId     = null;
     _pendingRecipe   = null;
     _pendingRecipeId = null;
+  }
+
+  // Open in edit mode — pre-fill items from existing group
+  function openEdit(dateStr, meal, groupId, existingItems) {
+    _dateStr         = dateStr;
+    _meal            = meal;
+    _step            = 'pairings';
+    _editGroupId     = groupId;
+    _selectedVariant = existingItems[0]?.groupName || existingItems[0]?.name || '';
+    _groupNameInput  = existingItems[0]?.groupName || '';
+    _pendingRecipe   = null;
+    _pendingRecipeId = null;
+
+    _items = existingItems.map(i => ({
+      id:      _nextId++,
+      name:    i.name    || '',
+      grams:   i.grams   || 0,
+      kcal:    i.kcal    || 0,
+      protein: i.protein || 0,
+      carbs:   i.carbs   || 0,
+      fat:     i.fat     || 0,
+      checked: true,
+    }));
+
+    const titleEl = document.getElementById('fsModalTitle');
+    if (titleEl) titleEl.textContent = '✏️ ' + (_ui('edit_group') || '编辑套餐');
+    _renderItemsTable();
+    document.getElementById('fsMaskOverlay')?.classList.remove('hidden');
   }
 
   // ── Render modal body based on current step ──────────
@@ -228,10 +265,20 @@ const FoodSearch = (() => {
         ${pairingItems.map(item => _itemRowHTML(item)).join('')}
       </div>` : '';
 
+    const defaultName = _groupNameInput ||
+      (_selectedVariant ? _selectedVariant : '');
+
     body.innerHTML = `
       <div class="fs-pairings-header">
         <span class="fs-selected-label">「${_selectedVariant}」</span>
         <span class="fs-meal-badge">${_mealLabel(_meal)}</span>
+      </div>
+      <div class="fs-group-name-row">
+        <label class="fs-group-name-label">${_ui('group_name_label')}</label>
+        <input class="inp fs-group-name-inp" id="fsGroupNameInp"
+          placeholder="${_ui('group_name_ph')}"
+          value="${_esc(defaultName)}"
+          oninput="FoodSearch._setGroupName(this.value)" />
       </div>
       ${mainHTML}
       ${pairingsHTML}
@@ -323,20 +370,37 @@ const FoodSearch = (() => {
   function _confirmAdd() {
     const valid = _items.filter(x => x.checked && (x.name || '').trim());
     if (!valid.length) { App.showToast(_ui('need_one')); return; }
+
+    // Build a group name from selected items (max 3 names joined)
+    const groupName = _groupNameInput
+      ? _groupNameInput.trim()
+      : valid.slice(0, 3).map(x => x.name.trim()).join('+');
+    const groupId = _editGroupId || ('g' + Date.now().toString(36));
+
+    // If editing existing group: remove old entries first
+    if (_editGroupId) {
+      const log = State.getLog(_dateStr);
+      const kept = (log.meals[_meal] || []).filter(i => i.groupId !== _editGroupId);
+      log.meals[_meal] = kept;
+      State._save && State._save();
+    }
+
     valid.forEach(item => {
       State.addLogEntry(_dateStr, _meal, {
-        name:    item.name.trim(),
-        kcal:    item.kcal    || 0,
-        protein: item.protein || 0,
-        carbs:   item.carbs   || 0,
-        fat:     item.fat     || 0,
-        grams:   item.grams   || 0,
+        name:      item.name.trim(),
+        kcal:      item.kcal    || 0,
+        protein:   item.protein || 0,
+        carbs:     item.carbs   || 0,
+        fat:       item.fat     || 0,
+        grams:     item.grams   || 0,
+        groupId,
+        groupName,
       });
     });
     close();
     Tracker.render();
     Charts.renderMacroRing();
-    App.showToast(`✅ ${_ui('added_ok')} ${valid.length} ${_ui('items_unit')}${_mealLabel(_meal)}`);
+    App.showToast(`✅ ${_ui('added_ok')} 「${groupName}」→ ${_mealLabel(_meal)}`);
   }
 
   // ── Save to recipe library ───────────────────────────
@@ -405,6 +469,8 @@ const FoodSearch = (() => {
   }
 
   // ── Navigation ───────────────────────────────────────
+  function _setGroupName(val) { _groupNameInput = val; }
+
   function _backToSearch() {
     _step = 'search';
     _items = [];
@@ -423,10 +489,10 @@ const FoodSearch = (() => {
   function _esc(s) { return (s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
   return {
-    open, close,
+    open, close, openEdit,
     _searchVariants, _selectVariant,
     _toggleCheck, _upd, _delRow, _addEmptyRow,
     _confirmAdd, _saveToRecipe, _overwriteRecipe,
-    _backToSearch,
+    _backToSearch, _setGroupName,
   };
 })();
