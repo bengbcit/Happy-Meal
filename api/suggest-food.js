@@ -29,12 +29,21 @@ export default async function handler(req, res) {
   // ── mode: "variants" — return cooking variants for a food name ──────────────
   // バリアント取得モード / 变体列表模式
   if (mode === 'variants') {
-    const langHint = lang === 'zh' ? '用中文回复' : lang === 'ja' ? '日本語で回答' : 'Reply in English';
-    const prompt = `用户输入了食物名称："${food}"
-请列出 5-8 种常见的烹饪方式或变体（如"煎鸡蛋"、"煮鸡蛋"、"炒鸡蛋"、"蒸蛋"等）。
+    const variantExamples = lang === 'ja'
+      ? '（例：目玉焼き、ゆで卵、炒り卵、茶碗蒸しなど）'
+      : lang === 'en'
+      ? '(e.g. fried egg, boiled egg, scrambled egg, steamed egg)'
+      : '（如"煎鸡蛋"、"煮鸡蛋"、"炒鸡蛋"、"蒸蛋"等）';
+    const langHint = lang === 'zh'
+      ? '用中文回复，食物名称用中文'
+      : lang === 'ja'
+      ? '日本語で回答し、食物名は日本語で'
+      : 'Reply in English, food names in English';
+    const prompt = `The user entered a food name: "${food}"
+List 5-8 common cooking methods or variants ${variantExamples}.
 ${langHint}
-只返回 JSON 数组，不要解释，不要 markdown：
-["变体1", "变体2", "变体3", ...]`;
+Return ONLY a JSON array, no explanation, no markdown:
+["variant1", "variant2", "variant3", ...]`;
 
     try {
       const raw = await _callAI(provider, { GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, CLAUDE_API_KEY }, prompt);
@@ -50,30 +59,46 @@ ${langHint}
   // ── mode: "pairings" — return healthy food pairings with nutrition ──────────
   // ペアリング取得モード / 健康搭配模式
   if (mode === 'pairings') {
-    const langHint = lang === 'zh' ? '食物名用中文' : lang === 'ja' ? '食物名を日本語で' : 'Food names in English';
-    const prompt = `用户选择了食物："${food}"
-请推荐 4-6 种健康的搭配食物（少油炸、少盐、少糖、营养均衡）。
-每种搭配给出默认克重（合理的一份量）和对应的营养估算。
+    const langHint = lang === 'zh'
+      ? '食物名用中文，营养数值用数字'
+      : lang === 'ja'
+      ? '食物名を日本語で、栄養値は数値で'
+      : 'Food names in English, nutrition values as numbers';
+    const healthyNote = lang === 'ja'
+      ? '低油、低塩、低糖、栄養バランスの良い食品を優先'
+      : lang === 'en'
+      ? 'Prefer low-oil, low-salt, low-sugar, nutritionally balanced foods'
+      : '优先推荐少油炸、少盐、少糖、营养均衡的食物';
+
+    const pairPrompt = `The user selected: "${food}"
+Recommend 4-6 healthy pairing foods. ${healthyNote}.
+For each, provide a typical single-serving weight (grams) and estimated nutrition.
 ${langHint}
-只返回 JSON 数组，不要解释，不要 markdown：
+Return ONLY a JSON array, no explanation, no markdown:
 [
-  {"name":"食物名","grams":150,"kcal":120,"protein":5,"carbs":20,"fat":3},
+  {"name":"food name","grams":150,"kcal":120,"protein":5,"carbs":20,"fat":3},
   ...
 ]`;
 
-    try {
-      const raw = await _callAI(provider, { GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, CLAUDE_API_KEY }, prompt);
-      const match = raw.match(/\[[\s\S]*\]/);
-      if (!match) return res.status(422).json({ error: 'No JSON array in response', raw });
-      const pairings = JSON.parse(match[0]);
-      // Also include the selected food itself with nutrition estimate
-      const selfPrompt = `食物："${food}"，默认一份量的克重和营养估算。
-只返回单个 JSON 对象，不要解释，不要 markdown：
+    const selfPrompt = `Food: "${food}". Estimate nutrition for a typical single serving.
+${langHint}
+Return ONLY a single JSON object, no explanation, no markdown:
 {"name":"${food}","grams":100,"kcal":0,"protein":0,"carbs":0,"fat":0}
-请填入合理的估算数值。`;
-      const selfRaw = await _callAI(provider, { GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, CLAUDE_API_KEY }, selfPrompt);
+Fill in reasonable estimated values.`;
+
+    try {
+      const keys = { GROQ_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, CLAUDE_API_KEY };
+      const [pairRaw, selfRaw] = await Promise.all([
+        _callAI(provider, keys, pairPrompt),
+        _callAI(provider, keys, selfPrompt),
+      ]);
+      const pairMatch = pairRaw.match(/\[[\s\S]*\]/);
+      if (!pairMatch) return res.status(422).json({ error: 'No JSON array in pairings response', pairRaw });
+      const pairings = JSON.parse(pairMatch[0]);
       const selfMatch = selfRaw.match(/\{[\s\S]*\}/);
-      const selfItem = selfMatch ? JSON.parse(selfMatch[0]) : { name: food, grams: 100, kcal: 0, protein: 0, carbs: 0, fat: 0 };
+      const selfItem  = selfMatch
+        ? JSON.parse(selfMatch[0])
+        : { name: food, grams: 100, kcal: 0, protein: 0, carbs: 0, fat: 0 };
       return res.status(200).json({ selected: selfItem, pairings, _provider: provider });
     } catch (e) {
       return res.status(500).json({ error: e.message });

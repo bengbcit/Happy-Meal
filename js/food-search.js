@@ -11,7 +11,66 @@ const FoodSearch = (() => {
   let _step     = 'search'; // 'search' | 'variants' | 'pairings'
   let _selectedVariant = '';
 
-  const MEAL_KEYS = ['breakfast', 'lunch', 'dinner', 'snack'];
+  // pending recipe for duplicate-overwrite (stored on returned object after init)
+  let _pendingRecipe   = null;
+  let _pendingRecipeId = null;
+
+  // ── i18n helpers ─────────────────────────────────────
+  function _t(key, fallback) {
+    try { return I18n.get(key) || fallback; } catch { return fallback; }
+  }
+  function _lang() {
+    try { return I18n.current() || 'zh'; } catch { return 'zh'; }
+  }
+  function _mealLabel(m) {
+    return {
+      breakfast: _t('meal_breakfast', '早餐'),
+      lunch:     _t('meal_lunch',     '午餐'),
+      dinner:    _t('meal_dinner',    '晚餐'),
+      snack:     _t('meal_snack',     '零食'),
+    }[m] || m;
+  }
+
+  // ── UI strings (tri-lingual) ─────────────────────────
+  function _ui(key) {
+    const lang = _lang();
+    const MAP = {
+      search_placeholder: {
+        zh: '输入食物名，如：鸡蛋、豆腐、鸡胸肉…',
+        en: 'Enter food name, e.g. egg, tofu, chicken…',
+        ja: '食物名を入力、例：卵、豆腐、鶏むね肉…',
+      },
+      search_btn:   { zh: '搜索', en: 'Search', ja: '検索' },
+      search_hint:  { zh: 'AI 会分析常见烹饪方式供你选择', en: 'AI will suggest cooking variants', ja: 'AIが調理法の候補を提案します' },
+      loading_variants: { zh: 'AI 分析中…', en: 'Analyzing…', ja: 'AI分析中…' },
+      loading_pairings: { zh: '生成健康搭配中…', en: 'Generating pairings…', ja: '健康的な組み合わせを生成中…' },
+      you_searched: { zh: '你输入的是', en: 'You searched for', ja: '入力した食物' },
+      choose_method: { zh: '请选择具体做法：', en: 'Choose a cooking method:', ja: '調理法を選んでください：' },
+      back_search:  { zh: '← 重新搜索', en: '← Back to search', ja: '← 再検索' },
+      pairing_label: { zh: '的健康搭配推荐', en: 'healthy pairings', ja: 'の健康的な組み合わせ' },
+      hint_edit:    { zh: '勾选要添加的食物，可编辑克重和营养数值', en: 'Check foods to add, you can edit weight and nutrition', ja: 'チェックした食物を追加。栄養値も編集できます' },
+      add_manual:   { zh: '＋ 手动添加食物', en: '＋ Add food manually', ja: '＋ 手動で追加' },
+      save_recipe:  { zh: '📖 保存到菜谱', en: '📖 Save to recipes', ja: '📖 レシピに保存' },
+      add_tracker:  { zh: '✓ 添加到追踪', en: '✓ Add to log', ja: '✓ ログに追加' },
+      need_one:     { zh: '请至少勾选一个食物', en: 'Please check at least one food', ja: '少なくとも1つ選んでください' },
+      added_ok:     { zh: '已添加', en: 'Added', ja: '追加しました' },
+      items_unit:   { zh: '个食物到', en: 'food(s) to', ja: '個の食物を' },
+      saved_recipe: { zh: '已保存到菜谱：', en: 'Saved to recipes: ', ja: 'レシピに保存しました：' },
+      dup_ask:      { zh: '已存在于菜谱库，要覆盖吗？', en: 'already exists. Overwrite?', ja: 'はすでに存在します。上書きしますか？' },
+      cancel:       { zh: '取消', en: 'Cancel', ja: 'キャンセル' },
+      overwrite:    { zh: '覆盖', en: 'Overwrite', ja: '上書き' },
+      updated:      { zh: '菜谱已更新', en: 'Recipe updated', ja: 'レシピを更新しました' },
+      modal_title:  { zh: '🔍 添加食物', en: '🔍 Add Food', ja: '🔍 食物を追加' },
+      gram:         { zh: 'g', en: 'g', ja: 'g' },
+      protein_lbl:  { zh: '蛋白g', en: 'prot.g', ja: 'たんぱくg' },
+      carbs_lbl:    { zh: '碳水g', en: 'carbs g', ja: '炭水g' },
+      fat_lbl:      { zh: '脂肪g', en: 'fat g', ja: '脂質g' },
+      back_err:     { zh: '← 返回搜索', en: '← Back', ja: '← 戻る' },
+    };
+    const row = MAP[key];
+    if (!row) return key;
+    return row[lang] || row['zh'] || key;
+  }
 
   // ── Public: open modal ───────────────────────────────
   function open(dateStr, meal) {
@@ -20,6 +79,13 @@ const FoodSearch = (() => {
     _items   = [];
     _step    = 'search';
     _selectedVariant = '';
+    _pendingRecipe   = null;
+    _pendingRecipeId = null;
+
+    // Update modal title for current language
+    const titleEl = document.getElementById('fsModalTitle');
+    if (titleEl) titleEl.textContent = _ui('modal_title');
+
     _renderModal();
     document.getElementById('fsMaskOverlay')?.classList.remove('hidden');
     setTimeout(() => document.getElementById('fsSearchInput')?.focus(), 80);
@@ -29,9 +95,11 @@ const FoodSearch = (() => {
     document.getElementById('fsMaskOverlay')?.classList.add('hidden');
     _items = [];
     _step  = 'search';
+    _pendingRecipe   = null;
+    _pendingRecipeId = null;
   }
 
-  // ── Render the full modal content based on current step ─────────────────────
+  // ── Render modal body based on current step ──────────
   function _renderModal() {
     const body = document.getElementById('fsBody');
     if (!body) return;
@@ -39,25 +107,26 @@ const FoodSearch = (() => {
     if (_step === 'search') {
       body.innerHTML = `
         <div class="fs-search-row">
-          <input id="fsSearchInput" class="inp fs-input" placeholder="输入食物名，如：鸡蛋、豆腐、鸡胸肉…"
+          <input id="fsSearchInput" class="inp fs-input"
+            placeholder="${_ui('search_placeholder')}"
             onkeydown="if(event.key==='Enter') FoodSearch._searchVariants()" />
           <button class="btn-primary fs-search-btn" onclick="FoodSearch._searchVariants()">
-            <span id="fsSearchBtnTxt">搜索</span>
+            ${_ui('search_btn')}
           </button>
         </div>
-        <p class="fs-hint">AI 会分析常见烹饪方式供你选择</p>`;
+        <p class="fs-hint">${_ui('search_hint')}</p>`;
     }
 
     if (_step === 'variants') {
-      body.innerHTML = `<div class="fs-loading"><span class="loading-spin"></span> AI 分析中…</div>`;
+      body.innerHTML = `<div class="fs-loading"><span class="loading-spin"></span> ${_ui('loading_variants')}</div>`;
     }
 
     if (_step === 'pairings') {
-      body.innerHTML = `<div class="fs-loading"><span class="loading-spin"></span> 生成健康搭配中…</div>`;
+      body.innerHTML = `<div class="fs-loading"><span class="loading-spin"></span> ${_ui('loading_pairings')}</div>`;
     }
   }
 
-  // ── Step 1: search variants ──────────────────────────
+  // ── Step 1: fetch variants ───────────────────────────
   async function _searchVariants() {
     const input = document.getElementById('fsSearchInput');
     const food  = input?.value?.trim();
@@ -70,34 +139,29 @@ const FoodSearch = (() => {
       const resp = await fetch('/api/suggest-food', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'variants', food, lang: I18n.current?.() || 'zh' }),
+        body: JSON.stringify({ mode: 'variants', food, lang: _lang() }),
       });
       const data = await resp.json();
-      if (!resp.ok || !data.variants) throw new Error(data.error || '请求失败');
+      if (!resp.ok || !data.variants) throw new Error(data.error || 'Request failed');
       _renderVariants(food, data.variants);
     } catch (e) {
-      _showError(`变体搜索失败：${e.message}`);
+      _showError(e.message);
     }
   }
 
   function _renderVariants(originalFood, variants) {
     const body = document.getElementById('fsBody');
     if (!body) return;
-
-    // Include the original input as first option if not already there
-    const allOptions = variants.includes(originalFood)
-      ? variants
-      : [originalFood, ...variants];
-
+    const allOptions = variants.includes(originalFood) ? variants : [originalFood, ...variants];
     body.innerHTML = `
-      <p class="fs-hint">你输入的是「${originalFood}」，请选择具体做法：</p>
+      <p class="fs-hint">「${originalFood}」— ${_ui('choose_method')}</p>
       <div class="fs-variants">
         ${allOptions.map(v => `
-          <button class="fs-variant-btn" onclick="FoodSearch._selectVariant('${_esc(v)}')">
+          <button class="fs-variant-btn" onclick="FoodSearch._selectVariant(${JSON.stringify(v)})">
             ${v}
           </button>`).join('')}
       </div>
-      <button class="fs-back-btn" onclick="FoodSearch._backToSearch()">← 重新搜索</button>`;
+      <button class="fs-back-btn" onclick="FoodSearch._backToSearch()">${_ui('back_search')}</button>`;
   }
 
   // ── Step 2: select variant → fetch pairings ──────────
@@ -110,18 +174,17 @@ const FoodSearch = (() => {
       const resp = await fetch('/api/suggest-food', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'pairings', food: variant, lang: I18n.current?.() || 'zh' }),
+        body: JSON.stringify({ mode: 'pairings', food: variant, lang: _lang() }),
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || '请求失败');
+      if (!resp.ok) throw new Error(data.error || 'Request failed');
       _renderPairings(data.selected, data.pairings || []);
     } catch (e) {
-      _showError(`搭配推荐失败：${e.message}`);
+      _showError(e.message);
     }
   }
 
   function _renderPairings(selected, pairings) {
-    // Build items list: selected food first, then pairings — all checked by default
     _items = [];
     const allFoods = selected ? [selected, ...pairings] : pairings;
     allFoods.forEach(f => {
@@ -136,36 +199,27 @@ const FoodSearch = (() => {
         checked: true,
       });
     });
-
     _renderItemsTable();
   }
 
   function _renderItemsTable() {
     const body = document.getElementById('fsBody');
     if (!body) return;
-
-    const mealLabel = {
-      breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '零食'
-    }[_meal] || _meal;
-
     body.innerHTML = `
       <div class="fs-pairings-header">
-        <span class="fs-selected-label">「${_selectedVariant}」的健康搭配推荐</span>
-        <span class="fs-meal-badge">${mealLabel}</span>
+        <span class="fs-selected-label">「${_selectedVariant}」${_ui('pairing_label')}</span>
+        <span class="fs-meal-badge">${_mealLabel(_meal)}</span>
       </div>
-      <p class="fs-hint">勾选要添加的食物，可编辑克重和营养数值</p>
-
+      <p class="fs-hint">${_ui('hint_edit')}</p>
       <div class="fs-items-list" id="fsItemsList">
         ${_items.map(item => _itemRowHTML(item)).join('')}
       </div>
-
-      <button class="fs-add-row-btn" onclick="FoodSearch._addEmptyRow()">＋ 手动添加食物</button>
-
+      <button class="fs-add-row-btn" onclick="FoodSearch._addEmptyRow()">${_ui('add_manual')}</button>
       <div class="fs-actions">
-        <button class="btn-secondary" onclick="FoodSearch._backToSearch()">← 重新搜索</button>
+        <button class="btn-secondary" onclick="FoodSearch._backToSearch()">${_ui('back_search')}</button>
         <div class="fs-actions-right">
-          <button class="btn-secondary" onclick="FoodSearch._saveToRecipe()">📖 保存到菜谱</button>
-          <button class="btn-primary" onclick="FoodSearch._confirmAdd()">✓ 添加到追踪</button>
+          <button class="btn-secondary" onclick="FoodSearch._saveToRecipe()">${_ui('save_recipe')}</button>
+          <button class="btn-primary" onclick="FoodSearch._confirmAdd()">${_ui('add_tracker')}</button>
         </div>
       </div>`;
   }
@@ -178,13 +232,13 @@ const FoodSearch = (() => {
             onchange="FoodSearch._toggleCheck(${item.id}, this.checked)" />
         </label>
         <div class="fs-item-fields">
-          <input class="inp fs-name-inp" value="${_esc(item.name)}" placeholder="食物名"
+          <input class="inp fs-name-inp" value="${_esc(item.name)}" placeholder="—"
             onchange="FoodSearch._upd(${item.id},'name',this.value)" />
           <div class="fs-nums-row">
             <label class="fs-num-label">
               <input class="inp fs-num-inp" type="number" min="0" value="${item.grams}"
                 onchange="FoodSearch._upd(${item.id},'grams',this.value)" />
-              <span>g</span>
+              <span>${_ui('gram')}</span>
             </label>
             <label class="fs-num-label">
               <input class="inp fs-num-inp" type="number" min="0" value="${item.kcal}"
@@ -194,17 +248,17 @@ const FoodSearch = (() => {
             <label class="fs-num-label">
               <input class="inp fs-num-inp" type="number" min="0" value="${item.protein}"
                 onchange="FoodSearch._upd(${item.id},'protein',this.value)" />
-              <span>蛋白g</span>
+              <span>${_ui('protein_lbl')}</span>
             </label>
             <label class="fs-num-label">
               <input class="inp fs-num-inp" type="number" min="0" value="${item.carbs}"
                 onchange="FoodSearch._upd(${item.id},'carbs',this.value)" />
-              <span>碳水g</span>
+              <span>${_ui('carbs_lbl')}</span>
             </label>
             <label class="fs-num-label">
               <input class="inp fs-num-inp" type="number" min="0" value="${item.fat}"
                 onchange="FoodSearch._upd(${item.id},'fat',this.value)" />
-              <span>脂肪g</span>
+              <span>${_ui('fat_lbl')}</span>
             </label>
           </div>
         </div>
@@ -212,7 +266,7 @@ const FoodSearch = (() => {
       </div>`;
   }
 
-  // ── Item editing helpers ─────────────────────────────
+  // ── Item helpers ─────────────────────────────────────
   function _toggleCheck(id, checked) {
     const item = _items.find(x => x.id === id);
     if (item) item.checked = checked;
@@ -243,13 +297,10 @@ const FoodSearch = (() => {
     }
   }
 
-  // ── Confirm: add checked items to tracker log ────────
+  // ── Add to tracker ───────────────────────────────────
   function _confirmAdd() {
     const valid = _items.filter(x => x.checked && (x.name || '').trim());
-    if (!valid.length) {
-      App.showToast('请至少勾选一个食物');
-      return;
-    }
+    if (!valid.length) { App.showToast(_ui('need_one')); return; }
     valid.forEach(item => {
       State.addLogEntry(_dateStr, _meal, {
         name:    item.name.trim(),
@@ -263,87 +314,77 @@ const FoodSearch = (() => {
     close();
     Tracker.render();
     Charts.renderMacroRing();
-    App.showToast(`✅ 已添加 ${valid.length} 个食物到${_mealLabel(_meal)}`);
+    App.showToast(`✅ ${_ui('added_ok')} ${valid.length} ${_ui('items_unit')}${_mealLabel(_meal)}`);
   }
 
-  // ── Save checked items to recipe library ────────────
+  // ── Save to recipe library ───────────────────────────
   function _saveToRecipe() {
     const valid = _items.filter(x => x.checked && (x.name || '').trim());
-    if (!valid.length) {
-      App.showToast('请至少勾选一个食物');
-      return;
-    }
+    if (!valid.length) { App.showToast(_ui('need_one')); return; }
 
-    // Build a combined recipe from selected items
-    const recipeName = valid.length === 1
+    const recipeName   = valid.length === 1
       ? valid[0].name.trim()
-      : `${_selectedVariant || valid[0].name} 套餐`;
-
+      : `${_selectedVariant || valid[0].name} ${_lang() === 'ja' ? 'セット' : _lang() === 'en' ? 'Set' : '套餐'}`;
     const totalKcal    = valid.reduce((s, x) => s + (x.kcal    || 0), 0);
     const totalProtein = valid.reduce((s, x) => s + (x.protein || 0), 0);
     const totalCarbs   = valid.reduce((s, x) => s + (x.carbs   || 0), 0);
     const totalFat     = valid.reduce((s, x) => s + (x.fat     || 0), 0);
     const ingredients  = valid.map(x => `${x.name} ${x.grams || 0}g`);
+    const newRecipe    = {
+      name: recipeName,
+      kcal: Math.round(totalKcal), protein: Math.round(totalProtein),
+      carbs: Math.round(totalCarbs), fat: Math.round(totalFat),
+      ingredients, tags: [],
+    };
 
-    // Check for duplicate name
     const existing = State.getRecipes().find(
       r => r.name.trim().toLowerCase() === recipeName.trim().toLowerCase()
     );
 
     if (existing) {
-      // Show inline confirmation instead of using confirm()
-      _showDuplicateConfirm(recipeName, existing, {
-        name: recipeName, kcal: Math.round(totalKcal),
-        protein: Math.round(totalProtein), carbs: Math.round(totalCarbs),
-        fat: Math.round(totalFat), ingredients, tags: [],
-      });
-      return;
+      _showDuplicateConfirm(recipeName, existing, newRecipe);
+    } else {
+      _doSaveRecipe(newRecipe);
     }
-
-    _doSaveRecipe({
-      name: recipeName, kcal: Math.round(totalKcal),
-      protein: Math.round(totalProtein), carbs: Math.round(totalCarbs),
-      fat: Math.round(totalFat), ingredients, tags: [],
-    });
   }
 
   function _showDuplicateConfirm(name, existing, newRecipe) {
-    const body = document.getElementById('fsBody');
-    // Inject confirmation banner at top without wiping items
+    // Remove any existing banner first
+    document.getElementById('fsDupBanner')?.remove();
+    _pendingRecipe   = newRecipe;
+    _pendingRecipeId = existing.id;
+
     const banner = document.createElement('div');
     banner.className = 'fs-dup-banner';
     banner.id = 'fsDupBanner';
     banner.innerHTML = `
-      <span class="fs-dup-text">「${name}」已存在于菜谱库，要覆盖吗？</span>
+      <span class="fs-dup-text">「${name}」${_ui('dup_ask')}</span>
       <div class="fs-dup-btns">
-        <button class="btn-secondary fs-dup-cancel" onclick="document.getElementById('fsDupBanner').remove()">取消</button>
-        <button class="btn-primary fs-dup-ok" onclick="FoodSearch._overwriteRecipe('${existing.id}')">覆盖</button>
+        <button class="btn-secondary" onclick="document.getElementById('fsDupBanner').remove()">${_ui('cancel')}</button>
+        <button class="btn-primary" onclick="FoodSearch._overwriteRecipe()">${_ui('overwrite')}</button>
       </div>`;
-    body.insertAdjacentElement('afterbegin', banner);
-    // Store pending recipe for overwrite
-    FoodSearch._pendingRecipe = newRecipe;
-    FoodSearch._pendingRecipeId = existing.id;
+    document.getElementById('fsBody')?.insertAdjacentElement('afterbegin', banner);
   }
 
-  function _overwriteRecipe(existingId) {
-    if (!FoodSearch._pendingRecipe) return;
-    State.updateRecipe(existingId, FoodSearch._pendingRecipe);
+  function _overwriteRecipe() {
+    if (!_pendingRecipe || !_pendingRecipeId) return;
+    State.updateRecipe(_pendingRecipeId, _pendingRecipe);
     document.getElementById('fsDupBanner')?.remove();
-    App.showToast(`✅ 菜谱「${FoodSearch._pendingRecipe.name}」已更新`);
+    App.showToast(`✅ 「${_pendingRecipe.name}」${_ui('updated')}`);
     if (typeof Recipes !== 'undefined') Recipes.render();
-    FoodSearch._pendingRecipe   = null;
-    FoodSearch._pendingRecipeId = null;
+    _pendingRecipe   = null;
+    _pendingRecipeId = null;
   }
 
   function _doSaveRecipe(recipe) {
     State.addRecipe(recipe);
-    App.showToast(`📖 已保存到菜谱：${recipe.name}`);
+    App.showToast(`📖 ${_ui('saved_recipe')}${recipe.name}`);
     if (typeof Recipes !== 'undefined') Recipes.render();
   }
 
-  // ── Navigation helpers ───────────────────────────────
+  // ── Navigation ───────────────────────────────────────
   function _backToSearch() {
-    _step  = 'search';
+    _step = 'search';
     _items = [];
     _selectedVariant = '';
     _renderModal();
@@ -354,19 +395,10 @@ const FoodSearch = (() => {
     const body = document.getElementById('fsBody');
     if (body) body.innerHTML = `
       <p class="fs-error">${msg}</p>
-      <button class="fs-back-btn" onclick="FoodSearch._backToSearch()">← 返回搜索</button>`;
+      <button class="fs-back-btn" onclick="FoodSearch._backToSearch()">${_ui('back_err')}</button>`;
   }
 
-  // ── Utilities ────────────────────────────────────────
   function _esc(s) { return (s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-
-  function _mealLabel(m) {
-    return { breakfast:'早餐', lunch:'午餐', dinner:'晚餐', snack:'零食' }[m] || m;
-  }
-
-  // Public references needed for inline handlers
-  FoodSearch._pendingRecipe   = null;
-  FoodSearch._pendingRecipeId = null;
 
   return {
     open, close,
@@ -374,8 +406,5 @@ const FoodSearch = (() => {
     _toggleCheck, _upd, _delRow, _addEmptyRow,
     _confirmAdd, _saveToRecipe, _overwriteRecipe,
     _backToSearch,
-    // expose pending recipe slots
-    _pendingRecipe:   null,
-    _pendingRecipeId: null,
   };
 })();
