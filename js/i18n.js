@@ -115,6 +115,10 @@ const I18n = (() => {
       hero_browse_recipes: '浏览菜谱 →',
       recommend_exercise: '🏃 今日运动推荐',
       kids_favorite_tag: '😋 孩子喜爱',
+      indulge_added: '✅ {name}（{kcal} kcal）已加入今日记录',
+      indulge_add_btn: '+ 今日记录',
+      indulge_no_items: '未找到相关项目',
+      indulge_alcohol_warn: '🍺 酒精会降低脂肪燃烧效率，适量饮用',
     },
 
     en: {
@@ -220,6 +224,10 @@ const I18n = (() => {
       hero_browse_recipes: 'Browse Recipes →',
       recommend_exercise: '🏃 Exercise Pick',
       kids_favorite_tag: '😋 Kids\' Fave',
+      indulge_added: '✅ {name} ({kcal} kcal) added to today\'s log',
+      indulge_add_btn: '+ Add today',
+      indulge_no_items: 'No items found',
+      indulge_alcohol_warn: '🍺 Alcohol reduces fat-burning efficiency — drink in moderation',
     },
 
     ja: {
@@ -331,6 +339,10 @@ const I18n = (() => {
       hero_browse_recipes: 'レシピを見る →',
       recommend_exercise: '🏃 今日の運動',
       kids_favorite_tag: '😋 子供のお気に入り',
+      indulge_added: '✅ {name}（{kcal} kcal）を今日の記録に追加しました',
+      indulge_add_btn: '+ 今日の記録',
+      indulge_no_items: '該当なし',
+      indulge_alcohol_warn: '🍺 アルコールは脂肪燃焼効率を下げます。適量を',
     }
   };
 
