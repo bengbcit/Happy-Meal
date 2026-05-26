@@ -318,7 +318,7 @@ const Exercise = (() => {
     renderExerciseRecommend();
   }
 
-  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init,
+  return { render, renderLog, filterCat, setMode, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init,
            getTodayBurned, getTodayExerciseNames,
            renderExerciseRecommend, dismissExerciseRecommend, refreshExerciseRecommend };
 })();
