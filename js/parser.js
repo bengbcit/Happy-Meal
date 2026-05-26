@@ -126,27 +126,58 @@ const Parser = (() => {
     return await resp.json();
   }
 
-  // Helper: file → base64 string, resized to max 1280px and compressed to JPEG 0.82
-  // Prevents HTTP 413 on mobile: phone cameras produce 3-10MB files → 4-14MB base64 → exceeds Vercel 4.5MB body limit
-  // モバイル413対策：最大1280pxにリサイズしてJPEG圧縮 / 移动端413防护：压缩后再上传
+  // Helper: file → base64 string
+  // If file is small enough (<= 3MB), send as-is (fastest, best quality).
+  // If file exceeds 3MB, resize via canvas so the payload stays under Vercel's 4.5MB body limit.
+  // Target: long-edge ≤ 1600px + JPEG 0.88 → typical output 300-700KB, well within limits,
+  // sharp enough for AI food recognition (logos, text on packaging, dish details all readable).
+  // Very large files (>8MB, e.g. 48MP phones) get an extra scale step to 1280px / 0.82.
+  // ファイルが3MB超の場合のみcanvasでリサイズ / 超过3MB才压缩，保证AI识别清晰度
   function _fileToBase64(file) {
+    const MB = 1024 * 1024;
+
+    // Small file — skip canvas entirely, preserve original quality
+    if (file.size <= 3 * MB) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Large file — resize with canvas
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(url);
-        const MAX = 1280;
+
+        // Choose target long-edge and quality based on original file size
+        // > 8 MB (48MP+): aggressive — 1280px / 0.82
+        // 3–8 MB (normal phone): gentle  — 1600px / 0.88
+        const aggressive = file.size > 8 * MB;
+        const MAX     = aggressive ? 1280 : 1600;
+        const QUALITY = aggressive ? 0.82  : 0.88;
+
         let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-          else                { width  = Math.round(width  * MAX / height); height = MAX; }
+        const long = Math.max(width, height);
+        if (long > MAX) {
+          const ratio = MAX / long;
+          width  = Math.round(width  * ratio);
+          height = Math.round(height * ratio);
         }
+
         const canvas = document.createElement('canvas');
         canvas.width  = width;
         canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        // Use JPEG 0.82 quality — good visual quality, ~3-5× smaller than raw PNG
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        const ctx = canvas.getContext('2d');
+        // imageSmoothingQuality 'high' gives sharper downscale with negligible speed cost
+        ctx.imageSmoothingEnabled  = true;
+        ctx.imageSmoothingQuality  = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', QUALITY);
         resolve(dataUrl.split(',')[1]);
       };
       img.onerror = reject;
