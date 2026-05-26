@@ -656,6 +656,19 @@
   <div id="indulgeToast" class="toast hidden"></div>
 
   <!-- ════════════════════════════════════════════
+     FOOD SEARCH MODAL
+     AI-powered: variant → pairings → edit → log/recipe
+     AI搭載食物検索モーダル / AI 智能食物搜索弹窗
+     ════════════════════════════════════════════ -->
+  <div id="fsMaskOverlay" class="modal-overlay hidden" onclick="if(event.target===this)FoodSearch.close()">
+    <div class="modal-card fs-modal-card">
+      <button class="modal-close" onclick="FoodSearch.close()">✕</button>
+      <div class="fs-modal-title">🔍 添加食物</div>
+      <div id="fsBody"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
      SCRIPTS — order matters
      ════════════════════════════════════════════ -->
   <script src="js/i18n.js"></script>
@@ -667,6 +680,7 @@
   <script src="js/bmi.js"></script>
   <script src="js/recipes.js"></script>
   <script src="js/tracker.js"></script>
+  <script src="js/food-search.js"></script>
   <script src="js/planner.js"></script>
   <script src="js/parser.js"></script>
   <script src="js/indulgence.js"></script>

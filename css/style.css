@@ -1254,3 +1254,220 @@ body.hero-light .hero-chevrons span {
 .weight-log-table tr:last-child td { border-bottom: none; }
 .wl-actions { display: flex; gap: 4px; }
 .wl-actions .icon-btn { font-size: .85rem; padding: 0 4px; line-height: 1.6; }
+
+/* ══════════════════════════════════════════════════════
+   FoodSearch Modal
+   ══════════════════════════════════════════════════════ */
+.fs-modal-card {
+  max-width: 620px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fs-modal-title {
+  font-family: var(--font-tight);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+/* Search step */
+.fs-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.fs-input {
+  flex: 1;
+  font-size: 1rem;
+}
+.fs-search-btn {
+  white-space: nowrap;
+  padding: 0 18px;
+}
+.fs-hint {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Variants step */
+.fs-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0;
+}
+.fs-variant-btn {
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-el);
+  color: var(--text);
+  font-size: .9rem;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.fs-variant-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Pairings step */
+.fs-pairings-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fs-selected-label {
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--text);
+}
+.fs-meal-badge {
+  font-size: .78rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-weight: 600;
+}
+
+/* Item rows */
+.fs-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fs-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface-el);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.fs-check-wrap {
+  padding-top: 6px;
+  flex-shrink: 0;
+}
+.fs-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.fs-item-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fs-name-inp {
+  width: 100%;
+  font-weight: 600;
+}
+.fs-nums-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fs-num-label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.fs-num-inp {
+  width: 62px;
+  font-size: .82rem;
+  padding: 3px 6px;
+  text-align: right;
+}
+
+/* Add row button */
+.fs-add-row-btn {
+  align-self: flex-start;
+  font-size: .83rem;
+  color: var(--secondary);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.fs-add-row-btn:hover { border-color: var(--secondary); }
+
+/* Actions bar */
+.fs-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.fs-actions-right {
+  display: flex;
+  gap: 8px;
+}
+
+/* Back button */
+.fs-back-btn {
+  font-size: .83rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fs-back-btn:hover { color: var(--text); }
+
+/* Duplicate confirm banner */
+.fs-dup-banner {
+  background: var(--overlay);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.fs-dup-text {
+  font-size: .88rem;
+  color: var(--text);
+}
+.fs-dup-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* Loading + error states */
+.fs-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: .92rem;
+  padding: 16px 0;
+}
+.fs-error {
+  color: #ff6b6b;
+  font-size: .88rem;
+  padding: 8px 0;
+}

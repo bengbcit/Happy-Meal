@@ -143,18 +143,10 @@ const Tracker = (() => {
     Charts.renderMacroRing();
   }
 
-  // Manual add dialog
-  // 手動追加ダイアログ / 手动添加对话框
+  // Manual add dialog — opens AI-powered FoodSearch modal
+  // 手動追加ダイアログ — AI食物検索モーダルを開く / 手动添加对话框 — 打开 AI 食物搜索弹窗
   function addManual(dateStr, meal) {
-    const name    = prompt('食物名称 / Food name:');
-    if (!name) return;
-    const kcal    = parseFloat(prompt('热量 kcal:')) || 0;
-    const protein = parseFloat(prompt('蛋白质 protein (g):')) || 0;
-    const carbs   = parseFloat(prompt('碳水 carbs (g):')) || 0;
-    const fat     = parseFloat(prompt('脂肪 fat (g):')) || 0;
-    State.addLogEntry(dateStr, meal, { name, kcal, protein, carbs, fat });
-    render();
-    Charts.renderMacroRing();
+    FoodSearch.open(dateStr, meal);
   }
 
   // Dashboard summary ring
