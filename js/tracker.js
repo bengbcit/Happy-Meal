@@ -18,19 +18,34 @@ const Tracker = (() => {
   }
 
   // ── Navigate dates ───────────────────────────────────
-  function prevDay() {
-    const d = new Date(_date + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
-    _date = d.toISOString().slice(0, 10);
-    render();
+  // Debounce guard: ignore rapid repeated calls within 400ms (prevents double-fire on mobile tap)
+  let _navBusy = false;
+  function _navGuard(fn) {
+    if (_navBusy) return;
+    _navBusy = true;
+    fn();
+    setTimeout(() => { _navBusy = false; }, 400);
   }
-  function nextDay() {
-    const today = _todayStr();
-    if (_date >= today) return;
-    const d = new Date(_date + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    _date = d.toISOString().slice(0, 10);
-    render();
+
+  function prevDay(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    _navGuard(() => {
+      const d = new Date(_date + 'T00:00:00');
+      d.setDate(d.getDate() - 1);
+      _date = d.toISOString().slice(0, 10);
+      render();
+    });
+  }
+  function nextDay(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    _navGuard(() => {
+      const today = _todayStr();
+      if (_date >= today) return;
+      const d = new Date(_date + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      _date = d.toISOString().slice(0, 10);
+      render();
+    });
   }
 
   // ── Totals for a date ────────────────────────────────

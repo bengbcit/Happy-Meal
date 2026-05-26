@@ -430,20 +430,15 @@
     <section id="tab-tracker" class="tab-page">
       <!-- Date nav -->
       <div class="date-nav">
-        <button class="icon-btn" onclick="Tracker.prevDay()">◀</button>
+        <button class="icon-btn" onclick="Tracker.prevDay(event)">◀</button>
         <span id="trackerDate" class="date-label"></span>
-        <button class="icon-btn" onclick="Tracker.nextDay()">▶</button>
+        <button class="icon-btn" onclick="Tracker.nextDay(event)">▶</button>
       </div>
 
       <!-- Quick import: image only -->
       <div class="card">
         <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
         <div class="import-row">
-          <label class="import-btn" for="trackerCamInput">
-            📷 <span data-i18n="import_camera">拍照识别</span>
-          </label>
-          <input id="trackerCamInput" type="file" accept="image/*" capture="environment" class="hidden"
-            onchange="Tracker.importImage(this.files[0])" />
           <label class="import-btn" for="trackerImgInput">
             🖼 <span data-i18n="import_photo">上传图片</span>
           </label>
