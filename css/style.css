@@ -1275,6 +1275,32 @@ body.hero-light .hero-chevrons span {
   display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
 }
 
+/* Weight chart + history table side-by-side */
+.dash-weight-split {
+  display: flex; gap: 12px; align-items: flex-start; margin-top: 8px;
+}
+@media (max-width: 520px) {
+  .dash-weight-split { flex-direction: column; }
+  .dash-weight-split #weightLogHistory { max-width: 100% !important; max-height: 160px; }
+}
+
+/* BMI + Today's Summary side-by-side */
+.dash-bmi-summary {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;
+}
+@media (max-width: 600px) {
+  .dash-bmi-summary { grid-template-columns: 1fr; }
+}
+
+/* Copyright footer */
+.app-footer {
+  text-align: center; padding: 14px 16px 20px;
+  font-size: .72rem; color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  letter-spacing: .03em;
+  opacity: .7;
+}
+
 /* ── Scroll-reveal animation ──────────────────────── */
 .reveal-card {
   opacity: 0;

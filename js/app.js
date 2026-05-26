@@ -99,6 +99,7 @@ const App = (() => {
   // If no Firebase config, show auth gate with local option visible
   window.addEventListener('DOMContentLoaded', () => {
     I18n.init();
+    App._setupWheelNav();
 
     // Check if we have a persisted local session
     // 永続化されたローカルセッションを確認 / 检查是否有持久化的本地会话
@@ -109,7 +110,44 @@ const App = (() => {
     }
   });
 
-  return { switchTab, showToast, init };
+  // ── Wheel-to-tab navigation ──────────────────────────
+  // Scrolling down at bottom of page → next tab; scrolling up at top → prev tab
+  // タブのホイールナビゲーション / 滚轮切换 Tab
+  const TAB_ORDER = ['dashboard','recipes','tracker','planner','exercise','indulgence'];
+  let _wheelCooldown = false;
+
+  function _setupWheelNav() {
+    window.addEventListener('wheel', (e) => {
+      if (_wheelCooldown) return;
+
+      // Only trigger when the page is scrolled to its boundary
+      const scrollEl = document.scrollingElement || document.documentElement;
+      const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 4;
+      const atTop    = scrollEl.scrollTop <= 4;
+
+      if (e.deltaY > 30 && atBottom) {
+        // Scroll down at bottom → next tab
+        const idx = TAB_ORDER.indexOf(_currentTab);
+        if (idx < TAB_ORDER.length - 1) {
+          _wheelCooldown = true;
+          switchTab(TAB_ORDER[idx + 1]);
+          window.scrollTo({ top: 0 });
+          setTimeout(() => { _wheelCooldown = false; }, 800);
+        }
+      } else if (e.deltaY < -30 && atTop) {
+        // Scroll up at top → prev tab
+        const idx = TAB_ORDER.indexOf(_currentTab);
+        if (idx > 0) {
+          _wheelCooldown = true;
+          switchTab(TAB_ORDER[idx - 1]);
+          window.scrollTo({ top: document.body.scrollHeight });
+          setTimeout(() => { _wheelCooldown = false; }, 800);
+        }
+      }
+    }, { passive: true });
+  }
+
+  return { switchTab, showToast, init, _setupWheelNav };
 })();
 
 // Make ProfilePanel and LangMenu globally accessible
