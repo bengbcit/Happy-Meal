@@ -13,20 +13,29 @@ export default async function handler(req, res) {
   const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
   const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
   const CLAUDE_API_KEY   = process.env.CLAUDE_API_KEY;
+  const NVIDIA_API_KEY   = process.env.NVIDIA_API_KEY;
 
-  // Text provider: Groq first (fastest/cheapest), then others
-  const provider =
-    GROQ_API_KEY     ? 'groq'     :
-    GEMINI_API_KEY   ? 'gemini'   :
-    DEEPSEEK_API_KEY ? 'deepseek' :
-    CLAUDE_API_KEY   ? 'claude'   : null;
+  // Text providers: Groq (fastest) → Gemini → Claude → Nvidia → DeepSeek
+  const TEXT_PROVIDERS = [
+    GROQ_API_KEY     && 'groq',
+    GEMINI_API_KEY   && 'gemini',
+    CLAUDE_API_KEY   && 'claude',
+    NVIDIA_API_KEY   && 'nvidia',
+    DEEPSEEK_API_KEY && 'deepseek',
+  ].filter(Boolean);
 
-  // Vision provider: Gemini first, then Claude (Groq has no vision support)
-  const visionProviderOverride =
-    GEMINI_API_KEY ? 'gemini' :
-    CLAUDE_API_KEY ? 'claude' : null;
+  // Vision providers: Gemini → Claude → Nvidia (Groq has no vision API)
+  const VISION_PROVIDERS = [
+    GEMINI_API_KEY && 'gemini',
+    CLAUDE_API_KEY && 'claude',
+    NVIDIA_API_KEY && 'nvidia',
+  ].filter(Boolean);
 
-  if (!provider) return res.status(500).json({ error: 'No AI API key configured.' });
+  if (!TEXT_PROVIDERS.length)  return res.status(500).json({ error: 'No AI API key configured.' });
+  if (!VISION_PROVIDERS.length && !TEXT_PROVIDERS.length) return res.status(500).json({ error: 'No AI API key configured.' });
+
+  // Legacy single-value aliases (used below in text path)
+  const provider = TEXT_PROVIDERS[0];
 
   const { url, text, fileBase64, fileType, fileName, lang = 'zh', mode = 'recipe' } = req.body || {};
   if (!url && !text && !fileBase64) return res.status(400).json({ error: 'url, text, or fileBase64 required' });
@@ -34,8 +43,7 @@ export default async function handler(req, res) {
   // ── Handle image / PDF (base64) ──────────────────────────────────────────
   // 画像/PDFはビジョンAPIで処理 / 图片/PDF 使用视觉 API 处理
   if (fileBase64) {
-    const visionProvider = visionProviderOverride;
-    if (!visionProvider) return res.status(400).json({ error: 'Vision requires GEMINI_API_KEY or CLAUDE_API_KEY' });
+    if (!VISION_PROVIDERS.length) return res.status(400).json({ error: 'Vision requires GEMINI_API_KEY, CLAUDE_API_KEY, or NVIDIA_API_KEY' });
 
     // Vision prompt: explicitly handle multi-language ingredient section names
     // ビジョンプロンプト：多言語の食材セクション名を明示的に処理 / 视觉提示：明确处理多语言食材区块名称
@@ -80,87 +88,87 @@ Return ONLY valid JSON (no markdown):
 ${lang==='zh'?'菜名和食材用中文':lang==='ja'?'日本語で出力':'Output in English'}
 Estimate nutrition if not provided. tags may include: high-protein, low-fat, low-carb, high-carb, vegetarian.`;
 
-    // Helper: call Gemini vision, returns raw text or throws
-    async function _geminiVision(prompt, b64, mime) {
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ contents:[{ parts:[
-            { text: prompt },
-            { inline_data: { mime_type: mime, data: b64 } }
-          ]}] }) }
-      );
-      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Gemini vision ${r.status}: ${t.slice(0,120)}`); }
-      return (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
-    }
-
-    // Helper: call Claude vision, returns raw text or throws
-    async function _claudeVision(prompt, b64, mime) {
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
-        body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2048,
-          messages:[{ role:'user', content:[
-            { type:'image', source:{ type:'base64', media_type: mime, data: b64 } },
-            { type:'text', text: prompt }
-          ]}]
-        })
-      });
-      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Claude vision ${r.status}: ${t.slice(0,120)}`); }
-      return (await r.json()).content?.[0]?.text || '';
-    }
-
-    // Retry-with-fallback:
-    //   1. Try primary provider (Gemini preferred)
-    //   2. On 5xx/network error → wait 1s, retry once
-    //   3. If still failing and a second provider is available → fall through to it
     const mime = fileType || 'image/jpeg';
-    let raw = '';
-    let usedProvider = visionProvider;
-    let lastErr = null;
-
     const _sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    async function _tryProvider(prov) {
-      if (prov === 'gemini' && GEMINI_API_KEY) return _geminiVision(visionPrompt, fileBase64, mime);
-      if (prov === 'claude' && CLAUDE_API_KEY)  return _claudeVision(visionPrompt, fileBase64, mime);
-      throw new Error(`Provider ${prov} not available`);
+    // ── Vision provider helpers ───────────────────────────────────────────────
+    async function _visionCall(prov, prompt, b64, mimeType) {
+      if (prov === 'gemini') {
+        // Try 1.5-flash first (stable quota), then 2.5-flash
+        const models = ['gemini-1.5-flash', 'gemini-2.5-flash'];
+        let lastE;
+        for (const model of models) {
+          const r = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+            { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ contents:[{ parts:[
+                { text: prompt },
+                { inline_data: { mime_type: mimeType, data: b64 } }
+              ]}] }) }
+          );
+          if (r.ok) return (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const t = await r.text().catch(()=>'');
+          lastE = new Error(`Gemini ${model} ${r.status}: ${t.slice(0,120)}`);
+          if (r.status !== 503 && r.status !== 429) throw lastE;
+          await _sleep(700);
+        }
+        throw lastE;
+      }
+      if (prov === 'claude') {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST',
+          headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
+          body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2048,
+            messages:[{ role:'user', content:[
+              { type:'image', source:{ type:'base64', media_type: mimeType, data: b64 } },
+              { type:'text', text: prompt }
+            ]}] })
+        });
+        if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Claude vision ${r.status}: ${t.slice(0,120)}`); }
+        return (await r.json()).content?.[0]?.text || '';
+      }
+      if (prov === 'nvidia') {
+        // Nvidia NIM — llama-3.2-90b-vision-instruct supports base64 images
+        const imgTag = `<img src="data:${mimeType};base64,${b64}" />`;
+        const r = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${NVIDIA_API_KEY}`,'Content-Type':'application/json'},
+          body: JSON.stringify({
+            model: 'meta/llama-3.2-90b-vision-instruct',
+            max_tokens: 2048,
+            messages:[{ role:'user', content: imgTag + '\n\n' + prompt }],
+          })
+        });
+        if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Nvidia vision ${r.status}: ${t.slice(0,120)}`); }
+        return (await r.json()).choices?.[0]?.message?.content || '';
+      }
+      throw new Error(`Unknown vision provider: ${prov}`);
     }
 
-    try {
-      // Attempt 1: primary provider
+    // ── Try each vision provider in order, stop on first success ─────────────
+    // Chain: Gemini → Claude → Nvidia
+    let raw = '', usedProvider = '';
+    let lastErr;
+    for (const prov of VISION_PROVIDERS) {
       try {
-        raw = await _tryProvider(visionProvider);
-        usedProvider = visionProvider;
-      } catch (e1) {
-        lastErr = e1;
-        // Retry primary once after 1s (handles transient 503/429)
-        try {
-          await _sleep(1000);
-          raw = await _tryProvider(visionProvider);
-          usedProvider = visionProvider;
-          lastErr = null;
-        } catch (e2) {
-          lastErr = e2;
-          // Fallback to the other provider if available
-          const fallback = (visionProvider === 'gemini' && CLAUDE_API_KEY)  ? 'claude'
-                         : (visionProvider === 'claude' && GEMINI_API_KEY)  ? 'gemini'
-                         : null;
-          if (fallback) {
-            raw = await _tryProvider(fallback);
-            usedProvider = fallback + '-fallback';
-            lastErr = null;
-          } else {
-            throw e2;
-          }
-        }
+        raw = await _visionCall(prov, visionPrompt, fileBase64, mime);
+        usedProvider = prov;
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        // Wait before trying next provider
+        await _sleep(500);
       }
+    }
+    if (lastErr) return res.status(500).json({ error: lastErr.message });
 
+    try {
       const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);
       if (!jsonMatch) return res.status(422).json({ error:'No JSON in vision response', raw });
       return res.status(200).json({ ...JSON.parse(jsonMatch[0]), _provider: usedProvider + '-vision' });
     } catch(e) {
-      return res.status(500).json({ error: e.message });
+      return res.status(500).json({ error: 'JSON parse failed: ' + e.message, raw });
     }
   }
 
@@ -243,77 +251,97 @@ tags: pick ≤10 tags that clearly match this recipe from this vocabulary (mix J
 料理、レシピ、献立、メニュー、おかず、惣菜、定食、弁当、作り置き、時短、簡単、本格的、プロ、家庭料理、和食、洋食、中華、アジア、エスニック、イタリアン、フレンチ、食材、肉、牛肉、豚肉、鶏肉、ひき肉、魚介、海鮮、魚、エビ、イカ、貝、海藻、野菜、葉物、根菜、きのこ、豆、卵、乳製品、チーズ、ヨーグルト、穀物、米、パン、麺、パスタ、粉類、調味料、ソース、たれ、つゆ、だし、スパイス、ハーブ、油、オイル、酢、酒、みりん、砂糖、塩、こしょう、醤油、味噌、焼く、煮る、蒸す、揚げる、炒める、茹でる、和える、漬ける、燻製、オーブン、電子レンジ、圧力鍋、フライパン、主菜、副菜、汁物、スープ、サラダ、前菜、おつまみ、デザート、スイーツ、ドリンク、丼、カレー、唐揚げ、天ぷら、餃子、チャーハン、炊き込みご飯、お好み焼き、たこ焼き、ラーメン、うどん、そば、お茶漬け、朝食、昼食、夕食、ランチ、ディナー、おやつ、パーティー、おもてなし、運動後、ダイエット、健康、美容、離乳食、子供、高齢者、一人暮らし、節約、冷凍、冷蔵、乾物、缶詰、レトルト、常備菜、ベジタリアン、ビーガン、グルテンフリー、低糖質、糖質制限、卵不使用、乳不使用、アレルギー対応、初心者向け、中級、上級、春、夏、秋、冬、旬、クリスマス、お正月、ひな祭り、バレンタイン、韓国料理、インド料理、メキシカン、スペイン料理、地中海、ケーキ、クッキー、チョコレート、プリン、アイス、和菓子、大福、どら焼き、high-protein、low-fat、low-carb、high-carb、vegetarian
 Only include tags clearly supported by the page content. Return [] if none apply clearly.`;
 
-  try {
-    let raw = '';
+  // ── Text provider call helpers ────────────────────────────────────────────
+  async function _textCall(prov, sysPrompt, content) {
+    const _sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    if (provider === 'groq') {
+    if (prov === 'groq') {
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
         headers:{'Authorization':`Bearer ${GROQ_API_KEY}`,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          max_tokens: 2048,
-          messages: [
-            { role:'system', content: systemPrompt },
-            { role:'user',   content: sourceContent },
-          ],
-        }),
+        body: JSON.stringify({ model:'llama-3.1-8b-instant', max_tokens:2048,
+          messages:[{ role:'system', content: sysPrompt },{ role:'user', content }] }),
       });
-      if (!r.ok) throw new Error(`Groq ${r.status}: ${await r.text()}`);
-      raw = (await r.json()).choices?.[0]?.message?.content || '';
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Groq ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).choices?.[0]?.message?.content || '';
     }
-
-    else if (provider === 'gemini') {
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            contents:[{ parts:[{ text: systemPrompt + '\n\n---\n\n' + sourceContent }] }],
-            generationConfig:{ maxOutputTokens:2048 },
-          }) }
-      );
-      if (!r.ok) throw new Error(`Gemini ${r.status}: ${await r.text()}`);
-      raw = (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (prov === 'gemini') {
+      const models = ['gemini-1.5-flash', 'gemini-2.5-flash'];
+      let lastE;
+      for (const model of models) {
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+          { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ contents:[{ parts:[{ text: sysPrompt + '\n\n---\n\n' + content }] }],
+              generationConfig:{ maxOutputTokens:2048 } }) }
+        );
+        if (r.ok) return (await r.json()).candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const t = await r.text().catch(()=>'');
+        lastE = new Error(`Gemini ${model} ${r.status}: ${t.slice(0,120)}`);
+        if (r.status !== 503 && r.status !== 429) throw lastE;
+        await _sleep(700);
+      }
+      throw lastE;
     }
-
-    else if (provider === 'deepseek') {
-      const r = await fetch('https://api.deepseek.com/chat/completions', {
-        method:'POST',
-        headers:{'Authorization':`Bearer ${DEEPSEEK_API_KEY}`,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'deepseek-chat',
-          max_tokens:2048,
-          messages:[
-            { role:'system', content: systemPrompt },
-            { role:'user',   content: sourceContent },
-          ],
-        }),
-      });
-      if (!r.ok) throw new Error(`DeepSeek ${r.status}: ${await r.text()}`);
-      raw = (await r.json()).choices?.[0]?.message?.content || '';
-    }
-
-    else {
-      // Claude fallback
+    if (prov === 'claude') {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
         headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-haiku-4-5-20251001',
-          max_tokens:2048,
-          system: systemPrompt,
-          messages:[{ role:'user', content: sourceContent }],
-        }),
+        body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2048,
+          system: sysPrompt, messages:[{ role:'user', content }] }),
       });
-      if (!r.ok) throw new Error(`Claude ${r.status}: ${await r.text()}`);
-      raw = (await r.json()).content?.[0]?.text || '';
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Claude ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).content?.[0]?.text || '';
     }
+    if (prov === 'nvidia') {
+      const r = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method:'POST',
+        headers:{'Authorization':`Bearer ${NVIDIA_API_KEY}`,'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'meta/llama-3.1-70b-instruct', max_tokens:2048,
+          messages:[{ role:'system', content: sysPrompt },{ role:'user', content }] }),
+      });
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Nvidia ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).choices?.[0]?.message?.content || '';
+    }
+    if (prov === 'deepseek') {
+      const r = await fetch('https://api.deepseek.com/chat/completions', {
+        method:'POST',
+        headers:{'Authorization':`Bearer ${DEEPSEEK_API_KEY}`,'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'deepseek-chat', max_tokens:2048,
+          messages:[{ role:'system', content: sysPrompt },{ role:'user', content }] }),
+      });
+      if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`DeepSeek ${r.status}: ${t.slice(0,120)}`); }
+      return (await r.json()).choices?.[0]?.message?.content || '';
+    }
+    throw new Error(`Unknown provider: ${prov}`);
+  }
+
+  // ── Try each text provider in order ──────────────────────────────────────
+  // Chain: Groq → Gemini → Claude → Nvidia → DeepSeek
+  try {
+    let raw = '';
+    let usedProvider = '';
+    let lastErr;
+    const _sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    for (const prov of TEXT_PROVIDERS) {
+      try {
+        raw = await _textCall(prov, systemPrompt, sourceContent);
+        usedProvider = prov;
+        lastErr = null;
+        break;
+      } catch(e) {
+        lastErr = e;
+        await _sleep(400);
+      }
+    }
+    if (lastErr) throw lastErr;
 
     const jsonMatch = _cleanJson(raw).match(/\{[\s\S]*\}/);
     if (!jsonMatch) return res.status(422).json({ error:'No JSON in response', raw });
 
     const recipe = JSON.parse(jsonMatch[0]);
-    return res.status(200).json({ ...recipe, _provider: provider, sourceUrl: url });
+    return res.status(200).json({ ...recipe, _provider: usedProvider, sourceUrl: url });
 
   } catch (e) {
     console.error('[parse-recipe] error:', e);
