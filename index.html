@@ -427,11 +427,18 @@
       <!-- Quick import: image only -->
       <div class="card">
         <div class="card-title" data-i18n="quick_import">⚡ 快速导入食物</div>
-        <label class="import-btn import-btn-full" for="trackerImgInput">
-          📷 <span data-i18n="import_photo">拍照 / 截图识别</span>
-        </label>
-        <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
-          onchange="Tracker.importImage(this.files[0])" />
+        <div class="import-row">
+          <label class="import-btn" for="trackerCamInput">
+            📷 <span data-i18n="import_camera">拍照识别</span>
+          </label>
+          <input id="trackerCamInput" type="file" accept="image/*" capture="environment" class="hidden"
+            onchange="Tracker.importImage(this.files[0])" />
+          <label class="import-btn" for="trackerImgInput">
+            🖼 <span data-i18n="import_photo">上传图片</span>
+          </label>
+          <input id="trackerImgInput" type="file" accept="image/*" class="hidden"
+            onchange="Tracker.importImage(this.files[0])" />
+        </div>
         <div id="importStatus" class="parse-status"></div>
       </div>
 

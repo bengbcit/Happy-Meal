@@ -377,24 +377,43 @@ const TrackerImportModal = (() => {
     ).join('');
     return `
       <div class="tim-row" id="timRow-${item.id}">
-        <input class="inp tim-name" value="${_esc(item.name||'')}"
-               placeholder="${I18n.get('add_food')||'食物名'}"
-               onchange="TrackerImportModal._upd(${item.id},'name',this.value)"/>
-        <div class="tim-nums">
-          <input class="inp tim-num" type="number" min="0" value="${item.grams||''}"
-                 placeholder="g" title="克重"
-                 onchange="TrackerImportModal._upd(${item.id},'grams',this.value)"/>
-          <span class="tim-sep">g</span>
-          <input class="inp tim-num" type="number" min="0" value="${item.kcal||''}"
-                 placeholder="kcal"
-                 onchange="TrackerImportModal._upd(${item.id},'kcal',this.value)"/>
-          <span class="tim-sep">kcal</span>
+        <div class="tim-row-top">
+          <input class="inp tim-name" value="${_esc(item.name||'')}"
+                 placeholder="${I18n.get('add_food')||'食物名'}"
+                 onchange="TrackerImportModal._upd(${item.id},'name',this.value)"/>
+          <select class="inp tim-meal-sel"
+                  onchange="TrackerImportModal._upd(${item.id},'meal',this.value)">
+            ${mealOptions}
+          </select>
+          <button class="row-del-btn" onclick="TrackerImportModal._del(${item.id})">−</button>
         </div>
-        <select class="inp tim-meal-sel"
-                onchange="TrackerImportModal._upd(${item.id},'meal',this.value)">
-          ${mealOptions}
-        </select>
-        <button class="row-del-btn" onclick="TrackerImportModal._del(${item.id})">−</button>
+        <div class="tim-nums">
+          <label class="tim-num-label">
+            <input class="inp tim-num" type="number" min="0" value="${item.grams||''}"
+                   placeholder="0" onchange="TrackerImportModal._upd(${item.id},'grams',this.value)"/>
+            <span class="tim-sep">g</span>
+          </label>
+          <label class="tim-num-label">
+            <input class="inp tim-num" type="number" min="0" value="${item.kcal||''}"
+                   placeholder="0" onchange="TrackerImportModal._upd(${item.id},'kcal',this.value)"/>
+            <span class="tim-sep">kcal</span>
+          </label>
+          <label class="tim-num-label">
+            <input class="inp tim-num" type="number" min="0" value="${item.protein||''}"
+                   placeholder="0" onchange="TrackerImportModal._upd(${item.id},'protein',this.value)"/>
+            <span class="tim-sep">${I18n.get('protein_lbl')||'蛋白g'}</span>
+          </label>
+          <label class="tim-num-label">
+            <input class="inp tim-num" type="number" min="0" value="${item.carbs||''}"
+                   placeholder="0" onchange="TrackerImportModal._upd(${item.id},'carbs',this.value)"/>
+            <span class="tim-sep">${I18n.get('carb_lbl')||'碳水g'}</span>
+          </label>
+          <label class="tim-num-label">
+            <input class="inp tim-num" type="number" min="0" value="${item.fat||''}"
+                   placeholder="0" onchange="TrackerImportModal._upd(${item.id},'fat',this.value)"/>
+            <span class="tim-sep">${I18n.get('fat_lbl')||'脂肪g'}</span>
+          </label>
+        </div>
       </div>`;
   }
 
