@@ -6,6 +6,11 @@ const BMI = (() => {
   // WHO基準のBMI分類 / WHO 标准分级
   const THRESHOLDS = { thin: 18.5, normal: 24.9, overweight: 27.9 };
 
+  // Session-only dismissed recipe ids (cleared on page refresh)
+  // セッション中に非表示にしたレシピID / 本次会话中关闭的菜谱ID（刷新页面恢复）
+  let _dismissed = new Set();
+  let _lastBmi   = null;   // remember last bmi value for refresh
+
   // Calculate BMR using Mifflin-St Jeor equation
   // Mifflin-St Jeor式でBMRを計算 / 使用 Mifflin-St Jeor 公式计算基础代谢
   function _bmr(gender, age, height, weight) {
@@ -134,11 +139,13 @@ const BMI = (() => {
   // Render recommended recipes on dashboard with priority label
   // 優先度ラベル付きでダッシュボードにおすすめレシピをレンダリング / 带优先级标签渲染主页推荐
   function renderRecommend(bmiVal) {
+    if (bmiVal !== undefined) _lastBmi = bmiVal;
+    const useBmi = _lastBmi;
     const el = document.getElementById('recommendList');
     if (!el) return;
 
     const todayMacros = Tracker ? Tracker.getTodayMacros() : null;
-    const preferred   = _preferredTags(bmiVal, todayMacros);
+    const preferred   = _preferredTags(useBmi, todayMacros);
     const all         = State.getRecipes();
 
     // Score by priority: protein match scores 3, others 1
@@ -146,40 +153,55 @@ const BMI = (() => {
     const scored = all.map(r => {
       const tags  = r.tags || [];
       let score   = 0;
-      if (tags.includes('high-protein')) score += 3;   // protein first
+      if (tags.includes('high-protein')) score += 3;
       if (preferred.some(t => tags.includes(t))) score += 1;
-      // Penalize high-fat if overweight
-      if (bmiVal > THRESHOLDS.normal && tags.includes('high-carb')) score -= 1;
+      if (useBmi > THRESHOLDS.normal && tags.includes('high-carb')) score -= 1;
       return { ...r, _score: score, _matched: preferred.filter(t=>tags.includes(t)) };
-    }).sort((a, b) => b._score - a._score).slice(0, 5);
+    }).sort((a, b) => b._score - a._score);
 
-    if (scored.length === 0) {
-      el.innerHTML = `<p class="placeholder-text">${I18n.get('no_recipes')}</p>`;
+    // Separate dismissed vs available; pick 3 from available (random among same-score tier)
+    // 非表示除外後から3件をランダム選出 / 排除已关闭的，从剩余中随机取3个
+    const available = scored.filter(r => !_dismissed.has(r.id));
+    if (available.length === 0) {
+      el.innerHTML = `<p class="placeholder-text">${all.length ? (I18n.get('rec_all_dismissed')||'已全部关闭，点击🔄刷新') : I18n.get('no_recipes')}</p>`;
       return;
     }
 
+    // Shuffle within top tier to vary picks on refresh
+    const topScore = available[0]._score;
+    const topTier  = available.filter(r => r._score >= topScore - 1);
+    const rest     = available.filter(r => r._score <  topScore - 1);
+    const shuffTop = topTier.sort(() => Math.random() - 0.5);
+    const picks    = shuffTop.concat(rest).slice(0, 3);
+
     // Show why each recipe is recommended
     // 各レシピの推薦理由を表示 / 显示每个菜谱被推荐的原因
-    el.innerHTML = scored.map(r => {
+    el.innerHTML = picks.map(r => {
       const reasonIcons = (r._matched||[]).map(t => ({
         'high-protein':'🥩','low-fat':'🥗','low-carb':'🥦','high-carb':'🍚','vegetarian':'🌿'
       }[t]||'')).join('');
       return `
-        <div class="recipe-small-row" onclick="RecipeModal.open('${r.id}')">
-          <span class="recipe-small-name">${r.name}</span>
+        <div class="recipe-small-row">
+          <span class="recipe-small-name" onclick="RecipeModal.open('${r.id}')" style="cursor:pointer;flex:1">${r.name}</span>
           <span style="font-size:.8rem">${reasonIcons}</span>
           <span class="recipe-small-kcal">${r.kcal||'—'} ${I18n.get('kcal')}</span>
+          <button class="rec-dismiss-btn" onclick="BMI.dismissRecommend('${r.id}')" title="不再显示">✕</button>
         </div>`;
     }).join('');
+  }
 
-    // Show priority hint
-    // 優先度ヒントを表示 / 显示优先级提示
-    const hint = document.createElement('p');
-    hint.className = 'text-muted';
-    hint.style.fontSize = '.75rem';
-    hint.style.marginTop = '6px';
-    hint.textContent = '推荐依据：蛋白质 > 碳水 > 脂肪';
-    el.appendChild(hint);
+  // Dismiss one recipe from current session view
+  // 今回セッションで非表示 / 本次会话关闭该推荐（刷新后可再次出现）
+  function dismissRecommend(id) {
+    _dismissed.add(id);
+    renderRecommend();
+  }
+
+  // Refresh — clear dismissed set then re-render with new random picks
+  // 刷新：清除关闭记录，重新随机选出推荐 / リフレッシュ：非表示をリセットして再ランダム選出
+  function refreshRecommend() {
+    _dismissed.clear();
+    renderRecommend();
   }
 
   // Log today's weight and refresh chart + BMI
@@ -316,5 +338,5 @@ const BMI = (() => {
     renderWeightLog();
   }
 
-  return { calc, renderRecommend, init, logWeight, renderWeightLog, editWeightRow, saveWeightRow, deleteWeightRow };
+  return { calc, renderRecommend, dismissRecommend, refreshRecommend, init, logWeight, renderWeightLog, editWeightRow, saveWeightRow, deleteWeightRow };
 })();

@@ -416,13 +416,38 @@ input, select, textarea { font: inherit; }
 @media (max-width:560px) { .dual-recommend { grid-template-columns:1fr; } }
 .dual-recommend > .card { margin:0; }
 .recipe-small-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px; background: var(--bg);
-  border-radius: var(--radius-sm); cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; background: var(--bg);
+  border-radius: var(--radius-sm);
 }
 .recipe-small-row:hover { background: var(--green-lt); }
 .recipe-small-name { flex: 1; font-size: .88rem; font-weight: 600; }
-.recipe-small-kcal { font-size: .8rem; color: var(--green-dk); font-weight: 700; }
+.recipe-small-kcal { font-size: .8rem; color: var(--green-dk); font-weight: 700; white-space: nowrap; }
+
+/* Recommend card header with refresh button */
+.rec-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rec-card-header .card-title { margin-bottom: 0; }
+.rec-refresh-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; padding: 2px 4px; border-radius: 6px;
+  color: var(--text-muted); transition: transform .3s, color .15s;
+  line-height: 1;
+}
+.rec-refresh-btn:hover { color: var(--green-dk); transform: rotate(180deg); }
+
+/* Dismiss (✕) button on each recommend row */
+.rec-dismiss-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: .7rem; color: var(--text-muted);
+  padding: 0 2px; line-height: 1; opacity: 0;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+.recipe-small-row:hover .rec-dismiss-btn { opacity: 1; }
+.rec-dismiss-btn:hover { color: var(--red, #e74c3c); }
 .placeholder-text { color: var(--text-muted); font-size: .85rem; text-align: center; padding: 16px; }
 
 /* ── Add Recipe panel ───────────────────────────────── */
@@ -490,14 +515,43 @@ input, select, textarea { font: inherit; }
 
 /* ── Indulgence ─────────────────────────────────────── */
 .search-row { display: flex; gap: 8px; }
-.indulge-cats { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.indulge-cats { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex-wrap: wrap; margin-bottom: 0; }
 .indulge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .indulge-card {
   background: var(--bg); border-radius: var(--radius-sm);
   padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
   border: 1.5px solid var(--border); transition: var(--transition);
-  cursor: pointer;
+  cursor: pointer; position: relative;
 }
+.indulge-del-btn {
+  position: absolute; top: 5px; right: 6px;
+  background: none; border: none; cursor: pointer;
+  font-size: .85rem; opacity: 0.4; line-height: 1; padding: 0;
+  transition: opacity .15s;
+}
+.indulge-card:hover .indulge-del-btn { opacity: 1; }
+
+/* Quantity picker */
+.indulge-picker-stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 20px; padding: 12px 0 16px;
+}
+.indulge-picker-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--yellow); color: #fff;
+  font-size: 1.4rem; font-weight: 700; line-height: 1;
+  border: none; cursor: pointer;
+  transition: transform .1s, opacity .15s;
+}
+.indulge-picker-btn:active { transform: scale(.92); }
+.indulge-picker-macros {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 4px; background: var(--bg-alt); border-radius: var(--radius-sm);
+  padding: 10px 8px;
+}
+.indulge-pm-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.indulge-pm-val  { font-size: 1rem; font-weight: 700; }
+.indulge-pm-lbl  { font-size: .68rem; color: var(--text-muted); text-align: center; }
 .indulge-card:hover { border-color: var(--yellow); background: rgba(255,184,0,0.06); }
 .indulge-icon { font-size: 1.4rem; }
 .indulge-name { font-weight: 600; font-size: .85rem; }

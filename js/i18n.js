@@ -119,6 +119,13 @@ const I18n = (() => {
       indulge_add_btn: '+ 今日记录',
       indulge_no_items: '未找到相关项目',
       indulge_alcohol_warn: '🍺 酒精会降低脂肪燃烧效率，适量饮用',
+      indulge_add_custom: '自定义',
+      indulge_add_custom_title: '添加自定义零食',
+      indulge_name_required: '请填写名称',
+      deleted_ok: '已删除',
+      indulge_ph_size: '份量 (如 1杯 350ml)',
+      indulge_servings: '份数',
+      rec_all_dismissed: '已全部关闭，点🔄刷新',
     },
 
     en: {
@@ -228,6 +235,13 @@ const I18n = (() => {
       indulge_add_btn: '+ Add today',
       indulge_no_items: 'No items found',
       indulge_alcohol_warn: '🍺 Alcohol reduces fat-burning efficiency — drink in moderation',
+      indulge_add_custom: 'Custom',
+      indulge_add_custom_title: 'Add Custom Item',
+      indulge_name_required: 'Name is required',
+      deleted_ok: 'Deleted',
+      indulge_ph_size: 'Serving size (e.g. 1 cup 350ml)',
+      indulge_servings: 'Servings',
+      rec_all_dismissed: 'All dismissed — tap 🔄 to refresh',
     },
 
     ja: {
@@ -343,6 +357,13 @@ const I18n = (() => {
       indulge_add_btn: '+ 今日の記録',
       indulge_no_items: '該当なし',
       indulge_alcohol_warn: '🍺 アルコールは脂肪燃焼効率を下げます。適量を',
+      indulge_add_custom: 'カスタム',
+      indulge_add_custom_title: 'カスタムアイテムを追加',
+      indulge_name_required: '名前を入力してください',
+      deleted_ok: '削除しました',
+      indulge_ph_size: '量（例：1杯 350ml）',
+      indulge_servings: '份数',
+      rec_all_dismissed: 'すべて非表示 — 🔄で更新',
     }
   };
 
@@ -404,3 +425,4 @@ const I18n = (() => {
     }
   };
 })();
+                              

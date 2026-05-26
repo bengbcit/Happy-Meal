@@ -4,7 +4,7 @@
 const Indulgence = (() => {
   // Built-in database of common treats — names & sizes in zh/en/ja
   // 一般的なおやつのデータベース / 常见零食内置数据库
-  const DB = [
+  const DB_BUILTIN = [
     // Desserts 甜品
     { id:'d1',  cat:'dessert', icon:'🧁',
       name: { zh:'奶油蛋糕',      en:'Cream Cake',          ja:'クリームケーキ' },
@@ -108,13 +108,105 @@ const Indulgence = (() => {
       name: { zh:'莫吉托',         en:'Mojito',              ja:'モヒート' },
       size: { zh:'1杯(240ml)',    en:'1 glass (240ml)',      ja:'1杯(240ml)' },
       kcal:220, sugar:20, rice:0.9 },
+    // Starbucks Japan ☕
+    { id:'c1',  cat:'cafe', icon:'☕',
+      name: { zh:'甜蜜牛奶咖啡 G',       en:'Sweet Milk Coffee G',               ja:'スイートミルクコーヒー G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:396, protein:5.7, carbs:43.9, sugar:43.4, fat:21.9, rice:1.6 },
+    { id:'c2',  cat:'cafe', icon:'☕',
+      name: { zh:'甜蜜牛奶咖啡 V',       en:'Sweet Milk Coffee V',               ja:'スイートミルクコーヒー V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:462, protein:6.5, carbs:50.3, sugar:49.8, fat:26.1, rice:1.8 },
+    { id:'c3',  cat:'cafe', icon:'🍵',
+      name: { zh:'豆乳抹茶拿铁(冰) G',  en:'Soy Matcha Latte (Iced) G',         ja:'ソイ抹茶ティーラテ（I）G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:272, protein:9.6, carbs:37.2, sugar:35.0, fat:10.0, rice:1.1 },
+    { id:'c4',  cat:'cafe', icon:'🍵',
+      name: { zh:'豆乳抹茶拿铁(冰) V',  en:'Soy Matcha Latte (Iced) V',         ja:'ソイ抹茶ティーラテ（I）V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:329, protein:11.3, carbs:46.0, sugar:43.3, fat:11.8, rice:1.3 },
+    { id:'c5',  cat:'cafe', icon:'🍵',
+      name: { zh:'豆乳抹茶拿铁(热) G',  en:'Soy Matcha Latte (Hot) G',          ja:'ソイ抹茶ティーラテ（H）G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:306, protein:9.5, carbs:44.8, sugar:43.1, fat:10.8, rice:1.2 },
+    { id:'c6',  cat:'cafe', icon:'🍵',
+      name: { zh:'豆乳抹茶拿铁(热) V',  en:'Soy Matcha Latte (Hot) V',          ja:'ソイ抹茶ティーラテ（H）V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:400, protein:12.2, carbs:59.4, sugar:57.1, fat:13.2, rice:1.6 },
+    { id:'c7',  cat:'cafe', icon:'🥭',
+      name: { zh:'芒果星冰乐(无顶) G',  en:'Mango Frappuccino (No Top) G',      ja:'マンゴーフラペチーノ（NT）G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:191, protein:0.9, carbs:46.9, sugar:45.6, fat:0, rice:0.8 },
+    { id:'c8',  cat:'cafe', icon:'🥭',
+      name: { zh:'芒果星冰乐(无顶) V',  en:'Mango Frappuccino (No Top) V',      ja:'マンゴーフラペチーノ（NT）V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:233, protein:1.1, carbs:57.1, sugar:55.5, fat:0, rice:0.9 },
+    { id:'c9',  cat:'cafe', icon:'🌰',
+      name: { zh:'杏仁奶拿铁 G',        en:'Almond Milk Latte G',               ja:'アーモンドミルクラテ G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:117, protein:2.5, carbs:7.8, sugar:4.2, fat:9.3, rice:0.5 },
+    { id:'c10', cat:'cafe', icon:'🌰',
+      name: { zh:'杏仁奶拿铁 V',        en:'Almond Milk Latte V',               ja:'アーモンドミルクラテ V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:122, protein:2.9, carbs:8.9, sugar:5.1, fat:9.3, rice:0.5 },
+    { id:'c11', cat:'cafe', icon:'🧊',
+      name: { zh:'冰咖啡 G',            en:'Iced Coffee G',                      ja:'アイスコーヒー G' },
+      size: { zh:'G杯',                  en:'G size',                             ja:'G サイズ' },
+      kcal:14, protein:0.8, carbs:2.8, sugar:2.2, fat:0, rice:0.1 },
+    { id:'c12', cat:'cafe', icon:'🧊',
+      name: { zh:'冰咖啡 V',            en:'Iced Coffee V',                      ja:'アイスコーヒー V' },
+      size: { zh:'V杯',                  en:'V size',                             ja:'V サイズ' },
+      kcal:16, protein:0.9, carbs:3.1, sugar:2.5, fat:0, rice:0.1 },
+    { id:'c13', cat:'cafe', icon:'🍰',
+      name: { zh:'纽约芝士蛋糕',        en:'NY Cheesecake',                      ja:'NY チーズケーキ' },
+      size: { zh:'1份',                  en:'1 slice',                            ja:'1ピース' },
+      kcal:414, protein:6.6, carbs:30.1, sugar:29.1, fat:29.9, rice:1.7 },
+    { id:'c14', cat:'cafe', icon:'🍫',
+      name: { zh:'巧克力司康',          en:'Chocolate Scone',                    ja:'チョコスコーン' },
+      size: { zh:'1个',                  en:'1 piece',                            ja:'1個' },
+      kcal:332, protein:4.4, carbs:32.4, sugar:30.8, fat:20.9, rice:1.3 },
+    { id:'c15', cat:'cafe', icon:'🥪',
+      name: { zh:'火腿芝士三明治',      en:'Ham & Cheese Sandwich',              ja:'ハム＆チーズサンドイッチ' },
+      size: { zh:'1个',                  en:'1 piece',                            ja:'1個' },
+      kcal:342, protein:19.0, carbs:39.4, sugar:36.3, fat:12.7, rice:1.4 },
+    { id:'c16', cat:'cafe', icon:'🥗',
+      name: { zh:'根菜鸡肉沙拉卷',      en:'Root Veg & Chicken Salad Wrap',     ja:'根菜チキンサラダラップ' },
+      size: { zh:'1个',                  en:'1 piece',                            ja:'1個' },
+      kcal:203, protein:9.6, carbs:25.1, sugar:22.7, fat:7.2, rice:0.8 },
   ];
 
-  // Helper: get localized field from a DB entry
-  // ローカライズされたフィールドを取得 / 获取本地化字段
+  // Category definitions — labels in zh/en/ja, rendered dynamically so language-switching works
+  // カテゴリー定義（動的レンダリングで多言語対応） / 分类定义（动态渲染支持多语言）
+  const CATS = [
+    { key:'all',     icon:'',   label:{ zh:'全部',    en:'All',        ja:'すべて' } },
+    { key:'dessert', icon:'🍰', label:{ zh:'甜品',    en:'Desserts',   ja:'スイーツ' } },
+    { key:'drink',   icon:'🧋', label:{ zh:'饮料',    en:'Drinks',     ja:'ドリンク' } },
+    { key:'alcohol', icon:'🍺', label:{ zh:'酒精',    en:'Alcohol',    ja:'アルコール' } },
+    { key:'cafe',    icon:'☕', label:{ zh:'星巴克',  en:'Starbucks',  ja:'スターバックス' } },
+    { key:'custom',  icon:'⭐', label:{ zh:'自定义',  en:'Custom',     ja:'カスタム' } },
+  ];
+
+  // Custom items — persisted in localStorage
+  // カスタムアイテム（ローカルストレージに保存） / 自定义条目（存储在 localStorage）
+  const CUSTOM_KEY = 'hm_custom_indulge';
+  let _customItems = [];
+  function _loadCustom() {
+    try { _customItems = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch(e) { _customItems = []; }
+  }
+  function _saveCustom() {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(_customItems));
+  }
+
+  // Combined DB = builtins + custom
+  function _allItems() { return DB_BUILTIN.concat(_customItems); }
+
+  // Helper: localize a name/size field (string or {zh,en,ja} object)
+  // ローカライズヘルパー / 本地化帮助函数
   function _loc(field) {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
     const lang = (typeof I18n !== 'undefined' && I18n.current) ? I18n.current() : 'zh';
-    return field[lang] || field['zh'] || '';
+    return field[lang] || field['zh'] || field['en'] || '';
   }
 
   let _filter = 'all';
@@ -122,41 +214,128 @@ const Indulgence = (() => {
 
   function _filtered() {
     const lang = (typeof I18n !== 'undefined' && I18n.current) ? I18n.current() : 'zh';
-    return DB.filter(item => {
+    return _allItems().filter(item => {
       const matchCat = _filter === 'all' || item.cat === _filter;
-      const localName = (item.name[lang] || item.name['zh'] || '').toLowerCase();
+      const n = item.name;
+      const localName = (typeof n === 'string' ? n : (n[lang] || n['zh'] || n['en'] || '')).toLowerCase();
       const matchQ   = !_query || localName.includes(_query.toLowerCase());
       return matchCat && matchQ;
     });
   }
 
+  // Render category filter buttons (language-aware)
+  // カテゴリーフィルターボタンをレンダリング / 渲染分类筛选按钮（支持多语言）
+  function _renderCats() {
+    const el = document.getElementById('indulgeCats');
+    if (!el) return;
+    el.innerHTML = CATS.map(c => {
+      const label = _loc(c.label);
+      const active = _filter === c.key ? ' active' : '';
+      return `<button class="pill${active}" data-cat="${c.key}" onclick="Indulgence.filterCat('${c.key}')">${c.icon ? c.icon + ' ' : ''}${label}</button>`;
+    }).join('');
+  }
+
+  // ── Quantity picker state ──────────────────────────────
+  // 份数选择器状态 / 数量ピッカー状態
+  let _pickerItemId = null;
+  let _pickerQty    = 1;
+
+  function openPicker(id) {
+    const item = _allItems().find(x => x.id === id);
+    if (!item) return;
+    _pickerItemId = id;
+    _pickerQty    = 1;
+    _renderPicker(item);
+    document.getElementById('indulgePickerModal')?.classList.remove('hidden');
+  }
+
+  function _renderPicker(item) {
+    const q   = _pickerQty;
+    const kcal    = Math.round(item.kcal    * q);
+    const protein = +((item.protein || 0) * q).toFixed(1);
+    const carbs   = +((item.carbs   != null ? item.carbs : (item.sugar || 0)) * q).toFixed(1);
+    const fat     = +((item.fat     || 0) * q).toFixed(1);
+    const sizeTxt = _loc(item.size) ? ` · ${_loc(item.size)}` : '';
+
+    const addBtn  = (typeof I18n!=='undefined') ? I18n.get('indulge_add_btn') || '+ 今日记录' : '+ 今日记录';
+    const servLbl = (typeof I18n!=='undefined') ? I18n.get('indulge_servings') || '份数' : '份数';
+
+    document.getElementById('indulgePickerContent').innerHTML = `
+      <div style="text-align:center;padding:4px 0 12px">
+        <div style="font-size:2rem">${item.icon || '🍽'}</div>
+        <div style="font-weight:700;font-size:1rem;margin:4px 0 2px">${_loc(item.name)}</div>
+        <div style="font-size:.78rem;color:var(--text-muted)">${_loc(item.size) || ''}</div>
+      </div>
+      <div class="indulge-picker-stepper">
+        <button class="indulge-picker-btn" onclick="Indulgence._pickerStep(-1)">−</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:1.5rem;font-weight:800;line-height:1">${q}</span>
+          <span style="font-size:.72rem;color:var(--text-muted)">${servLbl}</span>
+        </div>
+        <button class="indulge-picker-btn" onclick="Indulgence._pickerStep(1)">＋</button>
+      </div>
+      <div class="indulge-picker-macros">
+        <div class="indulge-pm-cell"><span class="indulge-pm-val" style="color:var(--accent)">${kcal}</span><span class="indulge-pm-lbl">kcal</span></div>
+        <div class="indulge-pm-cell"><span class="indulge-pm-val">${protein}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('protein_lbl'))||'蛋白'} g</span></div>
+        <div class="indulge-pm-cell"><span class="indulge-pm-val">${carbs}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('carb_lbl'))||'碳水'} g</span></div>
+        <div class="indulge-pm-cell"><span class="indulge-pm-val">${fat}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('fat_lbl'))||'脂肪'} g</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn-secondary" style="flex:1" onclick="Indulgence.closePicker()"
+          data-i18n="btn_cancel">取消</button>
+        <button class="btn-primary" style="flex:1" onclick="Indulgence.confirmPicker()">${addBtn}</button>
+      </div>`;
+  }
+
+  function _pickerStep(delta) {
+    _pickerQty = Math.max(0.5, +(_pickerQty + delta * 0.5).toFixed(1));
+    // allow integer steps below 1; above 1 step by 1
+    if (_pickerQty >= 1) _pickerQty = Math.round(_pickerQty);
+    const item = _allItems().find(x => x.id === _pickerItemId);
+    if (item) _renderPicker(item);
+  }
+
+  function closePicker() {
+    document.getElementById('indulgePickerModal')?.classList.add('hidden');
+    _pickerItemId = null;
+  }
+
+  function confirmPicker() {
+    if (!_pickerItemId) return;
+    addToday(_pickerItemId, _pickerQty);
+    closePicker();
+  }
+
   // Render indulgence grid
   // おやつグリッドをレンダリング / 渲染零食卡片网格
   function render() {
+    _renderCats();
     const el = document.getElementById('indulgeList');
     if (!el) return;
     const list = _filtered();
     const noItemsText = (typeof I18n !== 'undefined') ? (I18n.get('indulge_no_items') || 'No items found') : 'No items found';
-    const addTodayText = (typeof I18n !== 'undefined') ? (I18n.get('indulge_add_btn') || '+ 今日记录') : '+ 今日记录';
     if (list.length === 0) {
       el.innerHTML = `<p class="placeholder-text" style="grid-column:1/-1">${noItemsText}</p>`;
       return;
     }
-    el.innerHTML = list.map(item => `
-      <div class="indulge-card" onclick="Indulgence.addToday('${item.id}')">
-        <span class="indulge-icon">${item.icon}</span>
+    el.innerHTML = list.map(item => {
+      const isCustom = item.custom === true;
+      const delBtn = isCustom
+        ? `<button class="indulge-del-btn" onclick="event.stopPropagation();Indulgence.deleteCustom('${item.id}')" title="删除">🗑</button>`
+        : '';
+      return `
+      <div class="indulge-card" onclick="Indulgence.openPicker('${item.id}')">
+        ${delBtn}
+        <span class="indulge-icon">${item.icon || '🍽'}</span>
         <span class="indulge-name">${_loc(item.name)}</span>
         <span class="indulge-kcal">🔥 ${item.kcal} kcal</span>
         <span class="indulge-size">${_loc(item.size)}</span>
-        <button class="indulge-add-btn">${addTodayText}</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function filterCat(cat) {
     _filter = cat;
-    document.querySelectorAll('.indulge-cats .pill').forEach(b => {
-      b.classList.toggle('active', b.dataset.cat === cat);
-    });
     render();
   }
 
@@ -165,59 +344,110 @@ const Indulgence = (() => {
     render();
   }
 
-  // Add item to today's snack log + show warning toast
+  // ── Custom item management ─────────────────────────────
+  // カスタムアイテム管理 / 自定义条目管理
+
+  function openAddModal() {
+    const modal = document.getElementById('indulgeAddModal');
+    if (!modal) return;
+    // Reset form
+    ['indulgeAddName','indulgeAddSize','indulgeAddIcon',
+     'indulgeAddKcal','indulgeAddProtein','indulgeAddCarbs','indulgeAddFat'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const catSel = document.getElementById('indulgeAddCat');
+    if (catSel) catSel.value = _filter !== 'all' && _filter !== 'custom' ? _filter : 'dessert';
+    modal.classList.remove('hidden');
+  }
+
+  function closeAddModal() {
+    document.getElementById('indulgeAddModal')?.classList.add('hidden');
+  }
+
+  function saveCustom() {
+    const name    = document.getElementById('indulgeAddName')?.value.trim();
+    const size    = document.getElementById('indulgeAddSize')?.value.trim();
+    const icon    = document.getElementById('indulgeAddIcon')?.value.trim() || '🍽';
+    const cat     = document.getElementById('indulgeAddCat')?.value || 'dessert';
+    const kcal    = parseFloat(document.getElementById('indulgeAddKcal')?.value)   || 0;
+    const protein = parseFloat(document.getElementById('indulgeAddProtein')?.value) || 0;
+    const carbs   = parseFloat(document.getElementById('indulgeAddCarbs')?.value)   || 0;
+    const fat     = parseFloat(document.getElementById('indulgeAddFat')?.value)     || 0;
+    if (!name) { App.showToast('❌ ' + ((typeof I18n!=='undefined'&&I18n.get('indulge_name_required'))||'请填写名称')); return; }
+    const newItem = {
+      id: 'u_' + Date.now(),
+      cat, icon, custom: true,
+      name,   // plain string for custom items
+      size: size || '',
+      kcal, protein, carbs, fat, sugar: carbs,
+      rice: +(kcal / 250).toFixed(1),
+    };
+    _customItems.push(newItem);
+    _saveCustom();
+    closeAddModal();
+    render();
+    App.showToast('✅ ' + ((typeof I18n!=='undefined'&&I18n.get('saved_ok'))||'已保存'));
+  }
+
+  function deleteCustom(id) {
+    const item = _customItems.find(x => x.id === id);
+    if (!item) return;
+    const name = typeof item.name === 'string' ? item.name : _loc(item.name);
+    if (!confirm((typeof I18n!=='undefined'&&I18n.get('delete_confirm'))||'确定删除？')) return;
+    _customItems = _customItems.filter(x => x.id !== id);
+    _saveCustom();
+    render();
+    App.showToast('🗑 ' + name + ' ' + ((typeof I18n!=='undefined'&&I18n.get('deleted_ok'))||'已删除'));
+  }
+
+  // ── Add item to today's snack log + show warning toast ──
+  // qty = number of servings (default 1, supports 0.5 steps)
   // 今日のおやつログに追加してトースト警告を表示 / 添加到今日零食记录并显示警告提示
-  function addToday(id) {
-    const item = DB.find(x => x.id === id);
+  function addToday(id, qty) {
+    qty = qty || 1;
+    const item = _allItems().find(x => x.id === id);
     if (!item) return;
 
     const localName = _loc(item.name);
+    const qLabel    = qty !== 1 ? ` ×${qty}` : '';
+    const kcal      = Math.round(item.kcal * qty);
+    const protein   = +((item.protein || 0) * qty).toFixed(1);
+    const carbs     = +((item.carbs != null ? item.carbs : (item.sugar || 0)) * qty).toFixed(1);
+    const fat       = +((item.fat   || 0) * qty).toFixed(1);
+    const sugar     = +((item.sugar || 0) * qty).toFixed(1);
+
     const today = new Date().toISOString().slice(0, 10);
     State.addLogEntry(today, 'snack', {
-      name: localName, kcal: item.kcal,
-      protein: 0, carbs: item.sugar || 0, fat: 0,
+      name: localName + qLabel, kcal, protein, carbs, fat,
     });
 
-    // Show context-aware warning
-    // 状況に応じた警告を表示 / 显示情境化警告提示
-    const riceEq = item.rice || (item.kcal / 250).toFixed(1);
-    const sugarCubes = Math.round(item.sugar / 4);
+    // Context-aware warning
+    // 状況に応じた警告 / 情境化警告
+    const riceEq    = +(kcal / 250).toFixed(1);
+    const sugarCubes = Math.round(sugar / 4);
 
-    // i18n warning strings — fall back to zh if key missing
-    const addedTpl = (typeof I18n !== 'undefined')
-      ? (I18n.get('indulge_added') || '✅ {name} ({kcal} kcal) 已加入今日记录')
-      : '✅ {name} ({kcal} kcal) 已加入今日记录';
-    const kcalWarnTpl = (typeof I18n !== 'undefined')
-      ? (I18n.get('warn_kcal') || '⚠️ 相当于 {n} 碗白饭的热量！')
-      : '⚠️ 相当于 {n} 碗白饭的热量！';
-    const sugarWarnTpl = (typeof I18n !== 'undefined')
-      ? (I18n.get('warn_sugar') || '🍬 含糖约 {n}g ≈ {s} 颗方糖')
-      : '🍬 含糖约 {n}g ≈ {s} 颗方糖';
-    const alcoholWarn = (typeof I18n !== 'undefined')
-      ? (I18n.get('indulge_alcohol_warn') || '🍺 酒精会降低脂肪燃烧效率，适量饮用')
-      : '🍺 酒精会降低脂肪燃烧效率，适量饮用';
+    const addedTpl    = (typeof I18n!=='undefined') ? I18n.get('indulge_added')       || '✅ {name}（{kcal} kcal）已加入今日记录' : '✅ {name}（{kcal} kcal）已加入今日记录';
+    const kcalWarnTpl = (typeof I18n!=='undefined') ? I18n.get('warn_kcal')            || '⚠️ 相当于 {n} 碗白饭的热量！'           : '⚠️ 相当于 {n} 碗白饭的热量！';
+    const sugarWarnTpl= (typeof I18n!=='undefined') ? I18n.get('warn_sugar')           || '🍬 含糖约 {n} 颗方糖'                    : '🍬 含糖约 {n} 颗方糖';
+    const alcoholWarn = (typeof I18n!=='undefined') ? I18n.get('indulge_alcohol_warn') || '🍺 酒精会降低脂肪燃烧效率，适量饮用'     : '🍺 酒精会降低脂肪燃烧效率，适量饮用';
 
-    let msg = addedTpl.replace('{name}', localName).replace('{kcal}', item.kcal);
+    let msg = addedTpl.replace('{name}', localName + qLabel).replace('{kcal}', kcal);
+    if (kcal >= 300)    msg += '\n' + kcalWarnTpl.replace('{n}', riceEq);
+    if (sugar >= 20)    msg += '\n' + sugarWarnTpl.replace('{n}', sugarCubes);
+    if (item.cat === 'alcohol') msg += '\n' + alcoholWarn;
 
-    if (item.kcal >= 300) {
-      msg += '\n' + kcalWarnTpl.replace('{n}', riceEq);
-    }
-    if (item.sugar >= 20) {
-      msg += '\n' + sugarWarnTpl.replace('{n}', sugarCubes);
-    }
-    if (item.cat === 'alcohol') {
-      msg += '\n' + alcoholWarn;
-    }
-
-    App.showToast(msg, item.kcal >= 300 ? 'warning' : '');
-
-    // Refresh tracker summary
-    // トラッカーサマリーを更新 / 刷新追踪摘要
+    App.showToast(msg, kcal >= 300 ? 'warning' : '');
     Tracker.renderSummary();
     Charts.renderMacroRing();
   }
 
-  function init() { render(); }
+  function init() {
+    _loadCustom();
+    render();
+  }
 
-  return { render, filterCat, search, addToday, init };
+  return { render, filterCat, search, addToday,
+           openPicker, closePicker, confirmPicker, _pickerStep,
+           openAddModal, closeAddModal, saveCustom, deleteCustom, init };
 })();

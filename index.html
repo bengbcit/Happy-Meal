@@ -264,13 +264,19 @@
         <!-- Recommended Recipes + Exercise side by side -->
         <div class="dual-recommend reveal-card">
           <div class="card">
-            <div class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</div>
+            <div class="rec-card-header">
+              <span class="card-title" data-i18n="recommend_title">💡 今日推荐菜谱</span>
+              <button class="rec-refresh-btn" onclick="BMI.refreshRecommend()" title="刷新">🔄</button>
+            </div>
             <div id="recommendList" class="recipe-list-small">
               <p class="placeholder-text" data-i18n="recommend_hint">填写 BMI 信息后自动推荐</p>
             </div>
           </div>
           <div class="card">
-            <div class="card-title" data-i18n="recommend_exercise">🏃 今日运动推荐</div>
+            <div class="rec-card-header">
+              <span class="card-title" data-i18n="recommend_exercise">🏃 今日运动推荐</span>
+              <button class="rec-refresh-btn" onclick="Exercise.refreshExerciseRecommend()" title="刷新">🔄</button>
+            </div>
             <div id="exerciseRecommendList" class="recipe-list-small">
               <p class="placeholder-text">—</p>
             </div>
@@ -600,12 +606,10 @@
           <input id="indulgeSearch" class="inp" placeholder="搜索..." data-i18n-ph="ph_search"
             oninput="Indulgence.search(this.value)" />
         </div>
-        <div class="indulge-cats">
-          <button class="pill active" data-cat="all" onclick="Indulgence.filterCat('all')"
-            data-i18n="filter_all">全部</button>
-          <button class="pill" data-cat="dessert" onclick="Indulgence.filterCat('dessert')">🍰 甜品</button>
-          <button class="pill" data-cat="drink" onclick="Indulgence.filterCat('drink')">🧋 饮料</button>
-          <button class="pill" data-cat="alcohol" onclick="Indulgence.filterCat('alcohol')">🍺 酒精</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <div id="indulgeCats" class="indulge-cats" style="flex:1;margin-bottom:0"></div>
+          <button class="btn-secondary" style="white-space:nowrap;padding:5px 12px;font-size:.85rem"
+            onclick="Indulgence.openAddModal()">＋ <span data-i18n="indulge_add_custom">自定义</span></button>
         </div>
         <div id="indulgeList" class="indulge-grid">
           <!-- rendered by Indulgence.render() -->
@@ -719,6 +723,57 @@
     })();
   </script>
 
+
+
+  <!-- Indulgence Quantity Picker Modal -->
+  <div id="indulgePickerModal" class="modal-overlay hidden" onclick="if(event.target===this)Indulgence.closePicker()">
+    <div class="modal-card" style="max-width:320px;width:92%">
+      <div id="indulgePickerContent"></div>
+    </div>
+  </div>
+
+  <!-- Indulgence Add Custom Item Modal -->
+  <div id="indulgeAddModal" class="modal-overlay hidden" onclick="if(event.target===this)Indulgence.closeAddModal()">
+    <div class="modal-card" style="max-width:360px;width:94%">
+      <h3 style="margin:0 0 14px;font-size:1.05rem" data-i18n="indulge_add_custom_title">添加自定义零食</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px">
+          <input id="indulgeAddIcon" class="inp" style="width:52px;text-align:center;font-size:1.3rem"
+            placeholder="🍽" maxlength="4" title="emoji"/>
+          <input id="indulgeAddName" class="inp" style="flex:1"
+            data-i18n-ph="ph_rname" placeholder="名称 / Name"/>
+        </div>
+        <input id="indulgeAddSize" class="inp"
+          placeholder="份量 e.g. 1杯(350ml) / 1 cup (350ml)" data-i18n-ph="indulge_ph_size"/>
+        <select id="indulgeAddCat" class="inp">
+          <option value="dessert">🍰 甜品 / Desserts / スイーツ</option>
+          <option value="drink">🧋 饮料 / Drinks / ドリンク</option>
+          <option value="alcohol">🍺 酒精 / Alcohol / アルコール</option>
+          <option value="cafe">☕ 星巴克 / Starbucks / スターバックス</option>
+          <option value="custom">⭐ 自定义 / Custom / カスタム</option>
+        </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label style="font-size:.8rem;color:var(--text-muted)">kcal
+            <input id="indulgeAddKcal" class="inp" type="number" min="0" placeholder="0" style="margin-top:3px"/>
+          </label>
+          <label style="font-size:.8rem;color:var(--text-muted)" data-i18n="protein_lbl">蛋白质 g
+            <input id="indulgeAddProtein" class="inp" type="number" min="0" step="0.1" placeholder="0" style="margin-top:3px"/>
+          </label>
+          <label style="font-size:.8rem;color:var(--text-muted)" data-i18n="carb_lbl">碳水 g
+            <input id="indulgeAddCarbs" class="inp" type="number" min="0" step="0.1" placeholder="0" style="margin-top:3px"/>
+          </label>
+          <label style="font-size:.8rem;color:var(--text-muted)" data-i18n="fat_lbl">脂肪 g
+            <input id="indulgeAddFat" class="inp" type="number" min="0" step="0.1" placeholder="0" style="margin-top:3px"/>
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-primary" style="flex:1" onclick="Indulgence.saveCustom()" data-i18n="btn_save">💾 保存</button>
+          <button class="btn-secondary" style="flex:1" onclick="Indulgence.closeAddModal()" data-i18n="btn_cancel">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 
-</html>                    
+</html>                

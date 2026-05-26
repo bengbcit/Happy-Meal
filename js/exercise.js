@@ -190,6 +190,11 @@ const Exercise = (() => {
 
   function init() { render(); renderLog(); }
 
+  // Session-only dismissed exercise ids for home recommend
+  // セッション中非表示運動ID / 本次会话关闭的运动推荐ID
+  let _exDismissed = new Set();
+  let _exPool = null;   // cached shuffled pool for current session
+
   // Daily exercise recommendation for home dashboard
   // ホーム用今日の運動おすすめ / 主页今日运动推荐
   function renderExerciseRecommend() {
@@ -199,23 +204,50 @@ const Exercise = (() => {
     const POOL_IDS = ['walk','run','hiit','stairs','swim','dance_med','dance_hi'];
     const pool = EXERCISES.filter(e => POOL_IDS.includes(e.id));
 
-    // Date-seeded shuffle so picks are consistent within the day
-    const seed = parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''));
-    const shuffled = [...pool].sort((a,b) => ((seed * a.met * 31) % 97) - ((seed * b.met * 17) % 97));
-    const picks = shuffled.slice(0, 3);
+    // Build pool if not yet built (date-seeded for initial load consistency)
+    if (!_exPool) {
+      const seed = parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''));
+      _exPool = [...pool].sort((a,b) => ((seed * a.met * 31) % 97) - ((seed * b.met * 17) % 97));
+    }
+
+    const available = _exPool.filter(e => !_exDismissed.has(e.id));
+    if (available.length === 0) {
+      el.innerHTML = `<p class="placeholder-text">${I18n.get('rec_all_dismissed')||'已全部关闭，点击🔄刷新'}</p>`;
+      return;
+    }
+    const picks = available.slice(0, 3);
 
     const weight = State.get().user.weight || 65;
+    const minLbl = lang==='en' ? '30 min' : lang==='ja' ? '30分' : '30分钟';
     el.innerHTML = picks.map(ex => {
       const name = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
       const kcal = Math.round(ex.met * weight * 0.5); // 30 min
-      return `<div class="recipe-list-item" style="cursor:default">
-        <span>${ex.icon} ${name} <span style="font-size:.75rem;color:var(--text-faint)">30分钟</span></span>
-        <span style="color:var(--accent-warm,#FF7A45);font-weight:600">${kcal} 千卡</span>
+      return `<div class="recipe-small-row">
+        <span style="flex:1">${ex.icon} ${name} <span style="font-size:.72rem;color:var(--text-muted)">${minLbl}</span></span>
+        <span style="color:var(--accent-warm,#FF7A45);font-weight:600;font-size:.85rem">${kcal} ${I18n.get('kcal')||'千卡'}</span>
+        <button class="rec-dismiss-btn" onclick="Exercise.dismissExerciseRecommend('${ex.id}')" title="不再显示">✕</button>
       </div>`;
     }).join('');
   }
 
-  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init, renderExerciseRecommend };
+  // Dismiss one exercise from current session view
+  function dismissExerciseRecommend(id) {
+    _exDismissed.add(id);
+    renderExerciseRecommend();
+  }
+
+  // Refresh — reshuffle pool, clear dismissed, re-render
+  // リフレッシュ：シャッフルして非表示をリセット / 重新随机，清除关闭记录
+  function refreshExerciseRecommend() {
+    _exDismissed.clear();
+    // Re-shuffle so new random picks appear
+    const POOL_IDS = ['walk','run','hiit','stairs','swim','dance_med','dance_hi'];
+    const pool = EXERCISES.filter(e => POOL_IDS.includes(e.id));
+    _exPool = [...pool].sort(() => Math.random() - 0.5);
+    renderExerciseRecommend();
+  }
+
+  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init, renderExerciseRecommend, dismissExerciseRecommend, refreshExerciseRecommend };
 })();
 
 // ── DiningOut — restaurant meal options ───────────────
