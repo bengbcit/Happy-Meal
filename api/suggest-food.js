@@ -117,7 +117,7 @@ async function _callAI(provider, keys, userPrompt) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         max_tokens: 1024,
         messages: [{ role: 'user', content: userPrompt }],
       }),
