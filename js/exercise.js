@@ -80,7 +80,10 @@ const Exercise = (() => {
 
   function _exCardHTML(ex, lang) {
     const name = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
-    const defaultMin = 30;
+    const defaultMin  = 30;
+    const defaultKcal = _calcKcal(ex.met, defaultMin);
+    const minLbl = lang==='en' ? 'min' : lang==='ja' ? '分' : '分钟';
+    const logLbl = lang==='en' ? '+ Log' : lang==='ja' ? '＋記録' : '＋记录';
     return `
       <div class="exercise-card" id="exCard-${ex.id}">
         <span class="ex-icon">${ex.icon}</span>
@@ -91,12 +94,16 @@ const Exercise = (() => {
         <div class="ex-controls">
           <button class="ex-min-btn" onclick="Exercise.adjMin('${ex.id}',-5)">−</button>
           <input class="ex-min-inp" id="exMin-${ex.id}" type="number" value="${defaultMin}" min="1" max="300"
-                 onchange="Exercise.updateKcal('${ex.id}')"/>
-          <span class="ex-min-label">分钟</span>
+                 oninput="Exercise.updateKcal('${ex.id}')"/>
+          <span class="ex-min-label">${minLbl}</span>
           <button class="ex-min-btn" onclick="Exercise.adjMin('${ex.id}',5)">＋</button>
         </div>
-        <div class="ex-kcal-preview" id="exKcal-${ex.id}">${_calcKcal(ex.met, defaultMin)} kcal</div>
-        <button class="ex-log-btn" onclick="Exercise.logEntry('${ex.id}')">＋记录</button>
+        <div class="ex-kcal-row">
+          <input class="ex-kcal-inp" id="exKcal-${ex.id}" type="number" min="0"
+                 value="${defaultKcal}" title="可直接修改热量"/>
+          <span class="ex-kcal-unit">kcal</span>
+        </div>
+        <button class="ex-log-btn" onclick="Exercise.logEntry('${ex.id}')">${logLbl}</button>
         ${ex.cat==='custom' ? `<button class="row-del-btn" onclick="Exercise.deleteCustom('${ex.id}')" style="margin-left:4px">−</button>` : ''}
       </div>`;
   }
@@ -113,32 +120,56 @@ const Exercise = (() => {
     updateKcal(id);
   }
 
+  // Recalculate kcal from MET × minutes and write to the editable kcal field
+  // MET × 分数からkcalを再計算して編集可能フィールドに反映 / 根据 MET × 分钟重新计算并写入 kcal 字段
   function updateKcal(id) {
-    const inp    = document.getElementById(`exMin-${id}`);
-    const kcalEl = document.getElementById(`exKcal-${id}`);
-    if (!inp || !kcalEl) return;
+    const minInp  = document.getElementById(`exMin-${id}`);
+    const kcalInp = document.getElementById(`exKcal-${id}`);
+    if (!minInp || !kcalInp) return;
     const all = [...EXERCISES, ..._customList()];
     const ex  = all.find(e => e.id === id);
     if (!ex) return;
-    kcalEl.textContent = _calcKcal(ex.met, parseInt(inp.value)||30) + ' kcal';
+    // Only auto-update kcal if user hasn't manually overridden it
+    // (We mark manual edits with data-manual="1")
+    if (kcalInp.dataset.manual !== '1') {
+      kcalInp.value = _calcKcal(ex.met, parseInt(minInp.value)||30);
+    }
   }
 
   // Log an exercise entry to today's record
   // 今日の記録に運動エントリを追加 / 将运动记录添加到今日记录
   function logEntry(id) {
-    const inp = document.getElementById(`exMin-${id}`);
+    const minInp  = document.getElementById(`exMin-${id}`);
+    const kcalInp = document.getElementById(`exKcal-${id}`);
     const all = [...EXERCISES, ..._customList()];
     const ex  = all.find(e => e.id === id);
-    if (!ex || !inp) return;
-    const minutes = parseInt(inp.value) || 30;
-    const kcal    = _calcKcal(ex.met, minutes);
-    const lang    = I18n.current();
-    const name    = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
-    const log     = _todayLog();
+    if (!ex || !minInp) return;
+    const minutes = parseInt(minInp.value) || 30;
+    // Use the (possibly manually edited) kcal field value
+    const kcal = kcalInp ? (parseInt(kcalInp.value) || _calcKcal(ex.met, minutes)) : _calcKcal(ex.met, minutes);
+    const lang = I18n.current();
+    const name = lang==='en' ? ex.en : lang==='ja' ? ex.ja : ex.zh;
+    const log  = _todayLog();
     log.push({ id, name, icon: ex.icon, minutes, kcal, time: new Date().toTimeString().slice(0,5) });
     _saveLog(log);
     renderLog();
-    App.showToast(`${ex.icon} ${name} ${minutes}分钟 → 消耗 ${kcal} kcal`);
+    // Refresh tracker summary + ring so exercise is reflected
+    if (typeof Tracker !== 'undefined') Tracker.renderSummary();
+    const minLbl = lang==='en' ? 'min' : lang==='ja' ? '分' : '分钟';
+    const burnLbl = lang==='en' ? 'burned' : lang==='ja' ? '消費' : '消耗';
+    App.showToast(`${ex.icon} ${name} ${minutes}${minLbl} → ${burnLbl} ${kcal} kcal`);
+  }
+
+  // Get total kcal burned today from exercise log
+  // 今日の運動消費カロリー合計を取得 / 获取今日运动消耗总热量
+  function getTodayBurned() {
+    return _todayLog().reduce((s, e) => s + (e.kcal || 0), 0);
+  }
+
+  // Get today's exercise names list for display
+  function getTodayExerciseNames() {
+    const lang = I18n.current();
+    return _todayLog().map(e => e.name || '');
   }
 
   // Render today's exercise log
@@ -166,6 +197,7 @@ const Exercise = (() => {
     log.splice(idx, 1);
     _saveLog(log);
     renderLog();
+    if (typeof Tracker !== 'undefined') Tracker.renderSummary();
   }
 
   // Add custom exercise
@@ -247,7 +279,9 @@ const Exercise = (() => {
     renderExerciseRecommend();
   }
 
-  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init, renderExerciseRecommend, dismissExerciseRecommend, refreshExerciseRecommend };
+  return { render, renderLog, filterCat, adjMin, updateKcal, logEntry, removeLog, addCustom, deleteCustom, init,
+           getTodayBurned, getTodayExerciseNames,
+           renderExerciseRecommend, dismissExerciseRecommend, refreshExerciseRecommend };
 })();
 
 // ── DiningOut — restaurant meal options ───────────────

@@ -15,29 +15,56 @@ const Charts = (() => {
   }
 
   // ── Macro Ring (dashboard donut) ────────────────────
+  // burned = today's exercise kcal (shown as orange segment expanding the budget)
   // ダッシュボードのドーナツチャート / 仪表板环形图
-  function renderMacroRing(totals, target) {
+  function renderMacroRing(totals, target, burned) {
     const canvas = document.getElementById('macroRing');
     if (!canvas) return;
 
     if (!totals) totals = Tracker.getTotals(new Date().toISOString().slice(0, 10));
-    if (!target) target = State.get().settings.targetKcal || 1800;
+    const baseTarget = State.get().settings.targetKcal || 1800;
+    if (!target) target = baseTarget;
+    burned = burned || 0;
 
-    const remaining = Math.max(0, target - totals.kcal);
+    const proteinKcal = Math.round(totals.protein * 4);
+    const carbsKcal   = Math.round(totals.carbs   * 4);
+    const fatKcal     = Math.round(totals.fat     * 9);
+    const eaten       = proteinKcal + carbsKcal + fatKcal;
+    const remaining   = Math.max(0, target - eaten);
+
+    const lang = (typeof I18n !== 'undefined') ? I18n.current() : 'zh';
+    const labels = {
+      protein:   lang==='en' ? 'Protein'   : lang==='ja' ? 'タンパク質' : '蛋白质',
+      carbs:     lang==='en' ? 'Carbs'     : lang==='ja' ? '炭水化物'   : '碳水',
+      fat:       lang==='en' ? 'Fat'       : lang==='ja' ? '脂質'       : '脂肪',
+      exercise:  lang==='en' ? 'Exercise+' : lang==='ja' ? '運動+'      : '运动+',
+      remaining: lang==='en' ? 'Remaining' : lang==='ja' ? '残り'       : '剩余',
+    };
+
+    const dataValues = [proteinKcal, carbsKcal, fatKcal];
+    const dataLabels = [labels.protein, labels.carbs, labels.fat];
+    const dataColors = ['#3498db', '#f39c12', '#e74c3c'];
+
+    // Add exercise segment (orange) when burned > 0
+    if (burned > 0) {
+      dataValues.push(burned);
+      dataLabels.push(labels.exercise);
+      dataColors.push('#FF7A45');
+    }
+
+    // Remaining (grey)
+    dataValues.push(remaining);
+    dataLabels.push(labels.remaining);
+    dataColors.push('#ecf0f1');
 
     _macroRingChart = _destroy(_macroRingChart);
     _macroRingChart = new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: ['蛋白质', '碳水', '脂肪', '剩余'],
+        labels: dataLabels,
         datasets: [{
-          data: [
-            Math.round(totals.protein * 4),  // protein kcal
-            Math.round(totals.carbs * 4),    // carbs kcal
-            Math.round(totals.fat * 9),      // fat kcal
-            remaining,
-          ],
-          backgroundColor: ['#3498db', '#f39c12', '#e74c3c', '#ecf0f1'],
+          data: dataValues,
+          backgroundColor: dataColors,
           borderWidth: 0,
           hoverOffset: 4,
         }]

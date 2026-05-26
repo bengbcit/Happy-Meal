@@ -206,17 +206,34 @@ const Tracker = (() => {
     const todayKcalEl = document.getElementById('todayKcal');
     if (todayKcalEl) todayKcalEl.textContent = Math.round(t.kcal);
 
-    const target = State.get().settings.targetKcal || 1800;
-    const targetEl = document.getElementById('targetKcal');
-    if (targetEl) targetEl.textContent = target;
+    const baseTarget = State.get().settings.targetKcal || 1800;
+    // Add today's exercise burned to target so the ring shows adjusted budget
+    const burned       = (typeof Exercise !== 'undefined') ? Exercise.getTodayBurned() : 0;
+    const adjTarget    = baseTarget + burned;
+    const targetEl     = document.getElementById('targetKcal');
+    const targetRowEl  = document.getElementById('targetKcalRow');
+
+    if (targetEl) {
+      if (burned > 0) {
+        // Show base + exercise breakdown
+        const names = (typeof Exercise !== 'undefined') ? Exercise.getTodayExerciseNames() : [];
+        const uniqueNames = [...new Set(names)];
+        const exerciseNote = uniqueNames.length
+          ? `+${burned}（${uniqueNames.join('、')}）`
+          : `+${burned}`;
+        targetEl.innerHTML = `${baseTarget} <span style="color:var(--accent-warm,#FF7A45);font-size:.82em">${exerciseNote}</span> = ${adjTarget}`;
+      } else {
+        targetEl.textContent = baseTarget;
+      }
+    }
 
     // Macro bars
     const macroBarsEl = document.getElementById('macroBars');
     if (!macroBarsEl) return;
     const items = [
-      { label: I18n.get('protein_lbl'), val: t.protein, target: (target * 0.30) / 4, color: '#3498db' },
-      { label: I18n.get('carb_lbl'),    val: t.carbs,   target: (target * 0.40) / 4, color: '#f39c12' },
-      { label: I18n.get('fat_lbl'),     val: t.fat,     target: (target * 0.30) / 9, color: '#e74c3c' },
+      { label: I18n.get('protein_lbl'), val: t.protein, target: (adjTarget * 0.30) / 4, color: '#3498db' },
+      { label: I18n.get('carb_lbl'),    val: t.carbs,   target: (adjTarget * 0.40) / 4, color: '#f39c12' },
+      { label: I18n.get('fat_lbl'),     val: t.fat,     target: (adjTarget * 0.30) / 9, color: '#e74c3c' },
     ];
     macroBarsEl.innerHTML = items.map(item => {
       const pct = Math.min(100, (item.val / (item.target || 1)) * 100);
@@ -230,7 +247,8 @@ const Tracker = (() => {
         </div>`;
     }).join('');
 
-    Charts.renderMacroRing(t, target);
+    // Pass exercise burned to ring so it shows extra segment
+    Charts.renderMacroRing(t, adjTarget, burned);
   }
 
   // ── CSV import ───────────────────────────────────────

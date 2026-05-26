@@ -126,6 +126,7 @@ const I18n = (() => {
       indulge_ph_size: '份量 (如 1杯 350ml)',
       indulge_servings: '份数',
       rec_all_dismissed: '已全部关闭，点🔄刷新',
+      indulge_edit_hint: '可直接修改数值',
     },
 
     en: {
@@ -242,6 +243,7 @@ const I18n = (() => {
       indulge_ph_size: 'Serving size (e.g. 1 cup 350ml)',
       indulge_servings: 'Servings',
       rec_all_dismissed: 'All dismissed — tap 🔄 to refresh',
+      indulge_edit_hint: 'Tap any value to edit',
     },
 
     ja: {
@@ -364,6 +366,7 @@ const I18n = (() => {
       indulge_ph_size: '量（例：1杯 350ml）',
       indulge_servings: '份数',
       rec_all_dismissed: 'すべて非表示 — 🔄で更新',
+      indulge_edit_hint: '数値を直接編集できます',
     }
   };
 
@@ -425,3 +428,4 @@ const I18n = (() => {
     }
   };
 })();
+                              

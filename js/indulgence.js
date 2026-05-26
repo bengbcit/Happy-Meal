@@ -250,21 +250,24 @@ const Indulgence = (() => {
   }
 
   function _renderPicker(item) {
-    const q   = _pickerQty;
+    const q       = _pickerQty;
     const kcal    = Math.round(item.kcal    * q);
     const protein = +((item.protein || 0) * q).toFixed(1);
     const carbs   = +((item.carbs   != null ? item.carbs : (item.sugar || 0)) * q).toFixed(1);
     const fat     = +((item.fat     || 0) * q).toFixed(1);
-    const sizeTxt = _loc(item.size) ? ` · ${_loc(item.size)}` : '';
 
     const addBtn  = (typeof I18n!=='undefined') ? I18n.get('indulge_add_btn') || '+ 今日记录' : '+ 今日记录';
     const servLbl = (typeof I18n!=='undefined') ? I18n.get('indulge_servings') || '份数' : '份数';
+    const pLbl    = (typeof I18n!=='undefined'&&I18n.get('protein_lbl')) || '蛋白质';
+    const cLbl    = (typeof I18n!=='undefined'&&I18n.get('carb_lbl'))    || '碳水';
+    const fLbl    = (typeof I18n!=='undefined'&&I18n.get('fat_lbl'))     || '脂肪';
+    const editHint = (typeof I18n!=='undefined') ? I18n.get('indulge_edit_hint')||'可直接修改数值' : '可直接修改数值';
 
     document.getElementById('indulgePickerContent').innerHTML = `
-      <div style="text-align:center;padding:4px 0 12px">
+      <div style="text-align:center;padding:4px 0 10px">
         <div style="font-size:2rem">${item.icon || '🍽'}</div>
         <div style="font-weight:700;font-size:1rem;margin:4px 0 2px">${_loc(item.name)}</div>
-        <div style="font-size:.78rem;color:var(--text-muted)">${_loc(item.size) || ''}</div>
+        <div style="font-size:.75rem;color:var(--text-muted)">${_loc(item.size) || ''}</div>
       </div>
       <div class="indulge-picker-stepper">
         <button class="indulge-picker-btn" onclick="Indulgence._pickerStep(-1)">−</button>
@@ -274,11 +277,24 @@ const Indulgence = (() => {
         </div>
         <button class="indulge-picker-btn" onclick="Indulgence._pickerStep(1)">＋</button>
       </div>
+      <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin:-4px 0 6px">✏️ ${editHint}</div>
       <div class="indulge-picker-macros">
-        <div class="indulge-pm-cell"><span class="indulge-pm-val" style="color:var(--accent)">${kcal}</span><span class="indulge-pm-lbl">kcal</span></div>
-        <div class="indulge-pm-cell"><span class="indulge-pm-val">${protein}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('protein_lbl'))||'蛋白'} g</span></div>
-        <div class="indulge-pm-cell"><span class="indulge-pm-val">${carbs}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('carb_lbl'))||'碳水'} g</span></div>
-        <div class="indulge-pm-cell"><span class="indulge-pm-val">${fat}</span><span class="indulge-pm-lbl">${(typeof I18n!=='undefined'&&I18n.get('fat_lbl'))||'脂肪'} g</span></div>
+        <div class="indulge-pm-cell">
+          <input class="indulge-pm-inp" id="pmKcal" type="number" min="0" value="${kcal}" style="color:var(--accent)"/>
+          <span class="indulge-pm-lbl">kcal</span>
+        </div>
+        <div class="indulge-pm-cell">
+          <input class="indulge-pm-inp" id="pmProtein" type="number" min="0" step="0.1" value="${protein}"/>
+          <span class="indulge-pm-lbl">${pLbl} g</span>
+        </div>
+        <div class="indulge-pm-cell">
+          <input class="indulge-pm-inp" id="pmCarbs" type="number" min="0" step="0.1" value="${carbs}"/>
+          <span class="indulge-pm-lbl">${cLbl} g</span>
+        </div>
+        <div class="indulge-pm-cell">
+          <input class="indulge-pm-inp" id="pmFat" type="number" min="0" step="0.1" value="${fat}"/>
+          <span class="indulge-pm-lbl">${fLbl} g</span>
+        </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn-secondary" style="flex:1" onclick="Indulgence.closePicker()"
@@ -302,7 +318,12 @@ const Indulgence = (() => {
 
   function confirmPicker() {
     if (!_pickerItemId) return;
-    addToday(_pickerItemId, _pickerQty);
+    // Read from editable fields — user may have manually adjusted values
+    const kcal    = parseFloat(document.getElementById('pmKcal')?.value)    || 0;
+    const protein = parseFloat(document.getElementById('pmProtein')?.value) || 0;
+    const carbs   = parseFloat(document.getElementById('pmCarbs')?.value)   || 0;
+    const fat     = parseFloat(document.getElementById('pmFat')?.value)     || 0;
+    addTodayOverride(_pickerItemId, _pickerQty, { kcal, protein, carbs, fat });
     closePicker();
   }
 
@@ -403,19 +424,21 @@ const Indulgence = (() => {
 
   // ── Add item to today's snack log + show warning toast ──
   // qty = number of servings (default 1, supports 0.5 steps)
+  // override = optional {kcal,protein,carbs,fat} from user-edited picker fields
   // 今日のおやつログに追加してトースト警告を表示 / 添加到今日零食记录并显示警告提示
-  function addToday(id, qty) {
+  function addTodayOverride(id, qty, override) {
     qty = qty || 1;
     const item = _allItems().find(x => x.id === id);
     if (!item) return;
 
     const localName = _loc(item.name);
     const qLabel    = qty !== 1 ? ` ×${qty}` : '';
-    const kcal      = Math.round(item.kcal * qty);
-    const protein   = +((item.protein || 0) * qty).toFixed(1);
-    const carbs     = +((item.carbs != null ? item.carbs : (item.sugar || 0)) * qty).toFixed(1);
-    const fat       = +((item.fat   || 0) * qty).toFixed(1);
-    const sugar     = +((item.sugar || 0) * qty).toFixed(1);
+    // Use override values if provided (user manually edited in picker)
+    const kcal    = override ? override.kcal    : Math.round(item.kcal * qty);
+    const protein = override ? override.protein : +((item.protein || 0) * qty).toFixed(1);
+    const carbs   = override ? override.carbs   : +((item.carbs != null ? item.carbs : (item.sugar || 0)) * qty).toFixed(1);
+    const fat     = override ? override.fat     : +((item.fat   || 0) * qty).toFixed(1);
+    const sugar   = override ? override.carbs   : +((item.sugar || 0) * qty).toFixed(1);
 
     const today = new Date().toISOString().slice(0, 10);
     State.addLogEntry(today, 'snack', {
@@ -442,12 +465,14 @@ const Indulgence = (() => {
     Charts.renderMacroRing();
   }
 
+  function addToday(id, qty) { addTodayOverride(id, qty, null); }
+
   function init() {
     _loadCustom();
     render();
   }
 
-  return { render, filterCat, search, addToday,
+  return { render, filterCat, search, addToday, addTodayOverride,
            openPicker, closePicker, confirmPicker, _pickerStep,
            openAddModal, closeAddModal, saveCustom, deleteCustom, init };
 })();
