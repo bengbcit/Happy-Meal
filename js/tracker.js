@@ -35,24 +35,9 @@ const Tracker = (() => {
     render();
   }
 
-  // Guard: only bind once even if init() is called multiple times (e.g. Firebase re-auth)
-  // 重複バインド防止：init()が複数回呼ばれても1回だけ / 防止多次调用init()导致重复绑定
-  let _navBound = false;
   function _bindNavButtons() {
-    if (_navBound) return;
-    _navBound = true;
-    function _bind(id, fn) {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      // pointerdown fires exactly once for both mouse AND touch — no double-fire ever
-      // pointerdown 鼠标/触摸只触发一次，不会双发
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        fn();
-      });
-    }
-    _bind('btnPrevDay', prevDay);
-    _bind('btnNextDay', nextDay);
+    // Buttons use onclick in HTML — nothing to bind here
+    // 按钮在 HTML 里用 onclick，这里不需要绑定
   }
 
   // ── Totals for a date ────────────────────────────────
