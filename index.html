@@ -197,9 +197,13 @@
               placeholder="kg" onkeydown="if(event.key==='Enter') BMI.logWeight()" />
             <button class="btn-primary" onclick="BMI.logWeight()" data-i18n="btn_log_weight">记录今日体重</button>
           </div>
-          <div id="weightLogLast" class="text-muted" style="font-size:.8rem"></div>
           <div class="dash-weight-split">
-            <canvas id="weightHistoryChart" height="160"></canvas>
+            <!-- Left col: last-entry label + chart -->
+            <div class="dash-weight-left">
+              <div id="weightLogLast" class="text-muted" style="font-size:.8rem;margin-bottom:4px"></div>
+              <canvas id="weightHistoryChart" height="160"></canvas>
+            </div>
+            <!-- Right col: history table, top-aligned with last-entry label, scrollable -->
             <div id="weightLogHistory"></div>
           </div>
         </div>
