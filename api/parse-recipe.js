@@ -14,11 +14,17 @@ export default async function handler(req, res) {
   const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
   const CLAUDE_API_KEY   = process.env.CLAUDE_API_KEY;
 
+  // Text provider: Groq first (fastest/cheapest), then others
   const provider =
     GROQ_API_KEY     ? 'groq'     :
     GEMINI_API_KEY   ? 'gemini'   :
     DEEPSEEK_API_KEY ? 'deepseek' :
     CLAUDE_API_KEY   ? 'claude'   : null;
+
+  // Vision provider: Gemini first, then Claude (Groq has no vision support)
+  const visionProviderOverride =
+    GEMINI_API_KEY ? 'gemini' :
+    CLAUDE_API_KEY ? 'claude' : null;
 
   if (!provider) return res.status(500).json({ error: 'No AI API key configured.' });
 
@@ -28,7 +34,7 @@ export default async function handler(req, res) {
   // ── Handle image / PDF (base64) ──────────────────────────────────────────
   // 画像/PDFはビジョンAPIで処理 / 图片/PDF 使用视觉 API 处理
   if (fileBase64) {
-    const visionProvider = GEMINI_API_KEY ? 'gemini' : CLAUDE_API_KEY ? 'claude' : null;
+    const visionProvider = visionProviderOverride;
     if (!visionProvider) return res.status(400).json({ error: 'Vision requires GEMINI_API_KEY or CLAUDE_API_KEY' });
 
     // Vision prompt: explicitly handle multi-language ingredient section names

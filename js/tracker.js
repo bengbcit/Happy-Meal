@@ -262,14 +262,23 @@ const Tracker = (() => {
   async function importImage(file) {
     const statusEl = document.getElementById('importStatus');
     if (!file) return;
-    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> ${I18n.get('ai_recognizing') || 'AI 识别中...'}`;
+    // Reset input so same file can be selected again
+    document.getElementById('trackerImgInput').value = '';
+    if (statusEl) statusEl.innerHTML = `<span class="loading-spin"></span> AI 识别中...`;
     try {
       const result = await Parser.fromImageForTracker(file);
       if (!result) throw new Error('empty');
       if (statusEl) statusEl.textContent = '';
       TrackerImportModal.show(result, _date);
     } catch(e) {
-      if (statusEl) statusEl.textContent = '❌ ' + (I18n.get('parse_error') || '识别失败，请手动添加');
+      const msg = e.message || '';
+      if (msg.includes('Vision requires') || msg.includes('GEMINI') || msg.includes('CLAUDE')) {
+        if (statusEl) statusEl.innerHTML =
+          `❌ 图片识别需要 Gemini 或 Claude API key。` +
+          `请在 Vercel 环境变量中添加 <b>GEMINI_API_KEY</b> 或 <b>CLAUDE_API_KEY</b>。`;
+      } else {
+        if (statusEl) statusEl.textContent = '❌ 识别失败：' + (msg || '请手动添加');
+      }
     }
   }
 

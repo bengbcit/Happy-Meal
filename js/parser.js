@@ -119,7 +119,10 @@ const Parser = (() => {
         lang: I18n.current(), mode: 'tracker',  // tell backend to return food log entries
       }),
     });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || 'HTTP ' + resp.status);
+    }
     return await resp.json();
   }
 
