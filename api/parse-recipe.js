@@ -128,15 +128,18 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
         return (await r.json()).content?.[0]?.text || '';
       }
       if (prov === 'nvidia') {
-        // Nvidia NIM — llama-3.2-90b-vision-instruct supports base64 images
-        const imgTag = `<img src="data:${mimeType};base64,${b64}" />`;
+        // Nvidia NIM — llama-3.2-90b-vision-instruct
+        // Use OpenAI-compatible content array with image_url (data URI)
         const r = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method:'POST',
           headers:{'Authorization':`Bearer ${NVIDIA_API_KEY}`,'Content-Type':'application/json'},
           body: JSON.stringify({
             model: 'meta/llama-3.2-90b-vision-instruct',
             max_tokens: 2048,
-            messages:[{ role:'user', content: imgTag + '\n\n' + prompt }],
+            messages:[{ role:'user', content: [
+              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${b64}` } },
+              { type: 'text', text: prompt },
+            ]}],
           })
         });
         if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error(`Nvidia vision ${r.status}: ${t.slice(0,120)}`); }
@@ -149,6 +152,7 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
     // Chain: Gemini → Claude → Nvidia
     let raw = '', usedProvider = '';
     let lastErr;
+    const failedProviders = [];
     for (const prov of VISION_PROVIDERS) {
       try {
         raw = await _visionCall(prov, visionPrompt, fileBase64, mime);
@@ -156,12 +160,17 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
         lastErr = null;
         break;
       } catch (e) {
+        console.error(`[parse-recipe] vision ${prov} failed:`, e.message);
+        failedProviders.push(`${prov}(${e.message.slice(0,60)})`);
         lastErr = e;
         // Wait before trying next provider
         await _sleep(500);
       }
     }
-    if (lastErr) return res.status(500).json({ error: lastErr.message });
+    if (lastErr) return res.status(500).json({
+      error: `All vision providers failed: ${failedProviders.join(' → ')}`,
+      tried: failedProviders,
+    });
 
     try {
       const jsonMatch = raw.match(/[\[{][\s\S]*[\]}]/);

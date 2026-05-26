@@ -39,13 +39,20 @@ const Tracker = (() => {
     function _bind(id, fn) {
       const btn = document.getElementById(id);
       if (!btn) return;
-      // touchstart fires first — call fn and prevent the click that follows
+      let _wasTouched = false;
+      // touchstart: set flag, call fn, preventDefault blocks scroll and the synthetic click
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        _wasTouched = true;
         fn();
+        // Reset flag after the synthetic-click window (300ms)
+        setTimeout(() => { _wasTouched = false; }, 350);
       }, { passive: false });
-      // click handles mouse / keyboard / assistive tech (won't fire after touchstart+preventDefault)
-      btn.addEventListener('click', fn);
+      // click: only fire if not already handled by touchstart
+      btn.addEventListener('click', () => {
+        if (_wasTouched) return;
+        fn();
+      });
     }
     _bind('btnPrevDay', prevDay);
     _bind('btnNextDay', nextDay);
@@ -327,12 +334,14 @@ const Tracker = (() => {
       TrackerImportModal.show(result, _date);
     } catch(e) {
       const msg = e.message || '';
-      if (msg.includes('Vision requires') || msg.includes('GEMINI') || msg.includes('CLAUDE')) {
+      if (msg.includes('Vision requires') || msg.includes('No AI API key')) {
         if (statusEl) statusEl.innerHTML =
-          `❌ 图片识别需要 Gemini 或 Claude API key。` +
-          `请在 Vercel 环境变量中添加 <b>GEMINI_API_KEY</b> 或 <b>CLAUDE_API_KEY</b>。`;
+          `❌ 图片识别需要 API key。` +
+          `请在 Vercel 环境变量中添加 <b>GEMINI_API_KEY</b>、<b>CLAUDE_API_KEY</b> 或 <b>NVIDIA_API_KEY</b>。`;
       } else {
-        if (statusEl) statusEl.textContent = '❌ 识别失败：' + (msg || '请手动添加');
+        // Show trimmed error — don't expose full provider chain to user
+        const hint = msg.length > 60 ? msg.slice(0, 60) + '…' : msg;
+        if (statusEl) statusEl.textContent = '❌ 识别失败：' + (hint || '请手动添加');
       }
     }
   }

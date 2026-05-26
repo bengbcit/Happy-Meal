@@ -1289,11 +1289,11 @@ body.hero-light .hero-chevrons span {
 }
 .dash-weight-left canvas { width: 100% !important; display: block; }
 /* Right column: scrollable table, top-aligned with last-entry label.
-   max-height mirrors left col: label(~22px) + gap(4px) + chart(160px) = 186px.
+   max-height mirrors left col: label(~22px) + gap(4px) + chart(~220px) = 246px.
    When entries exceed this the scrollbar appears on the right edge. */
 .dash-weight-split #weightLogHistory {
   overflow-y: auto;
-  max-height: 186px;
+  max-height: 246px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }

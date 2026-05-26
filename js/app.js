@@ -122,26 +122,28 @@ const App = (() => {
 
       // Only trigger when the page is scrolled to its boundary
       const scrollEl = document.scrollingElement || document.documentElement;
-      const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 4;
-      const atTop    = scrollEl.scrollTop <= 4;
+      const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 8;
+      const atTop    = scrollEl.scrollTop <= 8;
 
-      if (e.deltaY > 30 && atBottom) {
+      if (e.deltaY > 20 && atBottom) {
         // Scroll down at bottom → next tab
         const idx = TAB_ORDER.indexOf(_currentTab);
         if (idx < TAB_ORDER.length - 1) {
           _wheelCooldown = true;
           switchTab(TAB_ORDER[idx + 1]);
-          window.scrollTo({ top: 0 });
-          setTimeout(() => { _wheelCooldown = false; }, 800);
+          // Immediately snap new tab to top with no scroll animation (avoids flash)
+          requestAnimationFrame(() => { window.scrollTo(0, 0); });
+          setTimeout(() => { _wheelCooldown = false; }, 1000);
         }
-      } else if (e.deltaY < -30 && atTop) {
+      } else if (e.deltaY < -20 && atTop) {
         // Scroll up at top → prev tab
         const idx = TAB_ORDER.indexOf(_currentTab);
         if (idx > 0) {
           _wheelCooldown = true;
           switchTab(TAB_ORDER[idx - 1]);
-          window.scrollTo({ top: document.body.scrollHeight });
-          setTimeout(() => { _wheelCooldown = false; }, 800);
+          // Snap to bottom of previous tab
+          requestAnimationFrame(() => { window.scrollTo(0, document.body.scrollHeight); });
+          setTimeout(() => { _wheelCooldown = false; }, 1000);
         }
       }
     }, { passive: true });
