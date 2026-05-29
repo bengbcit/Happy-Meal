@@ -162,7 +162,7 @@
           </div>
           <div class="hero-cta" style="--i:5">
             <button class="hero-btn-primary"
-              onclick="document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})"
+              onclick="App.requireAuth()&&document.getElementById('dashContent').scrollIntoView({behavior:'smooth'})"
               data-i18n="hero_start_track">
               开始追踪
             </button>

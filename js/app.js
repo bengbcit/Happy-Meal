@@ -5,10 +5,34 @@ const App = (() => {
   let _currentTab = 'dashboard';
   const TAB_ORDER = ['dashboard','tracker','recipes','planner','exercise','indulgence'];
 
+  // Check if user is authenticated (Firebase or local mode)
+  function _isAuthed() {
+    if (localStorage.getItem('hm_localMode') === '1') return true;
+    if (window.FirebaseCore?.auth?.currentUser) return true;
+    return false;
+  }
+
+  // Require auth — show toast + return false if not authenticated
+  function requireAuth(action) {
+    if (_isAuthed()) return true;
+    const msg = I18n.get('login_required_shared') || '请先登录或点击本地模式进入';
+    showToast(msg, 'warning');
+    // Show auth gate if it's hidden
+    const gate = document.getElementById('authGate');
+    if (gate && gate.classList.contains('hidden')) {
+      gate.classList.remove('hidden');
+      document.getElementById('mainApp')?.classList.add('hidden');
+    }
+    return false;
+  }
+
   // Switch between main tabs — CSS Scroll Snap version
-  // scrollIntoView() lets the browser handle smooth snap natively (zero JS jank)
-  // CSS スクロールスナップでタブ切替 / 用浏览器原生滚动吸附切换 Tab
   function switchTab(tabId) {
+    // Gate non-dashboard tabs behind auth
+    if (tabId !== 'dashboard' && !_isAuthed()) {
+      requireAuth();
+      return;
+    }
     _currentTab = tabId;
     sessionStorage.setItem('hm_tab', tabId);
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -19,7 +43,6 @@ const App = (() => {
     const container = document.getElementById('tabScrollContainer');
     const el = document.getElementById(`tab-${tabId}`);
     if (container && el) {
-      // el.offsetTop is relative to offsetParent; subtract container's offsetTop to get scroll position
       const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
       container.scrollTo({ top, behavior: 'smooth' });
     }
@@ -169,7 +192,7 @@ const App = (() => {
     // Firebase onAuthStateChanged handles auto-login; nothing needed here
   });
 
-  return { switchTab, showToast, init };
+  return { switchTab, showToast, init, requireAuth, _isAuthed };
 })();
 
 // Make ProfilePanel and LangMenu globally accessible

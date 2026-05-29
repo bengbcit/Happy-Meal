@@ -118,7 +118,10 @@ const SharedRecipes = (() => {
 
   // ── Firestore: unpublish a recipe ──────────────────────
   async function unpublish(sharedId) {
-    if (!_isOnline()) return;
+    if (!_isOnline()) {
+      App.showToast(I18n.get('share_error_offline'), 'warning');
+      return;
+    }
     try {
       const { deleteDoc, doc } = window.FirebaseCore;
       await deleteDoc(doc(_db(), 'shared_recipes', sharedId));
@@ -127,6 +130,7 @@ const SharedRecipes = (() => {
       App.showToast(I18n.get('deleted_ok'));
     } catch (e) {
       console.warn('[SharedRecipes] unpublish failed:', e.message);
+      App.showToast('❌ 取消分享失败: ' + e.message, 'warning');
     }
   }
 
