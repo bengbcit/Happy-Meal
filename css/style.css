@@ -1835,3 +1835,27 @@ body.hero-light .hero-chevrons span {
   color: var(--secondary);
   font-weight: 600;
 }
+.shared-edit-btn {
+  font-size: .72rem;
+  padding: 4px 10px;
+  color: var(--secondary);
+  background: rgba(0,200,255,0.1);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.shared-edit-btn:hover {
+  background: rgba(0,200,255,0.2);
+}
+.shared-unpub-btn {
+  font-size: .72rem;
+  padding: 4px 10px;
+  color: #e74c3c;
+  background: rgba(231,76,60,0.08);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.shared-unpub-btn:hover {
+  background: rgba(231,76,60,0.16);
+}

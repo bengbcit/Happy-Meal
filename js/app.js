@@ -10,6 +10,7 @@ const App = (() => {
   // CSS スクロールスナップでタブ切替 / 用浏览器原生滚动吸附切换 Tab
   function switchTab(tabId) {
     _currentTab = tabId;
+    sessionStorage.setItem('hm_tab', tabId);
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
@@ -146,6 +147,20 @@ const App = (() => {
     Charts.renderWeightChart();
     Tracker.render();
     Tracker.renderSummary();
+
+    // Restore last active tab after re-render (no animation)
+    const savedTab = sessionStorage.getItem('hm_tab');
+    if (savedTab && savedTab !== 'dashboard') {
+      const container = document.getElementById('tabScrollContainer');
+      const el = document.getElementById(`tab-${savedTab}`);
+      if (container && el) {
+        container.scrollTop = el.offsetTop - container.offsetTop;
+        _currentTab = savedTab;
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === savedTab);
+        });
+      }
+    }
   }
 
   window.addEventListener('DOMContentLoaded', () => {

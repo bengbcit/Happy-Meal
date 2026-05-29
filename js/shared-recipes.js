@@ -168,21 +168,30 @@ const SharedRecipes = (() => {
     };
     State.addRecipe(newRecipe);
 
-    // Atomic increment import count
+    // Increment import count — update local cache first, then Firestore
+    shared.importCount = (shared.importCount || 0) + 1;
     try {
-      const { updateDoc, doc, increment } = window.FirebaseCore;
-      await updateDoc(doc(_db(), 'shared_recipes', sharedId), {
-        importCount: increment(1)
-      });
-      // Update local cache
-      shared.importCount = (shared.importCount || 0) + 1;
+      const { updateDoc, doc, increment, getDoc } = window.FirebaseCore;
+      if (typeof increment === 'function') {
+        await updateDoc(doc(_db(), 'shared_recipes', sharedId), {
+          importCount: increment(1)
+        });
+      } else {
+        // Fallback: read current count + write
+        const snap = await getDoc(doc(_db(), 'shared_recipes', sharedId));
+        const current = snap.data()?.importCount || 0;
+        await updateDoc(doc(_db(), 'shared_recipes', sharedId), {
+          importCount: current + 1
+        });
+      }
     } catch (e) {
       console.warn('[SharedRecipes] increment failed:', e.message);
+      // Local cache already updated, will show until next load()
     }
 
     App.showToast(I18n.get('imported_ok'));
     Recipes.render();
-    render(); // re-render to show updated count
+    render();
   }
 
   // ── Client-side filter ─────────────────────────────────
@@ -217,8 +226,10 @@ const SharedRecipes = (() => {
       const r = s.recipe;
       const tags = (r.tags || []).map(t => `<span class="recipe-card-tag">${_tagLabel(t)}</span>`).join('');
       const isOwn = currentUid && s.sharedBy.uid === currentUid;
-      const importBtn = isOwn
-        ? `<span class="shared-badge">${I18n.get('already_published')}</span>`
+
+      const actionHtml = isOwn
+        ? `<button class="btn-small shared-edit-btn" onclick="SharedRecipes._editOwnRecipe('${s.id}')">✏️ 编辑</button>
+           <button class="btn-small shared-unpub-btn" onclick="SharedRecipes._confirmUnpublish('${s.id}')">${I18n.get('unpublish_recipe')}</button>`
         : `<button class="import-btn" onclick="SharedRecipes.importRecipe('${s.id}')">${I18n.get('import_recipe')}</button>`;
 
       return `
@@ -234,8 +245,7 @@ const SharedRecipes = (() => {
           <div class="shared-actions">
             <span class="shared-count">${I18n.get('import_count', { n: s.importCount || 0 })}</span>
             <div style="display:flex;gap:6px;align-items:center">
-              ${importBtn}
-              ${isOwn ? `<button class="btn-small" style="color:#e74c3c;font-size:.7rem;padding:2px 8px" onclick="SharedRecipes.unpublish('${s.id}')">✕</button>` : ''}
+              ${actionHtml}
             </div>
           </div>
         </div>`;
@@ -279,5 +289,27 @@ const SharedRecipes = (() => {
     }
   }
 
-  return { load, publish, unpublish, importRecipe, filter, render, isPublished, showSubTab };
+  // ── Edit own shared recipe — open personal copy in RecipeModal ──
+  function _editOwnRecipe(sharedId) {
+    const shared = _cache.find(s => s.id === sharedId);
+    if (!shared) return;
+    // Find the matching personal recipe by id
+    const personal = State.getRecipes().find(r => r.id === shared.recipe.id);
+    if (personal) {
+      // Switch to My Recipes tab first so the modal is visible
+      showSubTab('mine');
+      RecipeModal.open(personal.id);
+    } else {
+      App.showToast('原菜谱已删除，无法编辑。请取消分享后重新发布。', 'warning');
+    }
+  }
+
+  // ── Confirm before unpublishing ──
+  function _confirmUnpublish(sharedId) {
+    if (confirm(I18n.get('delete_confirm') || '确定取消分享？')) {
+      unpublish(sharedId);
+    }
+  }
+
+  return { load, publish, unpublish, importRecipe, filter, render, isPublished, showSubTab, _editOwnRecipe, _confirmUnpublish };
 })();
