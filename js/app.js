@@ -188,8 +188,12 @@ const App = (() => {
 
   window.addEventListener('DOMContentLoaded', () => {
     I18n.init();
-    const savedUser = State.get().user;
-    // Firebase onAuthStateChanged handles auto-login; nothing needed here
+    // Restore local mode session on page reload
+    if (localStorage.getItem('hm_localMode') === '1') {
+      if (typeof _enterApp === 'function') {
+        _enterApp({ displayName: '本地用户', isLocal: true });
+      }
+    }
   });
 
   return { switchTab, showToast, init, requireAuth, _isAuthed };

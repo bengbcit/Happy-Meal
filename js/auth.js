@@ -39,6 +39,8 @@ const Auth = {
   // ── Logout ───────────────────────────────────────────
   logout() {
     localStorage.removeItem(LOCAL_MODE_KEY);
+    sessionStorage.removeItem('hm_session');
+    sessionStorage.removeItem('hm_tab');
     // firebase-init.js overrides this to also call Firebase signOut
     // firebase-init.js が Firebase signOut も呼び出すよう上書き / firebase-init.js 会覆盖此方法同时调用 Firebase signOut
     window.location.reload();
@@ -53,10 +55,19 @@ const Auth = {
   },
 
   switchToLocal() {
-    // Sign out Firebase if logged in, then enter local mode
-    // Firebase ログアウト後にローカルモードへ / 先登出 Firebase 再进入本地模式
+    // Save to Firestore, sign out Firebase, but keep local mode flag
+    // Firebase からログアウトするがローカルモードフラグは保持 / 登出 Firebase 但保留本地模式
     localStorage.setItem(LOCAL_MODE_KEY, '1');
-    Auth.logout();
+    const doReload = () => { window.location.reload(); };
+    if (window.FirebaseSync?.push && window.FirebaseCore?.signOut && window.FirebaseCore?.auth) {
+      window.FirebaseSync.push().finally(() => {
+        window.FirebaseCore.signOut(window.FirebaseCore.auth).then(doReload).catch(doReload);
+      });
+    } else if (window.FirebaseCore?.signOut && window.FirebaseCore?.auth) {
+      window.FirebaseCore.signOut(window.FirebaseCore.auth).then(doReload).catch(doReload);
+    } else {
+      doReload();
+    }
   },
 
   switchToEmail() {
@@ -122,6 +133,7 @@ function _t(key, lang) {
 // Enter main app — called from auth.js and firebase-init.js
 // メインアプリに入る — auth.js と firebase-init.js から呼ばれる / 进入主应用
 function _enterApp(userInfo) {
+  sessionStorage.setItem('hm_session', '1');
   document.getElementById('authGate')?.classList.add('hidden');
   document.getElementById('mainApp')?.classList.remove('hidden');
 

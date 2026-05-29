@@ -22,7 +22,7 @@
     const db   = getFirestore(app);
 
     // Expose Firestore primitives for shared-recipes.js and other modules
-    window.FirebaseCore = { db, auth, addDoc, collection, query, orderBy, limit, updateDoc, increment, deleteDoc, getDocs };
+    window.FirebaseCore = { db, auth, doc, setDoc, getDoc, addDoc, collection, query, orderBy, limit, updateDoc, increment, deleteDoc, getDocs, signOut };
 
     // Override Auth stub with real Firebase implementations
     // Firebase実装でAuthスタブを上書き / 用真实 Firebase 实现覆盖 Auth 存根
@@ -173,6 +173,8 @@
             try { await _saveToFirestore(); } catch {}
             try { await signOut(auth); } catch {}
             localStorage.removeItem('hm_localMode');
+            sessionStorage.removeItem('hm_session');
+            sessionStorage.removeItem('hm_tab');
             window.location.reload();
           },
           async addAccount() {

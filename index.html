@@ -17,6 +17,13 @@
 
 <body>
 
+  <!-- Prevent flash: immediately show the right UI for returning users -->
+  <script>
+    if (localStorage.getItem('hm_localMode') === '1' || sessionStorage.getItem('hm_session')) {
+      document.write('<style id="hm-noflash">#authGate{display:none!important}#mainApp{display:block!important}</style>');
+    }
+  </script>
+
   <!-- ════════════════════════════════════════════
      AUTH GATE  — shown until user is logged in
      ════════════════════════════════════════════ -->
