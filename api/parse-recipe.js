@@ -95,7 +95,7 @@ Estimate nutrition if not provided. tags may include: high-protein, low-fat, low
     async function _visionCall(prov, prompt, b64, mimeType) {
       if (prov === 'gemini') {
         // Try 1.5-flash first (stable quota), then 2.5-flash
-        const models = ['gemini-1.5-flash', 'gemini-2.5-flash'];
+        const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         let lastE;
         for (const model of models) {
           const r = await fetch(
@@ -275,7 +275,7 @@ Only include tags clearly supported by the page content. Return [] if none apply
       return (await r.json()).choices?.[0]?.message?.content || '';
     }
     if (prov === 'gemini') {
-      const models = ['gemini-1.5-flash', 'gemini-2.5-flash'];
+      const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       let lastE;
       for (const model of models) {
         const r = await fetch(

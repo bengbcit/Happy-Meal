@@ -7,8 +7,8 @@ const SharedRecipes = (() => {
   let _loading = false;
 
   function _db()  { return window.FirebaseCore?.db; }
-  function _uid() { return window.FirebaseCore?.currentUser?.uid; }
-  function _currentUser() { return window.FirebaseCore?.currentUser; }
+  function _uid() { return window.FirebaseCore?.auth?.currentUser?.uid; }
+  function _currentUser() { return window.FirebaseCore?.auth?.currentUser; }
   function _isOnline() { return navigator.onLine && !!_db(); }
 
   // ── Tag label map (reuse same labels as Recipes) ─────
