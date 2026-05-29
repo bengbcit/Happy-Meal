@@ -129,6 +129,24 @@ const I18n = (() => {
       indulge_servings: '份数',
       rec_all_dismissed: '已全部关闭，点🔄刷新',
       indulge_edit_hint: '可直接修改数值',
+      // ── Shared Recipe Library ──────────────────────────
+      shared_library: '菜谱广场',
+      my_recipes: '我的菜谱',
+      publish_recipe: '分享到广场',
+      share_error_offline: '分享需要网络连接，请先登录',
+      import_recipe: '导入菜谱',
+      imported_ok: '菜谱已导入！',
+      already_published: '已分享',
+      shared_by: '{name} 分享',
+      import_count: '已导入 {n} 次',
+      no_shared_recipes: '还没有人分享菜谱，来做第一个吧！',
+      loading_shared: '加载中...',
+      share_error_dup: '这个菜谱已经分享过了',
+      unpublish_recipe: '取消分享',
+      share_confirm_title: '分享菜谱？',
+      share_confirm_desc: '所有用户都能看到这个菜谱',
+      shared_on: '分享于',
+      login_required_shared: '请先登录再浏览菜谱广场',
     },
 
     en: {
@@ -248,6 +266,24 @@ const I18n = (() => {
       indulge_servings: 'Servings',
       rec_all_dismissed: 'All dismissed — tap 🔄 to refresh',
       indulge_edit_hint: 'Tap any value to edit',
+      // ── Shared Recipe Library ──────────────────────────
+      shared_library: 'Shared Library',
+      my_recipes: 'My Recipes',
+      publish_recipe: 'Share to Library',
+      share_error_offline: 'Network required — please log in first',
+      import_recipe: 'Import Recipe',
+      imported_ok: 'Recipe imported!',
+      already_published: 'Published',
+      shared_by: 'Shared by {name}',
+      import_count: 'Imported {n} times',
+      no_shared_recipes: 'No shared recipes yet — be the first!',
+      loading_shared: 'Loading...',
+      share_error_dup: 'This recipe is already published',
+      unpublish_recipe: 'Unpublish',
+      share_confirm_title: 'Share Recipe?',
+      share_confirm_desc: 'All users will be able to see this recipe',
+      shared_on: 'Shared on',
+      login_required_shared: 'Please log in to browse the shared library',
     },
 
     ja: {
@@ -373,6 +409,24 @@ const I18n = (() => {
       indulge_servings: '份数',
       rec_all_dismissed: 'すべて非表示 — 🔄で更新',
       indulge_edit_hint: '数値を直接編集できます',
+      // ── Shared Recipe Library ──────────────────────────
+      shared_library: '共有レシピ',
+      my_recipes: 'マイレシピ',
+      publish_recipe: '共有する',
+      share_error_offline: 'ネットワークが必要です。ログインしてください',
+      import_recipe: 'インポート',
+      imported_ok: 'レシピをインポートしました！',
+      already_published: '共有済み',
+      shared_by: '{name}が共有',
+      import_count: '{n}回インポート済',
+      no_shared_recipes: 'まだ共有レシピがありません。最初に共有しよう！',
+      loading_shared: '読み込み中...',
+      share_error_dup: 'このレシピは既に共有済みです',
+      unpublish_recipe: '共有を取り消す',
+      share_confirm_title: 'レシピを共有しますか？',
+      share_confirm_desc: 'すべてのユーザーに表示されます',
+      shared_on: '共有日',
+      login_required_shared: 'ログインして共有レシピを閲覧',
     }
   };
 
@@ -417,6 +471,7 @@ const I18n = (() => {
       if (typeof Exercise    !== 'undefined') { Exercise.render(); Exercise.renderLog(); }
       if (typeof DiningOut   !== 'undefined') DiningOut.render();
       if (typeof Indulgence  !== 'undefined') Indulgence.render();
+      if (typeof SharedRecipes !== 'undefined') SharedRecipes.render();
       if (typeof BMI         !== 'undefined') BMI.init();
       if (typeof Charts      !== 'undefined') { Charts.renderMacroRing(); Charts.renderWeeklyKcal(); }
     },

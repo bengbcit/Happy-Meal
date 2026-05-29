@@ -14,12 +14,15 @@
       getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
       GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
     } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
-    const { getFirestore, doc, setDoc, getDoc } =
+    const { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, orderBy, limit, updateDoc, increment, deleteDoc, getDocs } =
       await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
+
+    // Expose Firestore primitives for shared-recipes.js and other modules
+    window.FirebaseCore = { db, auth, addDoc, collection, query, orderBy, limit, updateDoc, increment, deleteDoc, getDocs };
 
     // Override Auth stub with real Firebase implementations
     // Firebase実装でAuthスタブを上書き / 用真实 Firebase 实现覆盖 Auth 存根

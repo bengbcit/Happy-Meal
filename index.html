@@ -348,6 +348,14 @@
        TAB: RECIPES (菜谱)
        ═══════════════════════════════ -->
     <section id="tab-recipes" class="tab-page">
+      <!-- Sub-tabs: My Recipes / Shared Library -->
+      <div class="sub-tabs" style="margin-bottom:10px">
+        <button class="sub-tab active" id="subRecipe-mine" onclick="SharedRecipes.showSubTab('mine')" data-i18n="my_recipes">我的菜谱</button>
+        <button class="sub-tab" id="subRecipe-shared" onclick="SharedRecipes.showSubTab('shared')" data-i18n="shared_library">菜谱广场</button>
+      </div>
+
+      <!-- My Recipes panel -->
+      <div id="recipePanel-mine">
       <!-- Add Recipe -->
       <div class="card">
         <div class="card-title" data-i18n="add_recipe">➕ 添加菜谱</div>
@@ -451,6 +459,30 @@
       <div id="recipeList" class="recipe-grid">
         <!-- rendered by Recipes.render() -->
       </div>
+      </div><!-- /recipePanel-mine -->
+
+      <!-- Shared Library panel -->
+      <div id="recipePanel-shared" class="hidden">
+        <!-- Filter bar for shared recipes -->
+        <div class="filter-bar">
+          <button class="pill active" data-filter="all" onclick="SharedRecipes.filter('all')" data-i18n="filter_all">全部</button>
+          <button class="pill" data-filter="high-protein" onclick="SharedRecipes.filter('high-protein')">🥩 高蛋白</button>
+          <button class="pill" data-filter="low-fat" onclick="SharedRecipes.filter('low-fat')">🥗 低脂</button>
+          <button class="pill" data-filter="low-carb" onclick="SharedRecipes.filter('low-carb')">🥦 低碳</button>
+          <button class="pill" data-filter="high-carb" onclick="SharedRecipes.filter('high-carb')">🍚 高碳</button>
+          <button class="pill" data-filter="vegetarian" onclick="SharedRecipes.filter('vegetarian')">🌿 素食</button>
+          <button class="pill" data-filter="kids-favorite" onclick="SharedRecipes.filter('kids-favorite')">😋 孩子喜爱</button>
+        </div>
+        <!-- Loading / offline states -->
+        <div id="sharedLoading" class="text-muted text-center hidden" style="padding:20px">
+          <span class="loading-spin"></span> <span data-i18n="loading_shared">加载中...</span>
+        </div>
+        <div id="sharedOffline" class="placeholder-text hidden" data-i18n="share_error_offline">分享需要网络连接，请先登录</div>
+        <!-- Shared recipe grid -->
+        <div id="sharedRecipeList" class="recipe-grid">
+          <!-- rendered by SharedRecipes.render() -->
+        </div>
+      </div><!-- /recipePanel-shared -->
     </section>
 
     <!-- ═══════════════════════════════
@@ -671,6 +703,7 @@
   <script src="js/auth.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/firebase-init.js"></script>
+  <script src="js/shared-recipes.js"></script>
   <script src="js/bmi.js"></script>
   <script src="js/recipes.js"></script>
   <script src="js/tracker.js"></script>

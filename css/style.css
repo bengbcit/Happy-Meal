@@ -1774,3 +1774,64 @@ body.hero-light .hero-chevrons span {
   color: #fff;
   font-weight: 700;
 }
+
+/* ── Shared Recipe Library ──────────────────────────── */
+.shared-recipe-card {
+  /* extends .recipe-card */
+}
+.shared-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .73rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.shared-by {
+  color: var(--secondary);
+  font-weight: 500;
+}
+.shared-date {
+  color: var(--text-faint);
+}
+.shared-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+.shared-count {
+  font-size: .72rem;
+  color: var(--text-faint);
+}
+.import-btn {
+  background: rgba(0,200,255,0.12);
+  color: var(--secondary);
+  padding: 4px 14px;
+  font-size: .78rem;
+  border-radius: 9999px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.import-btn:hover {
+  background: rgba(0,200,255,0.22);
+}
+.share-btn {
+  background: rgba(0,232,122,0.12);
+  color: var(--primary);
+}
+.share-btn:hover {
+  background: rgba(0,232,122,0.22);
+}
+.shared-badge {
+  font-size: .7rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: rgba(0,200,255,0.1);
+  color: var(--secondary);
+  font-weight: 600;
+}

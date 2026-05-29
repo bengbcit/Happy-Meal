@@ -360,6 +360,7 @@ const RecipeModal = (() => {
         <button class="add-to-meal-btn" onclick="Tracker.addFromRecipe('${r.id}');RecipeModal.close()">
           ${I18n.get('add_to_meal')}</button>
         <button class="btn-small" onclick="RecipeModal.startEdit()">✏️ 编辑</button>
+        <button class="btn-small share-btn" onclick="RecipeModal.shareToLibrary()" data-i18n="publish_recipe">分享到广场</button>
         <button class="btn-small" style="color:#e74c3c;background:#fdecea"
           onclick="if(confirm('${I18n.get('delete_confirm')}'))RecipeModal._del()">🗑 删除</button>
       </div>`;
@@ -510,7 +511,20 @@ const RecipeModal = (() => {
   function _del()  { if(!_currentId)return; State.deleteRecipe(_currentId); Recipes.render(); close(); }
   function _tl(tag) { return TAG_MAP[tag] || tag; }
 
-  return { open, close, _del, startEdit, saveEdit, _cancelEdit,
+  async function shareToLibrary() {
+    if (!_currentId) return;
+    const r = State.getRecipes().find(x => x.id === _currentId);
+    if (!r) return;
+    if (typeof SharedRecipes === 'undefined') {
+      App.showToast('Shared library not available', 'warning');
+      return;
+    }
+    await SharedRecipes.publish(r);
+    // Re-render modal to update button state
+    open(_currentId);
+  }
+
+  return { open, close, _del, startEdit, saveEdit, _cancelEdit, shareToLibrary,
            _setField, _setIngName, _setIngAmt, _setStep,
            _addIng, _removeIng, _addStep, _removeStep,
            _removeEditTag, _addEditTag };
